@@ -3,6 +3,7 @@
 import {catalog} from '../models';
 import {scanner} from '../models';
 import {main} from '../models';
+import {thumbs} from '../models';
 
 export function AddRoot(arg1:string):Promise<catalog.Root>;
 
@@ -30,6 +31,8 @@ export function ListRoots():Promise<Array<catalog.Root>>;
 
 export function ListTags():Promise<Array<catalog.TagCount>>;
 
+export function ListThumbnailCandidates(arg1:number):Promise<Array<thumbs.Candidate>>;
+
 export function MarkFolderModel(arg1:number,arg2:string):Promise<void>;
 
 export function MarkFolderNotModel(arg1:number,arg2:string):Promise<void>;
@@ -40,6 +43,8 @@ export function OpenDataFolder():Promise<void>;
 
 export function PickFolder():Promise<string>;
 
+export function PickThumbnailFile(arg1:number):Promise<boolean>;
+
 export function RedetectRoot(arg1:number):Promise<void>;
 
 export function RemoveRoot(arg1:number):Promise<void>;
@@ -48,11 +53,15 @@ export function RemoveTag(arg1:Array<number>,arg2:string):Promise<void>;
 
 export function ResetCorrections(arg1:number):Promise<void>;
 
+export function ResetThumbnail(arg1:number):Promise<void>;
+
 export function SearchModels(arg1:catalog.ModelQuery,arg2:number,arg3:number):Promise<catalog.ModelPage>;
 
 export function SetLanguage(arg1:string):Promise<void>;
 
 export function SetRootCreatorLevel(arg1:number,arg2:boolean):Promise<void>;
+
+export function SetThumbnail(arg1:number,arg2:number):Promise<void>;
 
 export function ShowInExplorer(arg1:number):Promise<void>;
 

@@ -7,18 +7,41 @@ import {Msg, toMsg, translateMsg} from '../i18n/msg'
 import {formatNumber} from '../format'
 import {ModelDetailPanel} from './ModelDetail'
 import {TagInput} from './TagInput'
+import {Thumb} from './Thumb'
 import {activeFilters, emptyQuery, FilterPanel, Query} from './FilterPanel'
 
-const ROW_HEIGHT = 56
+const ROW_HEIGHT = 60
+const TILE_WIDTH = 190 // minimum grid tile width; tiles stretch to fill the row
+const TILE_HEIGHT = 250
 const PAGE_SIZE = 100
 const OVERSCAN = 8
 const ROW_TAGS = 3
+
+type ViewMode = 'list' | 'grid'
+
+// The chosen view is a per-user convenience; storage may be unavailable.
+function loadViewMode(): ViewMode {
+    try {
+        return localStorage.getItem('modelkeeper.view') === 'grid' ? 'grid' : 'list'
+    } catch {
+        return 'list'
+    }
+}
 
 /** Model list with live search (H1), virtual scrolling (C3), selection and detail panel (H4). */
 export function ModelsView() {
     const {t} = useTranslation()
     const [query, setQuery] = useState<Query>(emptyQuery)
     const [showFilters, setShowFilters] = useState(false)
+    const [view, setView] = useState<ViewMode>(loadViewMode)
+    const changeView = (v: ViewMode) => {
+        setView(v)
+        try {
+            localStorage.setItem('modelkeeper.view', v)
+        } catch {
+            // not persisted
+        }
+    }
     const [total, setTotal] = useState(0)
     const [selected, setSelected] = useState<number | null>(null)
     const [multi, setMulti] = useState<Map<number, string>>(new Map()) // id -> name
@@ -78,16 +101,27 @@ export function ModelsView() {
 
     const [scrollTop, setScrollTop] = useState(0)
     const [height, setHeight] = useState(600)
+    const [width, setWidth] = useState(800)
     useEffect(() => {
         const el = listRef.current
         if (!el) return
-        const ro = new ResizeObserver(() => setHeight(el.clientHeight))
+        const ro = new ResizeObserver(() => {
+            setHeight(el.clientHeight)
+            setWidth(el.clientWidth)
+        })
         ro.observe(el)
         return () => ro.disconnect()
     }, [])
 
-    const first = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN)
-    const last = Math.min(total - 1, Math.ceil((scrollTop + height) / ROW_HEIGHT) + OVERSCAN)
+    // Layout: the list is a grid with one column (H3, C3).
+    const cols = view === 'grid' ? Math.max(1, Math.floor(width / TILE_WIDTH)) : 1
+    const itemH = view === 'grid' ? TILE_HEIGHT : ROW_HEIGHT
+    const itemW = width / cols
+    const rowCount = Math.ceil(total / cols)
+    const firstRow = Math.max(0, Math.floor(scrollTop / itemH) - Math.ceil(OVERSCAN / cols))
+    const lastRow = Math.min(rowCount - 1, Math.ceil((scrollTop + height) / itemH) + Math.ceil(OVERSCAN / cols))
+    const first = firstRow * cols
+    const last = Math.min(total - 1, (lastRow + 1) * cols - 1)
     useEffect(() => {
         if (total === 0) return
         for (let p = Math.floor(first / PAGE_SIZE); p <= Math.floor(last / PAGE_SIZE); p++) loadPage(p)
@@ -126,11 +160,14 @@ export function ModelsView() {
     for (let i = first; i <= last; i++) {
         const row = rowAt(i)
         const isSel = row && (multi.size > 0 ? multi.has(row.id) : row.id === selected)
+        const style = view === 'grid'
+            ? {top: Math.floor(i / cols) * itemH, left: (i % cols) * itemW, width: itemW, height: itemH}
+            : {top: i * itemH, left: 0, right: 0, height: itemH}
         rows.push(
-            <div key={i} className={`model-row${isSel ? ' selected' : ''}`}
-                 style={{top: i * ROW_HEIGHT, height: ROW_HEIGHT}}
-                 onClick={e => row && onRowClick(i, row, e)}>
-                {row ? <ModelRowView row={row}/> : <span className="muted">…</span>}
+            <div key={i} className={`${view === 'grid' ? 'model-tile' : 'model-row'}${isSel ? ' selected' : ''}`}
+                 style={style} onClick={e => row && onRowClick(i, row, e)}>
+                {row ? (view === 'grid' ? <ModelTileView row={row}/> : <ModelRowView row={row}/>)
+                    : <span className="muted">…</span>}
             </div>,
         )
     }
@@ -146,6 +183,12 @@ export function ModelsView() {
                         {t('filters.button')}{activeFilters(query) > 0 && ` (${activeFilters(query)})`}
                     </button>
                     <span className="muted small nowrap">{t('models.count', {count: total, n: formatNumber(total)})}</span>
+                    <span className="segmented" role="group" aria-label={t('views.label')}>
+                        {(['list', 'grid'] as ViewMode[]).map(v => (
+                            <button key={v} className={view === v ? 'active' : ''} aria-pressed={view === v}
+                                    onClick={() => changeView(v)}>{t(`views.${v}`)}</button>
+                        ))}
+                    </span>
                 </div>
                 {showFilters && <FilterPanel query={query} onChange={setQuery} allTags={allTags} version={version}/>}
                 {multi.size > 1 && (
@@ -159,7 +202,7 @@ export function ModelsView() {
                 )}
                 {error && <p className="error">{translateMsg(error)}</p>}
                 <div className="vlist" ref={listRef} onScroll={e => setScrollTop(e.currentTarget.scrollTop)}>
-                    <div style={{height: total * ROW_HEIGHT, position: 'relative'}}>{rows}</div>
+                    <div style={{height: rowCount * itemH, position: 'relative'}}>{rows}</div>
                     {total === 0 && !error && (
                         <p className="muted center-text">
                             {query.text || activeFilters(query) > 0 ? t('models.noResults') : t('models.empty')}
@@ -247,10 +290,28 @@ function SelectionBar({selection, allTags, onChanged, onMerged, onClear}: {
     )
 }
 
-function ModelRowView({row}: { row: catalog.ModelRow }) {
+function ModelTileView({row}: { row: catalog.ModelRow }) {
     const {t} = useTranslation()
     return (
         <>
+            <Thumb src={row.thumb} className="tile-thumb"/>
+            <div className="tile-text">
+                <strong className="ellipsis" title={row.name}>{row.name}</strong>
+                <span className="row small muted">
+                    <span className="ellipsis">{row.creator || t('models.noCreator')}</span>
+                    {row.variants.length > 0 && <span className="chip">{row.variants.join(' · ')}</span>}
+                </span>
+            </div>
+        </>
+    )
+}
+
+function ModelRowView({row}: { row: catalog.ModelRow }) {
+    const {t} = useTranslation()
+    return (
+        <div className="row row-with-thumb">
+            <Thumb src={row.thumb} className="row-thumb"/>
+            <div className="row-body">
             <div className="row spread">
                 <strong className="ellipsis">{row.name}</strong>
                 <span className="row small">
@@ -266,6 +327,7 @@ function ModelRowView({row}: { row: catalog.ModelRow }) {
                 {row.tags.slice(0, ROW_TAGS).map(tag => <span key={tag} className="chip tag">{tag}</span>)}
                 {row.tags.length > ROW_TAGS && <span>+{row.tags.length - ROW_TAGS}</span>}
             </div>
-        </>
+            </div>
+        </div>
     )
 }

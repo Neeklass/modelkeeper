@@ -26,16 +26,18 @@ import (
 	"modelkeeper/internal/detect"
 	"modelkeeper/internal/msg"
 	"modelkeeper/internal/settings"
+	"modelkeeper/internal/thumbs"
 )
 
 // Phases reported in Progress.Phase.
 const (
-	PhaseChecking  = "checking"
-	PhaseWalking   = "walking"
-	PhaseHashing   = "hashing"
-	PhaseArchives  = "archives"
-	PhaseDetecting = "detecting"
-	PhaseFinished  = "finished"
+	PhaseChecking   = "checking"
+	PhaseWalking    = "walking"
+	PhaseHashing    = "hashing"
+	PhaseArchives   = "archives"
+	PhaseDetecting  = "detecting"
+	PhaseThumbnails = "thumbnails"
+	PhaseFinished   = "finished"
 )
 
 // Run states (scan_run.status).
@@ -76,6 +78,9 @@ type Progress struct {
 	ModelsFound   int `json:"modelsFound"`
 	ModelsCreated int `json:"modelsCreated"`
 
+	ThumbsTotal int `json:"thumbsTotal"`
+	ThumbsDone  int `json:"thumbsDone"`
+
 	Issues int      `json:"issues"`
 	Error  *msg.Msg `json:"error,omitempty"`
 }
@@ -89,6 +94,8 @@ type Options struct {
 	ArchiveMemLimit int64
 	// EmitInterval throttles progress events.
 	EmitInterval time.Duration
+	// ThumbDir is the thumbnail folder; empty disables thumbnail generation.
+	ThumbDir string
 }
 
 func (o Options) withDefaults(rootKind string) Options {
@@ -276,7 +283,12 @@ type scan struct {
 func (s *scan) run(ctx context.Context) {
 	if s.detectOnly {
 		status, errKey, detail := StatusDone, "", ""
-		if err := s.detectModels(ctx); err != nil {
+		err := s.detectModels(ctx)
+		if err == nil {
+			s.t.update(func(p *Progress) { p.Phase = PhaseThumbnails })
+			err = s.thumbnails(ctx)
+		}
+		if err != nil {
 			status, errKey, detail = StatusFailed, "scan.error.database", "detecting: "+err.Error()
 			if errors.Is(err, context.Canceled) {
 				status, errKey, detail = StatusCancelled, "", ""
@@ -320,6 +332,7 @@ func (s *scan) execute(ctx context.Context) (status, errKey, detail string) {
 		{PhaseHashing, s.hashFiles},
 		{PhaseArchives, s.archives},
 		{PhaseDetecting, s.detectModels},
+		{PhaseThumbnails, s.thumbnails},
 	}
 	for _, step := range steps {
 		if ctx.Err() != nil {
@@ -433,4 +446,34 @@ func (m *Manager) Exclusive(fn func(ctx context.Context) error) error {
 func (m *Manager) DetectRules() detect.Rules {
 	st := m.settings()
 	return detect.Rules{PartNames: st.PartNames, SizeTokens: st.SizeTokens}
+}
+
+// thumbnails is phase 5: create thumbnails for models that have none yet (I1, I3).
+// Failures of single models are logged; the model is not retried automatically.
+func (s *scan) thumbnails(ctx context.Context) error {
+	if s.opts.ThumbDir == "" {
+		return nil
+	}
+	ids, err := thumbs.Pending(ctx, s.db, s.root.ID)
+	if err != nil {
+		return err
+	}
+	s.t.update(func(p *Progress) { p.ThumbsTotal, p.ThumbsDone = len(ids), 0 })
+	store := &thumbs.Store{DB: s.db, Dir: s.opts.ThumbDir}
+	for i, id := range ids {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if err := store.Generate(ctx, id); err != nil {
+			if errors.Is(err, context.Canceled) {
+				return err
+			}
+			if !rootReachable(s.root.Path) {
+				return &offlineError{err}
+			}
+			log.Printf("thumbnail for model %d: %v", id, err)
+		}
+		s.t.update(func(p *Progress) { p.ThumbsDone = i + 1 })
+	}
+	return nil
 }

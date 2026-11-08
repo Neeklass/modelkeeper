@@ -7,6 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/nwaples/rardecode/v2 v2.4.6
 	github.com/wailsapp/wails/v2 v2.17.1
+	golang.org/x/image v0.47.0
 	golang.org/x/sys v0.49.0
 	modernc.org/sqlite v1.62.0
 )
@@ -50,7 +51,7 @@ require (
 	go4.org v0.0.0-20260112195520-a5071408f32f // indirect
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/net v0.60.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 	modernc.org/libc v1.80.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect

@@ -6,7 +6,11 @@ import (
 	"errors"
 	"io"
 	"log"
+	"net/http"
 	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
 
 	"modelkeeper/internal/appdir"
 	"modelkeeper/internal/catalog"
@@ -17,6 +21,7 @@ import (
 	"modelkeeper/internal/osopen"
 	"modelkeeper/internal/scanner"
 	"modelkeeper/internal/settings"
+	"modelkeeper/internal/thumbs"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -77,7 +82,7 @@ func (a *App) init() error {
 	a.db = conn
 	scans, err := scanner.NewManager(conn, st.Get, func(p scanner.Progress) {
 		runtime.EventsEmit(a.ctx, EventScanProgress, p)
-	}, scanner.Options{})
+	}, scanner.Options{ThumbDir: layout.Thumbnails})
 	if err != nil {
 		return msg.Wrap(err, "error.catalogOpen", "path", layout.Catalog)
 	}
@@ -295,12 +300,16 @@ func (a *App) SetRootCreatorLevel(id int64, on bool) error {
 	return wrapDB(a.scans.Redetect(id))
 }
 
-// detectExisting runs detection once for roots scanned before model
-// detection existed (files present, no models yet).
+// detectExisting runs detection (and thumbnail generation) once at startup
+// for roots that have files but no models yet, or models without a thumbnail
+// that was never attempted (e.g. catalogs from before these features).
 func (a *App) detectExisting() {
 	rows, err := a.db.Query(`SELECT r.id FROM root r
-		WHERE EXISTS (SELECT 1 FROM location l WHERE l.root_id = r.id AND l.present = 1)
-		  AND NOT EXISTS (SELECT 1 FROM model_anchor m WHERE m.root_id = r.id)`)
+		WHERE r.status <> 'offline'
+		  AND EXISTS (SELECT 1 FROM location l WHERE l.root_id = r.id AND l.present = 1)
+		  AND (NOT EXISTS (SELECT 1 FROM model_anchor m WHERE m.root_id = r.id)
+		    OR EXISTS (SELECT 1 FROM model m JOIN model_anchor a ON a.model_id = m.id
+		      WHERE a.root_id = r.id AND m.thumb_source IS NULL AND m.thumb_tried_at IS NULL))`)
 	if err != nil {
 		log.Printf("detect existing: %v", err)
 		return
@@ -429,4 +438,80 @@ func (a *App) GetFilterOptions() (catalog.FilterOptions, error) {
 	}
 	o, err := catalog.GetFilterOptions(a.ctx, a.db)
 	return o, wrapDB(err)
+}
+
+// thumbName: thumbnail files are named "<uuid>.jpg".
+var thumbName = regexp.MustCompile(`^[0-9a-f-]{36}\.jpg$`)
+
+// thumbHandler serves thumbnails under /thumbs/<file> to the frontend (Wails
+// asset server fallback). It is a separate type so that ServeHTTP is not
+// exposed as a JavaScript binding of App.
+type thumbHandler struct{ a *App }
+
+func (h thumbHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	a := h.a
+	name, ok := strings.CutPrefix(r.URL.Path, "/thumbs/")
+	if !ok || !thumbName.MatchString(name) || a.layout.Thumbnails == "" {
+		http.NotFound(w, r)
+		return
+	}
+	// The URL carries a version parameter, so the file can be cached for good.
+	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	http.ServeFile(w, r, filepath.Join(a.layout.Thumbnails, name))
+}
+
+func (a *App) thumbStore() *thumbs.Store {
+	return &thumbs.Store{DB: a.db, Dir: a.layout.Thumbnails}
+}
+
+// ListThumbnailCandidates returns the files a thumbnail can be made from (I4).
+func (a *App) ListThumbnailCandidates(modelID int64) ([]thumbs.Candidate, error) {
+	if err := a.ready(); err != nil {
+		return nil, err
+	}
+	c, err := thumbs.Candidates(a.ctx, a.db, modelID)
+	if c == nil {
+		c = []thumbs.Candidate{}
+	}
+	return c, wrapDB(err)
+}
+
+// SetThumbnail makes one of the model's files its thumbnail (manual, I4).
+func (a *App) SetThumbnail(modelID, locationID int64) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	if err := a.thumbStore().SetFromCandidate(a.ctx, modelID, locationID); err != nil {
+		return msg.Wrap(err, "thumbs.failed")
+	}
+	return nil
+}
+
+// PickThumbnailFile lets the user choose any image file as thumbnail (manual, I4).
+// Returns false if the dialog was cancelled.
+func (a *App) PickThumbnailFile(modelID int64) (bool, error) {
+	if err := a.ready(); err != nil {
+		return false, err
+	}
+	file, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Filters: []runtime.FileFilter{{DisplayName: "Images (*.jpg;*.png;*.webp)", Pattern: "*.jpg;*.jpeg;*.png;*.webp"}},
+	})
+	if err != nil || file == "" {
+		return false, err
+	}
+	if err := a.thumbStore().SetFromFile(a.ctx, modelID, file); err != nil {
+		return false, msg.Wrap(err, "thumbs.failed")
+	}
+	return true, nil
+}
+
+// ResetThumbnail drops a manual thumbnail and generates an automatic one again.
+func (a *App) ResetThumbnail(modelID int64) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	if err := a.thumbStore().Reset(a.ctx, modelID); err != nil {
+		return msg.Wrap(err, "thumbs.failed")
+	}
+	return nil
 }

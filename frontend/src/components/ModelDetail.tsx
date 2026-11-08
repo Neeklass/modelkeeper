@@ -1,10 +1,12 @@
 import {useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
-    AddTags, DetachAnchor, DismissSuggestion, GetModel, MarkFolderModel, MarkFolderNotModel, RemoveTag,
-    ResetCorrections, ShowInExplorer, SplitModel, UpdateModel,
+    AddTags, DetachAnchor, DismissSuggestion, GetModel, ListThumbnailCandidates, MarkFolderModel, MarkFolderNotModel,
+    PickThumbnailFile, RemoveTag, ResetCorrections, ResetThumbnail, SetThumbnail, ShowInExplorer, SplitModel,
+    UpdateModel,
 } from '../../wailsjs/go/main/App'
-import {catalog} from '../../wailsjs/go/models'
+import {catalog, thumbs} from '../../wailsjs/go/models'
+import {Thumb} from './Thumb'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
 import {formatBytes} from '../format'
 import {TagInput} from './TagInput'
@@ -67,6 +69,8 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose}: {
                 <button onClick={onClose} aria-label={t('models.close')}>✕</button>
             </div>
             {error && <p className="error">{translateMsg(error)}</p>}
+
+            <ThumbnailSection d={d} busy={busy} act={act}/>
 
             <dl className="props">
                 <dt>{t('models.creator')}</dt><dd>{d.creator || '—'}</dd>
@@ -205,6 +209,56 @@ function Notes({notes, disabled, onSave}: { notes: string; disabled: boolean; on
         <textarea className="notes" rows={3} value={value} disabled={disabled} placeholder={t('models.notesPlaceholder')}
                   onChange={e => setValue(e.target.value)}
                   onBlur={() => value !== notes && onSave(value)}/>
+    )
+}
+
+/** Thumbnail with the options to change it (I4). */
+function ThumbnailSection({d, busy, act}: {
+    d: catalog.ModelDetail
+    busy: boolean
+    act: (fn: () => Promise<void>, confirmText?: string) => void
+}) {
+    const {t} = useTranslation()
+    const [open, setOpen] = useState(false)
+    const [cands, setCands] = useState<thumbs.Candidate[] | null>(null)
+    useEffect(() => {
+        if (open) ListThumbnailCandidates(d.id).then(setCands).catch(() => setCands([]))
+    }, [open, d.id])
+
+    return (
+        <div className="thumb-section">
+            <Thumb src={d.thumb} className="detail-thumb"/>
+            <div className="row small muted spread">
+                <span>{d.thumbSource ? t(`thumbs.source.${d.thumbSource}`) : t('thumbs.none')}</span>
+                <button className="link small" onClick={() => setOpen(o => !o)}>{t('thumbs.change')}</button>
+            </div>
+            {open && (
+                <div className="thumb-options">
+                    {cands === null && <span className="muted small">{t('app.loading')}</span>}
+                    {cands?.length === 0 && <span className="muted small">{t('thumbs.noCandidates')}</span>}
+                    <ul className="plain small">
+                        {cands?.map(c => (
+                            <li key={c.locationId} className="row spread">
+                                <span className="ellipsis" title={c.label}>{c.label}
+                                    <span className="muted"> · {t(`thumbs.source.${c.kind}`)}</span></span>
+                                <button className="link" disabled={busy}
+                                        onClick={() => act(() => SetThumbnail(d.id, c.locationId))}>{t('thumbs.use')}</button>
+                            </li>
+                        ))}
+                    </ul>
+                    <div className="row wrap">
+                        <button disabled={busy} onClick={() => act(async () => {
+                            await PickThumbnailFile(d.id)
+                        })}>{t('thumbs.pickFile')}</button>
+                        {d.thumbSource === 'manual' && (
+                            <button disabled={busy} onClick={() => act(() => ResetThumbnail(d.id))}>
+                                {t('thumbs.automatic')}
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
     )
 }
 

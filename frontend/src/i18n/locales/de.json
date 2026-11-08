@@ -59,7 +59,8 @@
       "hashing": "Dateien werden gehasht…",
       "archives": "Archive werden geprüft…",
       "finished": "Fertig",
-      "detecting": "Modelle werden erkannt…"
+      "detecting": "Modelle werden erkannt…",
+      "thumbnails": "Vorschaubilder werden erstellt…"
     },
     "found_one": "{{n}} Datei gefunden",
     "found_other": "{{n}} Dateien gefunden",
@@ -214,5 +215,25 @@
     "extractedAndArchiveHint": "Dateien liegen entpackt und zusätzlich in einem Archiv – Kandidaten zum Platzsparen",
     "missing": "Fehlende Dateien",
     "missingHint": "Dateien sind seit dem letzten Scan verschwunden"
+  },
+  "views": {
+    "label": "Ansicht",
+    "list": "Liste",
+    "grid": "Raster"
+  },
+  "thumbs": {
+    "none": "Noch kein Vorschaubild",
+    "change": "Vorschaubild ändern",
+    "noCandidates": "Keine Bilder oder 3D-Dateien vorhanden.",
+    "use": "Verwenden",
+    "pickFile": "Bild auswählen…",
+    "automatic": "Wieder automatisch",
+    "failed": "Das Vorschaubild konnte nicht erstellt werden: {{detail}}",
+    "source": {
+      "manual": "Von dir gewähltes Vorschaubild",
+      "image": "Bild aus dem Modellordner",
+      "embedded": "Vorschau aus der 3MF-Datei",
+      "rendered": "Aus der STL gerendert"
+    }
   }
 }

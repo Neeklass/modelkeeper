@@ -59,7 +59,8 @@
       "hashing": "Hashing files…",
       "archives": "Checking archives…",
       "finished": "Finished",
-      "detecting": "Detecting models…"
+      "detecting": "Detecting models…",
+      "thumbnails": "Creating thumbnails…"
     },
     "found_one": "{{n}} file found",
     "found_other": "{{n}} files found",
@@ -214,5 +215,25 @@
     "extractedAndArchiveHint": "Files exist extracted and inside an archive – candidates for saving space",
     "missing": "Missing files",
     "missingHint": "Files disappeared since the last scan"
+  },
+  "views": {
+    "label": "View",
+    "list": "List",
+    "grid": "Grid"
+  },
+  "thumbs": {
+    "none": "No thumbnail yet",
+    "change": "Change thumbnail",
+    "noCandidates": "No images or 3D files available.",
+    "use": "Use",
+    "pickFile": "Choose image…",
+    "automatic": "Back to automatic",
+    "failed": "The thumbnail could not be created: {{detail}}",
+    "source": {
+      "manual": "Thumbnail set by you",
+      "image": "Image from the model folder",
+      "embedded": "Preview from the 3MF file",
+      "rendered": "Rendered from the STL"
+    }
   }
 }

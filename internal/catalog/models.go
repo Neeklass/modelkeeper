@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/hex"
+	"fmt"
 	"strings"
 	"unicode"
 )
@@ -20,6 +21,16 @@ type ModelRow struct {
 	Missing    int      `json:"missing"`    // files gone since the last scan
 	Suggestion int      `json:"tagSuggest"` // open tag suggestions
 	Tags       []string `json:"tags"`
+	Thumb      string   `json:"thumb"` // URL of the thumbnail, "" if none
+}
+
+// ThumbURL is the address under which the app serves a thumbnail file; the
+// version parameter changes whenever the model (and so its thumbnail) changes.
+func ThumbURL(file string, version int64) string {
+	if file == "" {
+		return ""
+	}
+	return fmt.Sprintf("/thumbs/%s?v=%d", file, version)
 }
 
 // ModelQuery selects models for the list (H1, H2). Empty fields do not filter.
@@ -150,7 +161,8 @@ func SearchModels(ctx context.Context, db *sql.DB, query ModelQuery, offset, lim
 			(SELECT count(*) FROM location l WHERE l.model_id = m.id AND l.present = 0),
 			(SELECT count(*) FROM tag_suggestion s WHERE s.model_id = m.id AND s.state = 'open'),
 			coalesce((SELECT group_concat(name, char(31)) FROM (SELECT t.name FROM model_tag mt
-				JOIN tag t ON t.id = mt.tag_id WHERE mt.model_id = m.id ORDER BY t.name COLLATE NOCASE)), '')
+				JOIN tag t ON t.id = mt.tag_id WHERE mt.model_id = m.id ORDER BY t.name COLLATE NOCASE)), ''),
+			coalesce(m.thumb_file, ''), m.updated_at
 		`+from+` `+order+` LIMIT ? OFFSET ?`, append(args, limit, offset)...)
 	if err != nil {
 		return page, err
@@ -158,11 +170,13 @@ func SearchModels(ctx context.Context, db *sql.DB, query ModelQuery, offset, lim
 	defer rows.Close()
 	for rows.Next() {
 		var r ModelRow
-		var variants, tags string
+		var variants, tags, thumb string
+		var updated int64
 		if err := rows.Scan(&r.ID, &r.Name, &r.Creator, &r.Supports, &variants, &r.Files, &r.Roots,
-			&r.Missing, &r.Suggestion, &tags); err != nil {
+			&r.Missing, &r.Suggestion, &tags, &thumb, &updated); err != nil {
 			return page, err
 		}
+		r.Thumb = ThumbURL(thumb, updated)
 		r.Variants, r.Tags = splitList(variants), splitList(tags)
 		page.Items = append(page.Items, r)
 	}
@@ -180,6 +194,8 @@ type ModelDetail struct {
 	Supports    string `json:"supports"`
 	// SupportsManual: the user set supports; detection no longer changes it.
 	SupportsManual bool          `json:"supportsManual"`
+	Thumb          string        `json:"thumb"`       // URL, "" if none
+	ThumbSource    string        `json:"thumbSource"` // manual | image | embedded | rendered | ""
 	Anchors        []ModelAnchor `json:"anchors"`
 	Variants       []string      `json:"variants"`
 	Tags           []string      `json:"tags"`
@@ -224,12 +240,17 @@ const maxDetailFiles = 2000
 func GetModel(ctx context.Context, db *sql.DB, id int64) (ModelDetail, error) {
 	var d ModelDetail
 	var supports sql.NullString
+	var thumbFile string
+	var updated int64
 	err := db.QueryRowContext(ctx, `SELECT m.id, m.uid, m.name, coalesce(c.name, ''), m.notes, m.print_status, m.supports,
-		m.supports_manual FROM model m LEFT JOIN creator c ON c.id = m.creator_id WHERE m.id = ?`, id).
-		Scan(&d.ID, &d.UID, &d.Name, &d.Creator, &d.Notes, &d.PrintStatus, &supports, &d.SupportsManual)
+		m.supports_manual, coalesce(m.thumb_file, ''), coalesce(m.thumb_source, ''), m.updated_at
+		FROM model m LEFT JOIN creator c ON c.id = m.creator_id WHERE m.id = ?`, id).
+		Scan(&d.ID, &d.UID, &d.Name, &d.Creator, &d.Notes, &d.PrintStatus, &supports, &d.SupportsManual,
+			&thumbFile, &d.ThumbSource, &updated)
 	if err != nil {
 		return d, err
 	}
+	d.Thumb = ThumbURL(thumbFile, updated)
 	d.Supports = supports.String
 
 	strs := func(q string) ([]string, error) {

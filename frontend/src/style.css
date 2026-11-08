@@ -208,3 +208,31 @@ textarea.notes { width: 100%; box-sizing: border-box; resize: vertical; }
 .filter-grid label { flex-direction: column; align-items: stretch; gap: 2px; font-size: 12px; color: var(--muted); }
 .filter-grid select { color: var(--text); }
 .filter-flags { gap: 4px 16px; }
+
+/* Thumbnails, grid view (H3, I) */
+.segmented { display: inline-flex; }
+.segmented button { border-radius: 0; }
+.segmented button:first-child { border-radius: 6px 0 0 6px; }
+.segmented button:last-child { border-radius: 0 6px 6px 0; border-left: none; }
+.segmented button.active { background: var(--surface); border-color: var(--accent); color: var(--accent); }
+
+.thumb-empty {
+    background: repeating-linear-gradient(45deg, var(--surface), var(--surface) 6px, var(--bg) 6px, var(--bg) 12px);
+}
+.row-with-thumb { gap: 10px; min-width: 0; }
+.row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.row-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+
+.model-tile {
+    position: absolute; box-sizing: border-box; padding: 8px; cursor: pointer;
+    display: flex; flex-direction: column; gap: 6px; border-radius: 8px;
+}
+.model-tile:hover { background: var(--surface); }
+.model-tile.selected { background: var(--surface); box-shadow: inset 0 0 0 2px var(--accent); }
+.tile-thumb { width: 100%; flex: 1; min-height: 0; object-fit: contain; border-radius: 6px; background: #3a3c44; }
+.tile-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.thumb-section { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.detail-thumb { width: 100%; max-height: 260px; object-fit: contain; border-radius: 6px; background: #3a3c44; }
+div.detail-thumb { height: 160px; }
+.thumb-options { display: flex; flex-direction: column; gap: 6px; padding: 6px 0; }

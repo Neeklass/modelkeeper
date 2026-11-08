@@ -2,20 +2,15 @@ package scanner
 
 import (
 	"archive/zip"
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"errors"
 	"fmt"
 	"hash/crc32"
 	"io"
+	"modelkeeper/internal/archive"
 	"os"
-	"path"
-	"regexp"
-	"strings"
-	"time"
 
-	"github.com/bodgit/sevenzip"
 	"github.com/nwaples/rardecode/v2"
 )
 
@@ -43,104 +38,15 @@ type archiveResult struct {
 	Members []archiveMember // successfully read members (also for broken archives)
 }
 
-// memberOpener abstracts the formats: next returns the next file entry and a
-// reader for its content, or io.EOF when done.
-type memberIter interface {
-	next() (hdr memberHeader, r io.Reader, err error)
-	close() error
-}
-
-type memberHeader struct {
-	name      string
-	size      int64
-	modified  time.Time
-	isDir     bool
-	encrypted bool
-	crc32     uint32 // expected CRC when the library does not verify it (7z), 0 = none
-	checkCRC  bool
-}
-
-// errEncrypted marks archives or members that need a password.
-var errEncrypted = errors.New("encrypted")
-
-// errUnsupported marks formats or compression methods we cannot read.
-var errUnsupported = errors.New("unsupported")
-
-// laterRarVolume matches the second and following volumes of a multi-volume
-// RAR (name.part2.rar ...). They are read through the first volume.
-var laterRarVolume = regexp.MustCompile(`(?i)\.part0*([2-9]|[1-9]\d+)\.rar$`)
-
-// openArchive opens an archive by extension. data, if not nil, is the full
-// archive content already in memory (avoids reading it a second time).
-func openArchive(file, ext string, data []byte) (memberIter, error) {
-	switch ext {
-	case "zip":
-		var zr *zip.Reader
-		var closer io.Closer
-		if data != nil {
-			r, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-			if err != nil {
-				return nil, err
-			}
-			zr = r
-		} else {
-			rc, err := zip.OpenReader(file)
-			if err != nil {
-				return nil, err
-			}
-			zr, closer = &rc.Reader, rc
-		}
-		return &zipIter{files: zr.File, closer: closer}, nil
-	case "7z":
-		if data != nil {
-			r, err := sevenzip.NewReader(bytes.NewReader(data), int64(len(data)))
-			if err != nil {
-				return nil, wrap7z(err)
-			}
-			return &sevenIter{files: r.File}, nil
-		}
-		rc, err := sevenzip.OpenReader(file)
-		if err != nil {
-			return nil, wrap7z(err)
-		}
-		return &sevenIter{files: rc.File, closer: rc}, nil
-	case "rar":
-		if laterRarVolume.MatchString(file) {
-			return nil, fmt.Errorf("%w: later volume of a multi-volume archive", errUnsupported)
-		}
-		if data != nil {
-			r, err := rardecode.NewReader(bytes.NewReader(data))
-			if err != nil {
-				return nil, err
-			}
-			return &rarIter{r: r}, nil
-		}
-		rc, err := rardecode.OpenReader(file)
-		if err != nil {
-			return nil, err
-		}
-		return &rarIter{r: &rc.Reader, closer: rc}, nil
-	}
-	return nil, fmt.Errorf("%w: .%s", errUnsupported, ext)
-}
-
-func wrap7z(err error) error {
-	var re *sevenzip.ReadError
-	if errors.As(err, &re) && re.Encrypted {
-		return fmt.Errorf("%w: %v", errEncrypted, err)
-	}
-	return err
-}
-
 // readArchive reads every member completely, hashing it (F11) and thereby
 // verifying its checksum (F7). Members are streamed and never written to disk (D8).
 // countBytes is called with the number of decompressed bytes read.
 func readArchive(ctx context.Context, file, ext string, data []byte, countBytes func(int64)) archiveResult {
-	it, err := openArchive(file, ext, data)
+	it, err := archive.Open(file, ext, data)
 	if err != nil {
 		return classify(err, nil)
 	}
-	defer it.close()
+	defer it.Close()
 
 	var members []archiveMember
 	buf := make([]byte, 256<<10)
@@ -148,35 +54,35 @@ func readArchive(ctx context.Context, file, ext string, data []byte, countBytes 
 		if err := ctx.Err(); err != nil {
 			return archiveResult{Status: "", Detail: err.Error(), Members: members}
 		}
-		hdr, r, err := it.next()
+		hdr, r, err := it.Next()
 		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
 			return classify(err, members)
 		}
-		if hdr.isDir {
+		if hdr.IsDir {
 			continue
 		}
-		if hdr.encrypted {
-			return classify(errEncrypted, members)
+		if hdr.Encrypted {
+			return classify(archive.ErrEncrypted, members)
 		}
 		h := sha256.New()
 		var w io.Writer = h
 		c := crc32.NewIEEE()
-		if hdr.checkCRC {
+		if hdr.CheckCRC {
 			w = io.MultiWriter(h, c)
 		}
 		n, err := io.CopyBuffer(w, &countingReader{r: r, ctx: ctx, add: countBytes}, buf)
 		if err != nil {
-			return classify(fmt.Errorf("%s: %w", hdr.name, err), members)
+			return classify(fmt.Errorf("%s: %w", hdr.Name, err), members)
 		}
-		if hdr.checkCRC && c.Sum32() != hdr.crc32 {
-			return classify(fmt.Errorf("%s: %w", hdr.name, errCRC), members)
+		if hdr.CheckCRC && c.Sum32() != hdr.CRC32 {
+			return classify(fmt.Errorf("%s: %w", hdr.Name, errCRC), members)
 		}
-		m := archiveMember{Path: cleanMemberPath(hdr.name), Size: n}
-		if !hdr.modified.IsZero() {
-			m.Mtime = hdr.modified.UnixNano()
+		m := archiveMember{Path: archive.CleanPath(hdr.Name), Size: n}
+		if !hdr.Modified.IsZero() {
+			m.Mtime = hdr.Modified.UnixNano()
 		}
 		copy(m.SHA256[:], h.Sum(nil))
 		if m.Path != "" {
@@ -193,11 +99,11 @@ func classify(err error, members []archiveMember) archiveResult {
 	switch {
 	case errors.Is(err, context.Canceled):
 		res.Status = "" // caller handles cancellation
-	case errors.Is(err, errEncrypted),
+	case errors.Is(err, archive.ErrEncrypted),
 		errors.Is(err, rardecode.ErrArchiveEncrypted),
 		errors.Is(err, rardecode.ErrArchivedFileEncrypted):
 		res.Status, res.ErrKey = archiveEncrypted, "scan.archive.encrypted"
-	case errors.Is(err, errUnsupported),
+	case errors.Is(err, archive.ErrUnsupported),
 		errors.Is(err, zip.ErrAlgorithm),
 		errors.Is(err, rardecode.ErrUnsupportedDecoder),
 		errors.Is(err, rardecode.ErrUnknownDecoder),
@@ -207,148 +113,6 @@ func classify(err error, members []archiveMember) archiveResult {
 		res.Status, res.ErrKey = archiveBroken, "scan.archive.broken"
 	}
 	return res
-}
-
-// cleanMemberPath normalizes a member name to a relative '/'-path.
-func cleanMemberPath(name string) string {
-	name = strings.ReplaceAll(name, `\`, "/")
-	name = path.Clean("/" + name)
-	return strings.TrimPrefix(name, "/")
-}
-
-// --- zip ---
-
-type zipIter struct {
-	files  []*zip.File
-	i      int
-	cur    io.ReadCloser
-	closer io.Closer
-}
-
-func (z *zipIter) next() (memberHeader, io.Reader, error) {
-	if z.cur != nil {
-		z.cur.Close()
-		z.cur = nil
-	}
-	if z.i >= len(z.files) {
-		return memberHeader{}, nil, io.EOF
-	}
-	f := z.files[z.i]
-	z.i++
-	hdr := memberHeader{
-		name:      f.Name,
-		size:      int64(f.UncompressedSize64),
-		modified:  f.Modified,
-		isDir:     strings.HasSuffix(f.Name, "/") || f.FileInfo().IsDir(),
-		encrypted: f.Flags&0x1 != 0,
-	}
-	if hdr.isDir || hdr.encrypted {
-		return hdr, nil, nil
-	}
-	rc, err := f.Open() // verifies CRC32 at EOF (zip.ErrChecksum)
-	if err != nil {
-		return hdr, nil, fmt.Errorf("%s: %w", f.Name, err)
-	}
-	z.cur = rc
-	return hdr, rc, nil
-}
-
-func (z *zipIter) close() error {
-	if z.cur != nil {
-		z.cur.Close()
-	}
-	if z.closer != nil {
-		return z.closer.Close()
-	}
-	return nil
-}
-
-// --- 7z ---
-
-type sevenIter struct {
-	files  []*sevenzip.File
-	i      int
-	cur    io.ReadCloser
-	closer io.Closer
-}
-
-func (s *sevenIter) next() (memberHeader, io.Reader, error) {
-	if s.cur != nil {
-		s.cur.Close()
-		s.cur = nil
-	}
-	if s.i >= len(s.files) {
-		return memberHeader{}, nil, io.EOF
-	}
-	f := s.files[s.i]
-	s.i++
-	hdr := memberHeader{
-		name:     f.Name,
-		size:     int64(f.UncompressedSize),
-		modified: f.Modified,
-		isDir:    f.FileInfo().IsDir(),
-		crc32:    f.CRC32,
-		// sevenzip does not verify member CRCs itself.
-		checkCRC: f.CRC32 != 0,
-	}
-	if hdr.isDir {
-		return hdr, nil, nil
-	}
-	rc, err := f.Open()
-	if err != nil {
-		return hdr, nil, fmt.Errorf("%s: %w", f.Name, wrap7z(err))
-	}
-	s.cur = rc
-	return hdr, &sevenReader{rc: rc}, nil
-}
-
-func (s *sevenIter) close() error {
-	if s.cur != nil {
-		s.cur.Close()
-	}
-	if s.closer != nil {
-		return s.closer.Close()
-	}
-	return nil
-}
-
-type sevenReader struct{ rc io.Reader }
-
-func (r *sevenReader) Read(p []byte) (int, error) {
-	n, err := r.rc.Read(p)
-	if err != nil && !errors.Is(err, io.EOF) {
-		err = wrap7z(err)
-	}
-	return n, err
-}
-
-// --- rar ---
-
-type rarIter struct {
-	r      *rardecode.Reader
-	closer io.Closer
-}
-
-func (r *rarIter) next() (memberHeader, io.Reader, error) {
-	h, err := r.r.Next() // verifies the previous file's checksum
-	if err != nil {
-		return memberHeader{}, nil, err
-	}
-	hdr := memberHeader{
-		name:      h.Name,
-		size:      h.UnPackedSize,
-		modified:  h.ModificationTime,
-		isDir:     h.IsDir,
-		encrypted: h.Encrypted,
-	}
-	return hdr, r.r, nil
-}
-
-func (r *rarIter) close() error {
-	if r.closer != nil {
-		return r.closer.Close()
-	}
-	return nil
 }
 
 // --- helpers ---

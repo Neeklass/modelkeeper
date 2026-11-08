@@ -151,6 +151,8 @@ export namespace catalog {
 	    printStatus: string;
 	    supports: string;
 	    supportsManual: boolean;
+	    thumb: string;
+	    thumbSource: string;
 	    anchors: ModelAnchor[];
 	    variants: string[];
 	    tags: string[];
@@ -172,6 +174,8 @@ export namespace catalog {
 	        this.printStatus = source["printStatus"];
 	        this.supports = source["supports"];
 	        this.supportsManual = source["supportsManual"];
+	        this.thumb = source["thumb"];
+	        this.thumbSource = source["thumbSource"];
 	        this.anchors = this.convertValues(source["anchors"], ModelAnchor);
 	        this.variants = source["variants"];
 	        this.tags = source["tags"];
@@ -210,6 +214,7 @@ export namespace catalog {
 	    missing: number;
 	    tagSuggest: number;
 	    tags: string[];
+	    thumb: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelRow(source);
@@ -227,6 +232,7 @@ export namespace catalog {
 	        this.missing = source["missing"];
 	        this.tagSuggest = source["tagSuggest"];
 	        this.tags = source["tags"];
+	        this.thumb = source["thumb"];
 	    }
 	}
 	export class ModelPage {
@@ -473,6 +479,8 @@ export namespace scanner {
 	    archivesEncrypted: number;
 	    modelsFound: number;
 	    modelsCreated: number;
+	    thumbsTotal: number;
+	    thumbsDone: number;
 	    issues: number;
 	    error?: msg.Msg;
 	
@@ -504,6 +512,8 @@ export namespace scanner {
 	        this.archivesEncrypted = source["archivesEncrypted"];
 	        this.modelsFound = source["modelsFound"];
 	        this.modelsCreated = source["modelsCreated"];
+	        this.thumbsTotal = source["thumbsTotal"];
+	        this.thumbsDone = source["thumbsDone"];
 	        this.issues = source["issues"];
 	        this.error = this.convertValues(source["error"], msg.Msg);
 	    }
@@ -525,6 +535,29 @@ export namespace scanner {
 		    }
 		    return a;
 		}
+	}
+
+}
+
+export namespace thumbs {
+	
+	export class Candidate {
+	    locationId: number;
+	    kind: string;
+	    label: string;
+	    size: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Candidate(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.locationId = source["locationId"];
+	        this.kind = source["kind"];
+	        this.label = source["label"];
+	        this.size = source["size"];
+	    }
 	}
 
 }

@@ -54,6 +54,10 @@ export function ListTags() {
   return window['go']['main']['App']['ListTags']();
 }
 
+export function ListThumbnailCandidates(arg1) {
+  return window['go']['main']['App']['ListThumbnailCandidates'](arg1);
+}
+
 export function MarkFolderModel(arg1, arg2) {
   return window['go']['main']['App']['MarkFolderModel'](arg1, arg2);
 }
@@ -74,6 +78,10 @@ export function PickFolder() {
   return window['go']['main']['App']['PickFolder']();
 }
 
+export function PickThumbnailFile(arg1) {
+  return window['go']['main']['App']['PickThumbnailFile'](arg1);
+}
+
 export function RedetectRoot(arg1) {
   return window['go']['main']['App']['RedetectRoot'](arg1);
 }
@@ -90,6 +98,10 @@ export function ResetCorrections(arg1) {
   return window['go']['main']['App']['ResetCorrections'](arg1);
 }
 
+export function ResetThumbnail(arg1) {
+  return window['go']['main']['App']['ResetThumbnail'](arg1);
+}
+
 export function SearchModels(arg1, arg2, arg3) {
   return window['go']['main']['App']['SearchModels'](arg1, arg2, arg3);
 }
@@ -100,6 +112,10 @@ export function SetLanguage(arg1) {
 
 export function SetRootCreatorLevel(arg1, arg2) {
   return window['go']['main']['App']['SetRootCreatorLevel'](arg1, arg2);
+}
+
+export function SetThumbnail(arg1, arg2) {
+  return window['go']['main']['App']['SetThumbnail'](arg1, arg2);
 }
 
 export function ShowInExplorer(arg1) {

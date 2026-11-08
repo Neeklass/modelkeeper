@@ -195,9 +195,13 @@ function ScanProgressView({p}: { p: scanner.Progress }) {
                     {' · '}{formatBytes(p.bytesDone)} / {formatBytes(p.bytesTotal)}</span>}
                 {p.phase === 'archives' && <span>{formatNumber(p.archivesDone)} / {formatNumber(p.archivesTotal)}
                     {' · '}{formatBytes(p.bytesDone)} / {formatBytes(p.bytesTotal)}</span>}
+                {p.phase === 'thumbnails' && <span>{formatNumber(p.thumbsDone)} / {formatNumber(p.thumbsTotal)}</span>}
             </div>
-            {p.phase !== 'walking' && p.phase !== 'checking' && (
+            {(p.phase === 'hashing' || p.phase === 'archives') && (
                 <div className="bar"><div style={{width: `${Math.min(100, frac * 100).toFixed(1)}%`}}/></div>
+            )}
+            {p.phase === 'thumbnails' && p.thumbsTotal > 0 && (
+                <div className="bar"><div style={{width: `${(100 * p.thumbsDone / p.thumbsTotal).toFixed(1)}%`}}/></div>
             )}
             <code className="small muted current">{p.current}</code>
         </div>
