@@ -80,6 +80,7 @@ func (a *App) init() error {
 		return msg.Wrap(err, "error.catalogOpen", "path", layout.Catalog)
 	}
 	a.scans = scans
+	go a.detectExisting()
 	return nil
 }
 
@@ -226,4 +227,93 @@ func (a *App) GetScanProgress() *scanner.Progress {
 		return nil
 	}
 	return a.scans.Progress()
+}
+
+// SearchModels returns a page of the model list; text filters via full-text search (H1).
+func (a *App) SearchModels(text string, offset, limit int) (catalog.ModelPage, error) {
+	if err := a.ready(); err != nil {
+		return catalog.ModelPage{}, err
+	}
+	if limit <= 0 || limit > 500 {
+		limit = 100
+	}
+	p, err := catalog.SearchModels(a.ctx, a.db, text, offset, limit)
+	return p, wrapDB(err)
+}
+
+// GetModel returns the detail view of a model (H4).
+func (a *App) GetModel(id int64) (catalog.ModelDetail, error) {
+	if err := a.ready(); err != nil {
+		return catalog.ModelDetail{}, err
+	}
+	d, err := catalog.GetModel(a.ctx, a.db, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return d, msg.Wrap(nil, "error.modelNotFound")
+	}
+	return d, wrapDB(err)
+}
+
+// ShowInExplorer reveals a file (or the archive containing it) in the file manager (H5).
+func (a *App) ShowInExplorer(locationID int64) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	p, err := catalog.LocationPath(a.ctx, a.db, locationID)
+	if err != nil {
+		return wrapDB(err)
+	}
+	if err := osopen.Reveal(p); err != nil {
+		return msg.Wrap(err, "error.openFolder", "path", p)
+	}
+	return nil
+}
+
+// RedetectRoot re-runs model detection for a root in the background.
+func (a *App) RedetectRoot(id int64) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	return wrapDB(a.scans.Redetect(id))
+}
+
+// SetRootCreatorLevel turns "first level = creator" (F4a) on/off and re-detects.
+func (a *App) SetRootCreatorLevel(id int64, on bool) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	if p := a.scans.Progress(); p != nil && p.Running {
+		return msg.Wrap(nil, "scan.error.alreadyRunning")
+	}
+	if err := catalog.SetCreatorLevel(a.ctx, a.db, id, on); err != nil {
+		return wrapDB(err)
+	}
+	return wrapDB(a.scans.Redetect(id))
+}
+
+// detectExisting runs detection once for roots scanned before model
+// detection existed (files present, no models yet).
+func (a *App) detectExisting() {
+	rows, err := a.db.Query(`SELECT r.id FROM root r
+		WHERE EXISTS (SELECT 1 FROM location l WHERE l.root_id = r.id AND l.present = 1)
+		  AND NOT EXISTS (SELECT 1 FROM model_anchor m WHERE m.root_id = r.id)`)
+	if err != nil {
+		log.Printf("detect existing: %v", err)
+		return
+	}
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if rows.Scan(&id) == nil {
+			ids = append(ids, id)
+		}
+	}
+	rows.Close()
+	for _, id := range ids {
+		a.scans.Wait()
+		if err := a.scans.Redetect(id); err != nil {
+			log.Printf("detect existing root %d: %v", id, err)
+			continue
+		}
+		a.scans.Wait()
+	}
 }

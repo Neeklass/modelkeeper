@@ -1,7 +1,8 @@
 import {useCallback, useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
-    AddRoot, CancelScan, GetRootStats, GetScanProgress, ListLastScanIssues, ListRoots, PickFolder, RemoveRoot, StartScan,
+    AddRoot, CancelScan, GetRootStats, GetScanProgress, ListLastScanIssues, ListRoots, PickFolder, RedetectRoot, RemoveRoot,
+    SetRootCreatorLevel, StartScan,
 } from '../../wailsjs/go/main/App'
 import {catalog, scanner} from '../../wailsjs/go/models'
 import {EventsOn} from '../../wailsjs/runtime/runtime'
@@ -59,6 +60,11 @@ export function RootsPanel() {
                 <RootRow key={r.id} root={r} scanning={scanning}
                          progress={progress?.rootId === r.id ? progress : null}
                          onScan={() => run(() => StartScan(r.id))}
+                         onRedetect={() => run(() => RedetectRoot(r.id))}
+                         onCreatorLevel={on => run(async () => {
+                             await SetRootCreatorLevel(r.id, on)
+                             reload()
+                         })}
                          onCancel={() => CancelScan()}
                          onRemove={() => removeRoot(r)}/>
             ))}
@@ -72,6 +78,8 @@ function RootRow(props: {
     scanning: boolean
     progress: scanner.Progress | null
     onScan: () => void
+    onRedetect: () => void
+    onCreatorLevel: (on: boolean) => void
     onCancel: () => void
     onRemove: () => void
 }) {
@@ -104,10 +112,19 @@ function RootRow(props: {
                 <div className="row">
                     {running
                         ? <button onClick={props.onCancel}>{t('scan.cancel')}</button>
-                        : <button onClick={props.onScan} disabled={props.scanning}>{t('scan.start')}</button>}
+                        : <>
+                            <button onClick={props.onScan} disabled={props.scanning}>{t('scan.start')}</button>
+                            <button onClick={props.onRedetect} disabled={props.scanning}>{t('scan.redetect')}</button>
+                        </>}
                     <button onClick={props.onRemove} disabled={running}>{t('roots.remove')}</button>
                 </div>
             </div>
+
+            <label className="small">
+                <input type="checkbox" checked={root.creatorLevel} disabled={props.scanning}
+                       onChange={e => props.onCreatorLevel(e.target.checked)}/>
+                {t('roots.creatorLevel')}
+            </label>
 
             {progress && <ScanProgressView p={progress}/>}
 
@@ -161,6 +178,9 @@ function ScanProgressView({p}: { p: scanner.Progress }) {
                     new: formatNumber(p.filesNew), changed: formatNumber(p.filesChanged),
                     missing: formatNumber(p.filesMissing), hashed: formatNumber(p.hashDone),
                 })}
+                {p.status === 'done' && p.modelsFound > 0 && <> {t('scan.modelsResult', {
+                    n: formatNumber(p.modelsFound), created: formatNumber(p.modelsCreated),
+                })}</>}
                 {p.error && <> — {translateMsg(p.error)}</>}
             </p>
         )

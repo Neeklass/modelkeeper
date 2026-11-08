@@ -8,6 +8,8 @@ export function AddRoot(arg1:string):Promise<catalog.Root>;
 
 export function CancelScan():Promise<void>;
 
+export function GetModel(arg1:number):Promise<catalog.ModelDetail>;
+
 export function GetRootStats(arg1:number):Promise<catalog.RootStats>;
 
 export function GetScanProgress():Promise<scanner.Progress>;
@@ -22,8 +24,16 @@ export function OpenDataFolder():Promise<void>;
 
 export function PickFolder():Promise<string>;
 
+export function RedetectRoot(arg1:number):Promise<void>;
+
 export function RemoveRoot(arg1:number):Promise<void>;
 
+export function SearchModels(arg1:string,arg2:number,arg3:number):Promise<catalog.ModelPage>;
+
 export function SetLanguage(arg1:string):Promise<void>;
+
+export function SetRootCreatorLevel(arg1:number,arg2:boolean):Promise<void>;
+
+export function ShowInExplorer(arg1:number):Promise<void>;
 
 export function StartScan(arg1:number):Promise<void>;

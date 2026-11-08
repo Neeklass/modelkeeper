@@ -10,6 +10,10 @@ export function CancelScan() {
   return window['go']['main']['App']['CancelScan']();
 }
 
+export function GetModel(arg1) {
+  return window['go']['main']['App']['GetModel'](arg1);
+}
+
 export function GetRootStats(arg1) {
   return window['go']['main']['App']['GetRootStats'](arg1);
 }
@@ -38,12 +42,28 @@ export function PickFolder() {
   return window['go']['main']['App']['PickFolder']();
 }
 
+export function RedetectRoot(arg1) {
+  return window['go']['main']['App']['RedetectRoot'](arg1);
+}
+
 export function RemoveRoot(arg1) {
   return window['go']['main']['App']['RemoveRoot'](arg1);
 }
 
+export function SearchModels(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SearchModels'](arg1, arg2, arg3);
+}
+
 export function SetLanguage(arg1) {
   return window['go']['main']['App']['SetLanguage'](arg1);
+}
+
+export function SetRootCreatorLevel(arg1, arg2) {
+  return window['go']['main']['App']['SetRootCreatorLevel'](arg1, arg2);
+}
+
+export function ShowInExplorer(arg1) {
+  return window['go']['main']['App']['ShowInExplorer'](arg1);
 }
 
 export function StartScan(arg1) {

@@ -117,3 +117,52 @@ button.link { border: none; background: none; padding: 0; color: var(--accent); 
 .stats dd { margin: 0; font-size: 15px; }
 .issues { margin: 6px 0 0; padding-left: 18px; font-size: 12px; max-height: 240px; overflow: auto; }
 .card { max-width: 900px; }
+
+/* Tabs */
+.shell header { gap: 24px; }
+.tabs { display: flex; gap: 4px; }
+.tabs button { border-color: transparent; background: none; }
+.tabs button.active { border-color: var(--border); background: var(--surface); }
+
+/* Models view: list + detail side by side, each scrolling on its own */
+.models { flex: 1; min-height: 0; display: flex; }
+.models-list { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.models .search { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.models .search input {
+    flex: 1; font: inherit; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px;
+}
+.models .search input:focus { outline: none; border-color: var(--accent); }
+.vlist { flex: 1; overflow-y: auto; position: relative; }
+.model-row {
+    position: absolute; left: 0; right: 0; box-sizing: border-box;
+    padding: 6px 16px; border-bottom: 1px solid var(--border); cursor: pointer;
+    display: flex; flex-direction: column; justify-content: center; gap: 2px;
+}
+.model-row:hover { background: var(--surface); }
+.model-row.selected { background: var(--surface); box-shadow: inset 3px 0 0 var(--accent); }
+.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.row.spread > .ellipsis { flex: 1; }
+.chip {
+    font-size: 11px; border-radius: 4px; padding: 0 6px;
+    background: var(--bg); border: 1px solid var(--border);
+}
+.chip.suggestion { border-style: dashed; margin-right: 4px; }
+.warn-text { color: var(--danger); }
+.center-text { text-align: center; margin-top: 48px; }
+
+.detail {
+    width: 420px; max-width: 45%; flex-shrink: 0; overflow-y: auto;
+    border-left: 1px solid var(--border); padding: 16px; box-sizing: border-box;
+}
+.detail h2 { font-size: 16px; margin: 0; word-break: break-word; }
+.detail h3 { font-size: 13px; margin: 18px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.detail h4 { font-size: 12px; margin: 10px 0 4px; }
+.props { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 12px 0 0; }
+.props dt { color: var(--muted); }
+.props dd { margin: 0; }
+ul.plain { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+ul.files { list-style: none; padding: 0; margin: 0; }
+ul.files li { padding: 5px 0; border-bottom: 1px solid var(--border); }
+ul.files li.missing { opacity: .6; }
+input[type=checkbox] { margin: 0 6px 0 0; }

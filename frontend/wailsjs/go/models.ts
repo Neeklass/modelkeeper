@@ -36,6 +36,176 @@ export namespace catalog {
 		    return a;
 		}
 	}
+	export class ModelAnchor {
+	    rootId: number;
+	    rootPath: string;
+	    rootKind: string;
+	    online: boolean;
+	    path: string;
+	    kind: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelAnchor(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rootId = source["rootId"];
+	        this.rootPath = source["rootPath"];
+	        this.rootKind = source["rootKind"];
+	        this.online = source["online"];
+	        this.path = source["path"];
+	        this.kind = source["kind"];
+	    }
+	}
+	export class ModelFile {
+	    locationId: number;
+	    rootId: number;
+	    path: string;
+	    archivePath: string;
+	    category: string;
+	    ext: string;
+	    size: number;
+	    present: boolean;
+	    variant: string;
+	    hash: string;
+	    copies: number;
+	    archiveStatus: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelFile(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.locationId = source["locationId"];
+	        this.rootId = source["rootId"];
+	        this.path = source["path"];
+	        this.archivePath = source["archivePath"];
+	        this.category = source["category"];
+	        this.ext = source["ext"];
+	        this.size = source["size"];
+	        this.present = source["present"];
+	        this.variant = source["variant"];
+	        this.hash = source["hash"];
+	        this.copies = source["copies"];
+	        this.archiveStatus = source["archiveStatus"];
+	    }
+	}
+	export class ModelDetail {
+	    id: number;
+	    uid: string;
+	    name: string;
+	    creator: string;
+	    notes: string;
+	    printStatus: string;
+	    supports: string;
+	    anchors: ModelAnchor[];
+	    variants: string[];
+	    tags: string[];
+	    tagSuggestions: string[];
+	    files: ModelFile[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelDetail(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.uid = source["uid"];
+	        this.name = source["name"];
+	        this.creator = source["creator"];
+	        this.notes = source["notes"];
+	        this.printStatus = source["printStatus"];
+	        this.supports = source["supports"];
+	        this.anchors = this.convertValues(source["anchors"], ModelAnchor);
+	        this.variants = source["variants"];
+	        this.tags = source["tags"];
+	        this.tagSuggestions = source["tagSuggestions"];
+	        this.files = this.convertValues(source["files"], ModelFile);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class ModelRow {
+	    id: number;
+	    name: string;
+	    creator: string;
+	    supports: string;
+	    variants: string[];
+	    files: number;
+	    roots: number;
+	    missing: number;
+	    tagSuggest: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelRow(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.creator = source["creator"];
+	        this.supports = source["supports"];
+	        this.variants = source["variants"];
+	        this.files = source["files"];
+	        this.roots = source["roots"];
+	        this.missing = source["missing"];
+	        this.tagSuggest = source["tagSuggest"];
+	    }
+	}
+	export class ModelPage {
+	    total: number;
+	    items: ModelRow[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelPage(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.total = source["total"];
+	        this.items = this.convertValues(source["items"], ModelRow);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	export class Root {
 	    id: number;
 	    path: string;
@@ -172,6 +342,8 @@ export namespace scanner {
 	    archivesDone: number;
 	    archivesBroken: number;
 	    archivesEncrypted: number;
+	    modelsFound: number;
+	    modelsCreated: number;
 	    issues: number;
 	    error?: msg.Msg;
 	
@@ -201,6 +373,8 @@ export namespace scanner {
 	        this.archivesDone = source["archivesDone"];
 	        this.archivesBroken = source["archivesBroken"];
 	        this.archivesEncrypted = source["archivesEncrypted"];
+	        this.modelsFound = source["modelsFound"];
+	        this.modelsCreated = source["modelsCreated"];
 	        this.issues = source["issues"];
 	        this.error = this.convertValues(source["error"], msg.Msg);
 	    }

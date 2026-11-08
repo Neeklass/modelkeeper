@@ -23,17 +23,19 @@ import (
 	"time"
 
 	"modelkeeper/internal/catalog"
+	"modelkeeper/internal/detect"
 	"modelkeeper/internal/msg"
 	"modelkeeper/internal/settings"
 )
 
 // Phases reported in Progress.Phase.
 const (
-	PhaseChecking = "checking"
-	PhaseWalking  = "walking"
-	PhaseHashing  = "hashing"
-	PhaseArchives = "archives"
-	PhaseFinished = "finished"
+	PhaseChecking  = "checking"
+	PhaseWalking   = "walking"
+	PhaseHashing   = "hashing"
+	PhaseArchives  = "archives"
+	PhaseDetecting = "detecting"
+	PhaseFinished  = "finished"
 )
 
 // Run states (scan_run.status).
@@ -70,6 +72,9 @@ type Progress struct {
 	ArchivesDone      int `json:"archivesDone"`
 	ArchivesBroken    int `json:"archivesBroken"`
 	ArchivesEncrypted int `json:"archivesEncrypted"`
+
+	ModelsFound   int `json:"modelsFound"`
+	ModelsCreated int `json:"modelsCreated"`
 
 	Issues int      `json:"issues"`
 	Error  *msg.Msg `json:"error,omitempty"`
@@ -129,8 +134,14 @@ func NewManager(db *sql.DB, settingsFn func() settings.Settings, emit func(Progr
 	return &Manager{db: db, settings: settingsFn, emit: emit, opts: opts}, nil
 }
 
-// Start begins scanning a root in the background.
-func (m *Manager) Start(rootID int64) error {
+// Start begins scanning a root in the background. Model detection runs at the end.
+func (m *Manager) Start(rootID int64) error { return m.start(rootID, false) }
+
+// Redetect re-runs only model detection for a root in the background
+// (e.g. after the creator-level setting changed).
+func (m *Manager) Redetect(rootID int64) error { return m.start(rootID, true) }
+
+func (m *Manager) start(rootID int64, detectOnly bool) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.done != nil {
@@ -145,11 +156,16 @@ func (m *Manager) Start(rootID int64) error {
 		return err
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	t := &tracker{p: Progress{RootID: rootID, Phase: PhaseChecking, Status: StatusRunning, Running: true, Started: nowMs()}}
+	phase := PhaseChecking
+	if detectOnly {
+		phase = PhaseDetecting
+	}
+	t := &tracker{p: Progress{RootID: rootID, Phase: phase, Status: StatusRunning, Running: true, Started: nowMs()}}
 	m.cancel, m.done, m.last = cancel, make(chan struct{}), t
 
 	s := &scan{
 		db: m.db, root: root, st: m.settings(), opts: m.opts.withDefaults(root.Kind), t: t,
+		detectOnly: detectOnly,
 	}
 	done := m.done
 	go func() {
@@ -254,9 +270,22 @@ type scan struct {
 	runID int64
 
 	pendingArchives []hashJob // loaded in phase 2, processed in phase 3
+	detectOnly      bool
 }
 
 func (s *scan) run(ctx context.Context) {
+	if s.detectOnly {
+		status, errKey, detail := StatusDone, "", ""
+		if err := s.detectModels(ctx); err != nil {
+			status, errKey, detail = StatusFailed, "scan.error.database", "detecting: "+err.Error()
+			if errors.Is(err, context.Canceled) {
+				status, errKey, detail = StatusCancelled, "", ""
+			}
+			log.Printf("detect: %v", err)
+		}
+		s.finish(status, errKey, detail)
+		return
+	}
 	status, errKey, detail := s.execute(ctx)
 	if ctx.Err() != nil && status == StatusDone {
 		status = StatusCancelled
@@ -290,6 +319,7 @@ func (s *scan) execute(ctx context.Context) (status, errKey, detail string) {
 		{PhaseWalking, s.walk},
 		{PhaseHashing, s.hashFiles},
 		{PhaseArchives, s.archives},
+		{PhaseDetecting, s.detectModels},
 	}
 	for _, step := range steps {
 		if ctx.Err() != nil {
@@ -361,3 +391,20 @@ func (s *scan) issue(locationID int64, kind, key string, kv ...any) {
 }
 
 func nowMs() int64 { return time.Now().UnixMilli() }
+
+// detectModels is phase 4: suggest models from the files (F4).
+func (s *scan) detectModels(ctx context.Context) error {
+	rules := detect.Rules{PartNames: s.st.PartNames, SizeTokens: s.st.SizeTokens}
+	var res detect.Result
+	err := withRetry(ctx, func(ctx context.Context) error {
+		var err error
+		res, err = detect.Apply(ctx, s.db, s.root.ID, rules)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	s.t.update(func(p *Progress) { p.ModelsFound, p.ModelsCreated = res.Models, res.Created })
+	log.Printf("detect root %d: %+v", s.root.ID, res)
+	return nil
+}

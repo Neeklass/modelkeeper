@@ -27,7 +27,8 @@
     "rootInvalid": "Ungültiger Pfad: {{path}}",
     "rootNotFolder": "{{path}} ist kein erreichbarer Ordner.",
     "rootOverlap": "{{path}} überschneidet sich mit dem vorhandenen Stammordner {{other}}.",
-    "database": "Datenbankfehler: {{detail}}"
+    "database": "Datenbankfehler: {{detail}}",
+    "modelNotFound": "Dieses Modell existiert nicht mehr."
   },
   "roots": {
     "title": "Stammordner",
@@ -45,7 +46,8 @@
       "unknown": "Nicht geprüft",
       "online": "Online",
       "offline": "Offline"
-    }
+    },
+    "creatorLevel": "Erste Ordnerebene ist der Ersteller"
   },
   "scan": {
     "start": "Scannen",
@@ -55,7 +57,8 @@
       "walking": "Dateien werden aufgelistet…",
       "hashing": "Dateien werden gehasht…",
       "archives": "Archive werden geprüft…",
-      "finished": "Fertig"
+      "finished": "Fertig",
+      "detecting": "Modelle werden erkannt…"
     },
     "found_one": "{{n}} Datei gefunden",
     "found_other": "{{n}} Dateien gefunden",
@@ -81,7 +84,9 @@
       "broken": "Archiv {{path}} ist beschädigt: {{detail}}",
       "encrypted": "Archiv {{path}} ist passwortgeschützt und konnte nicht geprüft werden.",
       "unsupported": "Archivformat oder Komprimierungsverfahren wird nicht unterstützt."
-    }
+    },
+    "redetect": "Modelle erkennen",
+    "modelsResult": "{{n}} Modelle ({{created}} neu)."
   },
   "stats": {
     "files": "Dateien",
@@ -93,5 +98,44 @@
     "archivesEncrypted": "Passwortgeschützt",
     "missing": "Fehlend",
     "pending": "Noch nicht verarbeitet"
+  },
+  "tabs": {
+    "models": "Modelle",
+    "folders": "Ordner",
+    "settings": "Einstellungen"
+  },
+  "models": {
+    "searchPlaceholder": "Name, Ersteller, Pfad suchen…",
+    "count_one": "{{n}} Modell",
+    "count_other": "{{n}} Modelle",
+    "empty": "Noch keine Modelle. Füge unter „Ordner“ einen Ordner hinzu und scanne ihn.",
+    "noResults": "Keine Modelle passen zur Suche.",
+    "noCreator": "Kein Ersteller",
+    "files_one": "{{n}} Datei",
+    "files_other": "{{n}} Dateien",
+    "roots": "an {{n}} Orten",
+    "missing": "{{n}} fehlen",
+    "close": "Schließen",
+    "creator": "Ersteller",
+    "supportsLabel": "Supports",
+    "variants": "Varianten",
+    "tagSuggestions": "Tag-Vorschläge",
+    "locations": "Gefunden in",
+    "filesTitle": "Dateien ({{n}})",
+    "noVariant": "Ohne Variante",
+    "showInExplorer": "Im Explorer zeigen",
+    "fileMissing": "fehlt",
+    "copies": "{{n}} identische Kopien"
+  },
+  "supports": {
+    "presupported": "Vorgestützt",
+    "unsupported": "Ungestützt",
+    "both": "Vor- & ungestützt"
+  },
+  "archiveStatus": {
+    "pending": "noch nicht geprüft",
+    "broken": "beschädigt",
+    "encrypted": "passwortgeschützt",
+    "unsupported": "nicht lesbar"
   }
 }

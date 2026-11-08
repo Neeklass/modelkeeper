@@ -4,6 +4,7 @@ go 1.26.0
 
 require (
 	github.com/bodgit/sevenzip v1.6.5
+	github.com/google/uuid v1.6.0
 	github.com/nwaples/rardecode/v2 v2.4.6
 	github.com/wailsapp/wails/v2 v2.17.1
 	golang.org/x/sys v0.49.0
@@ -20,7 +21,6 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.16 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect

@@ -5,11 +5,15 @@ import {main} from '../wailsjs/go/models'
 import i18n, {languages, resolveLanguage, systemLanguage} from './i18n'
 import {Msg, toMsg, translateMsg} from './i18n/msg'
 import {RootsPanel} from './components/RootsPanel'
+import {ModelsView} from './components/ModelsView'
+
+type Tab = 'models' | 'folders' | 'settings'
 
 function App() {
     const {t} = useTranslation()
     const [status, setStatus] = useState<main.AppStatus | null>(null)
     const [error, setError] = useState<Msg | null>(null)
+    const [tab, setTab] = useState<Tab>('models')
 
     useEffect(() => {
         GetStatus().then(s => {
@@ -33,13 +37,18 @@ function App() {
 
     return (
         <div className="shell">
-            <header>
+            <header className="row">
                 <h1>{t('app.title')}</h1>
+                <nav className="tabs" role="tablist">
+                    {(['models', 'folders', 'settings'] as Tab[]).map(k => (
+                        <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'active' : ''}
+                                onClick={() => setTab(k)}>{t(`tabs.${k}`)}</button>
+                    ))}
+                </nav>
             </header>
-            <main>
-                <RootsPanel/>
-                <SettingsPanel status={status} onChange={setStatus}/>
-            </main>
+            {tab === 'models' && <ModelsView/>}
+            {tab === 'folders' && <main><RootsPanel/></main>}
+            {tab === 'settings' && <main><SettingsPanel status={status} onChange={setStatus}/></main>}
         </div>
     )
 }

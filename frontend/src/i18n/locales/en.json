@@ -27,7 +27,8 @@
     "rootInvalid": "Invalid path: {{path}}",
     "rootNotFolder": "{{path}} is not a reachable folder.",
     "rootOverlap": "{{path}} overlaps with the existing root folder {{other}}.",
-    "database": "Database error: {{detail}}"
+    "database": "Database error: {{detail}}",
+    "modelNotFound": "This model no longer exists."
   },
   "roots": {
     "title": "Root folders",
@@ -45,7 +46,8 @@
       "unknown": "Not checked",
       "online": "Online",
       "offline": "Offline"
-    }
+    },
+    "creatorLevel": "First folder level is the creator"
   },
   "scan": {
     "start": "Scan",
@@ -55,7 +57,8 @@
       "walking": "Listing files…",
       "hashing": "Hashing files…",
       "archives": "Checking archives…",
-      "finished": "Finished"
+      "finished": "Finished",
+      "detecting": "Detecting models…"
     },
     "found_one": "{{n}} file found",
     "found_other": "{{n}} files found",
@@ -81,7 +84,9 @@
       "broken": "Archive {{path}} is damaged: {{detail}}",
       "encrypted": "Archive {{path}} is password-protected and could not be checked.",
       "unsupported": "Archive format or compression method not supported."
-    }
+    },
+    "redetect": "Detect models",
+    "modelsResult": "{{n}} models ({{created}} new)."
   },
   "stats": {
     "files": "Files",
@@ -93,5 +98,44 @@
     "archivesEncrypted": "Password-protected",
     "missing": "Missing",
     "pending": "Not yet processed"
+  },
+  "tabs": {
+    "models": "Models",
+    "folders": "Folders",
+    "settings": "Settings"
+  },
+  "models": {
+    "searchPlaceholder": "Search name, creator, path…",
+    "count_one": "{{n}} model",
+    "count_other": "{{n}} models",
+    "empty": "No models yet. Add a folder under “Folders” and scan it.",
+    "noResults": "No models match your search.",
+    "noCreator": "No creator",
+    "files_one": "{{n}} file",
+    "files_other": "{{n}} files",
+    "roots": "in {{n}} locations",
+    "missing": "{{n}} missing",
+    "close": "Close",
+    "creator": "Creator",
+    "supportsLabel": "Supports",
+    "variants": "Variants",
+    "tagSuggestions": "Tag suggestions",
+    "locations": "Found in",
+    "filesTitle": "Files ({{n}})",
+    "noVariant": "Without variant",
+    "showInExplorer": "Show in Explorer",
+    "fileMissing": "missing",
+    "copies": "{{n}} identical copies"
+  },
+  "supports": {
+    "presupported": "Presupported",
+    "unsupported": "Unsupported",
+    "both": "Pre- & unsupported"
+  },
+  "archiveStatus": {
+    "pending": "not checked yet",
+    "broken": "damaged",
+    "encrypted": "password-protected",
+    "unsupported": "not readable"
   }
 }

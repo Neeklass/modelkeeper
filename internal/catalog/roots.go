@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"modelkeeper/internal/detect"
 	"modelkeeper/internal/msg"
 )
 
@@ -98,15 +99,26 @@ func AddRoot(ctx context.Context, db *sql.DB, path string) (Root, error) {
 }
 
 // RemoveRoot deletes a root and everything found below it from the catalog.
-// Files on disk are never touched (J1).
+// Files on disk are never touched (J1). Models left without files are
+// removed too, unless the user added data to them.
 func RemoveRoot(ctx context.Context, db *sql.DB, id int64) error {
-	_, err := db.ExecContext(ctx, `DELETE FROM root WHERE id = ?`, id)
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `DELETE FROM root WHERE id = ?`, id); err != nil {
+		return err
+	}
 	// Content no longer referenced by any location.
-	_, err = db.ExecContext(ctx, `DELETE FROM file WHERE NOT EXISTS (SELECT 1 FROM location l WHERE l.file_id = file.id)`)
-	return err
+	if _, err := tx.ExecContext(ctx, `DELETE FROM file WHERE NOT EXISTS
+		(SELECT 1 FROM location l WHERE l.file_id = file.id)`); err != nil {
+		return err
+	}
+	if err := detect.Cleanup(ctx, tx); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // pathsOverlap reports whether a equals b or one contains the other.
@@ -121,4 +133,15 @@ func pathsOverlap(a, b string) bool {
 	}
 	na, nb := norm(a), norm(b)
 	return strings.HasPrefix(na, nb) || strings.HasPrefix(nb, na)
+}
+
+// SetCreatorLevel turns the "first level = creator" rule (F4a) on or off.
+func SetCreatorLevel(ctx context.Context, db *sql.DB, id int64, on bool) error {
+	_, err := db.ExecContext(ctx, `UPDATE root SET creator_level = ? WHERE id = ?`, on, id)
+	return err
+}
+
+// joinRoot joins a root path and a '/'-separated relative path.
+func joinRoot(root, rel string) string {
+	return filepath.Join(root, filepath.FromSlash(rel))
 }
