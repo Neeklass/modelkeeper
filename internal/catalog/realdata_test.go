@@ -22,6 +22,18 @@ func TestRealDataSearch(t *testing.T) {
 	}
 	defer db.Close(conn)
 	ctx := context.Background()
+	for name, fq := range map[string]ModelQuery{
+		"duplicates": {Duplicates: true}, "singleLocation": {SingleLocation: true},
+		"extractedAndArchive": {ExtractedAndArchive: true}, "brokenArchives": {BrokenArchives: true},
+		"ext stl": {Ext: "stl"}, "untagged": {Untagged: true}, "missing": {Missing: true},
+	} {
+		start := time.Now()
+		page, err := SearchModels(ctx, conn, fq, 0, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Printf("filter %-20s %5d models in %v\n", name, page.Total, time.Since(start))
+	}
 	for _, q := range []string{"", os.Getenv("MODELKEEPER_DEBUG_QUERY")} {
 		start := time.Now()
 		page, err := SearchModels(ctx, conn, ModelQuery{Text: q}, 0, 100)

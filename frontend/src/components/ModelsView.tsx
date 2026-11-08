@@ -7,18 +7,18 @@ import {Msg, toMsg, translateMsg} from '../i18n/msg'
 import {formatNumber} from '../format'
 import {ModelDetailPanel} from './ModelDetail'
 import {TagInput} from './TagInput'
+import {activeFilters, emptyQuery, FilterPanel, Query} from './FilterPanel'
 
 const ROW_HEIGHT = 56
 const PAGE_SIZE = 100
 const OVERSCAN = 8
 const ROW_TAGS = 3
 
-type Query = { text: string; untagged: boolean }
-
 /** Model list with live search (H1), virtual scrolling (C3), selection and detail panel (H4). */
 export function ModelsView() {
     const {t} = useTranslation()
-    const [query, setQuery] = useState<Query>({text: '', untagged: false})
+    const [query, setQuery] = useState<Query>(emptyQuery)
+    const [showFilters, setShowFilters] = useState(false)
     const [total, setTotal] = useState(0)
     const [selected, setSelected] = useState<number | null>(null)
     const [multi, setMulti] = useState<Map<number, string>>(new Map()) // id -> name
@@ -141,13 +141,13 @@ export function ModelsView() {
                 <div className="row search">
                     <input type="search" autoFocus placeholder={t('models.searchPlaceholder')} value={query.text}
                            onChange={e => setQuery(q => ({...q, text: e.target.value}))}/>
-                    <label className="small nowrap">
-                        <input type="checkbox" checked={query.untagged}
-                               onChange={e => setQuery(q => ({...q, untagged: e.target.checked}))}/>
-                        {t('tags.untaggedOnly')}
-                    </label>
+                    <button className={showFilters || activeFilters(query) > 0 ? 'active' : ''}
+                            onClick={() => setShowFilters(s => !s)} aria-expanded={showFilters}>
+                        {t('filters.button')}{activeFilters(query) > 0 && ` (${activeFilters(query)})`}
+                    </button>
                     <span className="muted small nowrap">{t('models.count', {count: total, n: formatNumber(total)})}</span>
                 </div>
+                {showFilters && <FilterPanel query={query} onChange={setQuery} allTags={allTags} version={version}/>}
                 {multi.size > 1 && (
                     <SelectionBar selection={multi} allTags={allTags} onChanged={refresh}
                                   onMerged={target => {
@@ -162,7 +162,7 @@ export function ModelsView() {
                     <div style={{height: total * ROW_HEIGHT, position: 'relative'}}>{rows}</div>
                     {total === 0 && !error && (
                         <p className="muted center-text">
-                            {query.text || query.untagged ? t('models.noResults') : t('models.empty')}
+                            {query.text || activeFilters(query) > 0 ? t('models.noResults') : t('models.empty')}
                         </p>
                     )}
                 </div>

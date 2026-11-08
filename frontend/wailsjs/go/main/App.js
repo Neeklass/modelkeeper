@@ -22,6 +22,10 @@ export function DismissSuggestion(arg1, arg2) {
   return window['go']['main']['App']['DismissSuggestion'](arg1, arg2);
 }
 
+export function GetFilterOptions() {
+  return window['go']['main']['App']['GetFilterOptions']();
+}
+
 export function GetModel(arg1) {
   return window['go']['main']['App']['GetModel'](arg1);
 }

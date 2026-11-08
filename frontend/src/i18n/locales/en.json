@@ -191,5 +191,28 @@
     "not_printed": "Not printed",
     "printed": "Printed successfully",
     "failed": "Print failed"
+  },
+  "filters": {
+    "button": "Filter",
+    "any": "Any",
+    "tag": "Tag",
+    "creator": "Creator",
+    "root": "Folder",
+    "ext": "File type",
+    "reset": "Reset filters",
+    "untagged": "Untagged",
+    "untaggedHint": "Models without any tag",
+    "duplicates": "Duplicates",
+    "duplicatesHint": "A file of the model exists more than once",
+    "singleLocation": "Only in one place",
+    "singleLocationHint": "All files exist in only one folder – no backup on the NAS or the PC",
+    "offline": "Offline",
+    "offlineHint": "Found in a folder that is currently not reachable",
+    "brokenArchives": "Damaged archives",
+    "brokenArchivesHint": "Contains an archive that failed the checksum test",
+    "extractedAndArchive": "Extracted and as archive",
+    "extractedAndArchiveHint": "Files exist extracted and inside an archive – candidates for saving space",
+    "missing": "Missing files",
+    "missingHint": "Files disappeared since the last scan"
   }
 }

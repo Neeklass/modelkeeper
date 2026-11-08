@@ -191,5 +191,28 @@
     "not_printed": "Nicht gedruckt",
     "printed": "Erfolgreich gedruckt",
     "failed": "Druck fehlgeschlagen"
+  },
+  "filters": {
+    "button": "Filter",
+    "any": "Alle",
+    "tag": "Tag",
+    "creator": "Ersteller",
+    "root": "Ordner",
+    "ext": "Dateityp",
+    "reset": "Filter zurücksetzen",
+    "untagged": "Ohne Tags",
+    "untaggedHint": "Modelle ohne Tag",
+    "duplicates": "Duplikate",
+    "duplicatesHint": "Eine Datei des Modells existiert mehrfach",
+    "singleLocation": "Nur an einem Ort",
+    "singleLocationHint": "Alle Dateien liegen nur in einem Ordner – keine Sicherung auf NAS oder PC",
+    "offline": "Offline",
+    "offlineHint": "Gefunden in einem Ordner, der gerade nicht erreichbar ist",
+    "brokenArchives": "Beschädigte Archive",
+    "brokenArchivesHint": "Enthält ein Archiv mit fehlerhafter Prüfsumme",
+    "extractedAndArchive": "Entpackt und als Archiv",
+    "extractedAndArchiveHint": "Dateien liegen entpackt und zusätzlich in einem Archiv – Kandidaten zum Platzsparen",
+    "missing": "Fehlende Dateien",
+    "missingHint": "Dateien sind seit dem letzten Scan verschwunden"
   }
 }

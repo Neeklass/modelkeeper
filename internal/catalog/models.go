@@ -22,11 +22,28 @@ type ModelRow struct {
 	Tags       []string `json:"tags"`
 }
 
-// ModelQuery selects models for the list. Empty fields do not filter.
+// ModelQuery selects models for the list (H1, H2). Empty fields do not filter.
 type ModelQuery struct {
 	Text     string `json:"text"`     // full-text search (H1)
 	Untagged bool   `json:"untagged"` // only models without tags (G4)
+
+	TagID       int64  `json:"tagId"`       // has this tag
+	CreatorID   int64  `json:"creatorId"`   // by this creator
+	RootID      int64  `json:"rootId"`      // has files in this root folder (location)
+	Ext         string `json:"ext"`         // has files of this type, e.g. "stl"
+	Supports    string `json:"supports"`    // presupported | unsupported | both | none
+	PrintStatus string `json:"printStatus"` // not_printed | printed | failed
+
+	Duplicates          bool `json:"duplicates"`          // a file exists more than once (D4)
+	SingleLocation      bool `json:"singleLocation"`      // all files only in one root folder, no backup (D5)
+	Offline             bool `json:"offline"`             // found in a root that is offline (E3)
+	BrokenArchives      bool `json:"brokenArchives"`      // contains a damaged archive (F7)
+	ExtractedAndArchive bool `json:"extractedAndArchive"` // files exist extracted and inside an archive
+	Missing             bool `json:"missing"`             // files gone since the last scan
 }
+
+// contentCats limits checks to files that make a model.
+const contentCats = `('model', 'slicer', 'archive')`
 
 // where builds the FROM/WHERE part and the ORDER BY for a query.
 func (q ModelQuery) where() (from, order string, args []any) {
@@ -41,6 +58,54 @@ func (q ModelQuery) where() (from, order string, args []any) {
 	}
 	if q.Untagged {
 		conds = append(conds, `NOT EXISTS (SELECT 1 FROM model_tag mt WHERE mt.model_id = m.id)`)
+	}
+	add := func(cond string, a ...any) {
+		conds = append(conds, cond)
+		args = append(args, a...)
+	}
+	if q.TagID != 0 {
+		add(`EXISTS (SELECT 1 FROM model_tag mt WHERE mt.model_id = m.id AND mt.tag_id = ?)`, q.TagID)
+	}
+	if q.CreatorID != 0 {
+		add(`m.creator_id = ?`, q.CreatorID)
+	}
+	if q.RootID != 0 {
+		add(`EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id AND l.root_id = ? AND l.present = 1)`, q.RootID)
+	}
+	if q.Ext != "" {
+		add(`EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id AND l.ext = ? AND l.present = 1)`, strings.ToLower(q.Ext))
+	}
+	switch q.Supports {
+	case "presupported", "unsupported", "both":
+		add(`m.supports = ?`, q.Supports)
+	case "none":
+		add(`m.supports IS NULL`)
+	}
+	if q.PrintStatus != "" {
+		add(`m.print_status = ?`, q.PrintStatus)
+	}
+	if q.Duplicates {
+		add(`EXISTS (SELECT 1 FROM location l JOIN location o ON o.file_id = l.file_id AND o.id <> l.id AND o.present = 1
+			WHERE l.model_id = m.id AND l.present = 1 AND l.category IN ` + contentCats + `)`)
+	}
+	if q.SingleLocation {
+		add(`(SELECT count(DISTINCT o.root_id) FROM location l JOIN location o ON o.file_id = l.file_id AND o.present = 1
+			WHERE l.model_id = m.id AND l.present = 1 AND l.category IN ` + contentCats + `) = 1`)
+	}
+	if q.Offline {
+		add(`EXISTS (SELECT 1 FROM model_anchor a JOIN root r ON r.id = a.root_id
+			WHERE a.model_id = m.id AND r.status = 'offline')`)
+	}
+	if q.BrokenArchives {
+		add(`EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id AND l.present = 1 AND l.archive_status = 'broken')`)
+	}
+	if q.ExtractedAndArchive {
+		add(`EXISTS (SELECT 1 FROM location l JOIN location o ON o.file_id = l.file_id
+			WHERE l.model_id = m.id AND l.present = 1 AND l.archive_id IS NULL AND l.category IN ('model', 'slicer')
+			  AND o.archive_id IS NOT NULL AND o.present = 1)`)
+	}
+	if q.Missing {
+		add(`EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id AND l.present = 0)`)
 	}
 	if len(conds) > 0 {
 		from += ` WHERE ` + strings.Join(conds, ` AND `)
@@ -261,4 +326,44 @@ func splitList(s string) []string {
 		return []string{}
 	}
 	return strings.Split(s, "\x1f")
+}
+
+// FilterOptions are the values offered in the filter dropdowns.
+type FilterOptions struct {
+	Creators []Option `json:"creators"`
+	Exts     []Option `json:"exts"`
+}
+
+// Option is a filter value with the number of models it matches.
+type Option struct {
+	ID     int64  `json:"id"`
+	Name   string `json:"name"`
+	Models int    `json:"models"`
+}
+
+// GetFilterOptions returns creators and file types that occur in the catalog.
+func GetFilterOptions(ctx context.Context, db *sql.DB) (FilterOptions, error) {
+	opts := FilterOptions{Creators: []Option{}, Exts: []Option{}}
+	load := func(q string, into *[]Option) error {
+		rows, err := db.QueryContext(ctx, q)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var o Option
+			if err := rows.Scan(&o.ID, &o.Name, &o.Models); err != nil {
+				return err
+			}
+			*into = append(*into, o)
+		}
+		return rows.Err()
+	}
+	if err := load(`SELECT c.id, c.name, count(m.id) FROM creator c JOIN model m ON m.creator_id = c.id
+		GROUP BY c.id ORDER BY c.name COLLATE NOCASE`, &opts.Creators); err != nil {
+		return opts, err
+	}
+	err := load(`SELECT 0, ext, count(DISTINCT model_id) FROM location
+		WHERE model_id IS NOT NULL AND present = 1 GROUP BY ext ORDER BY ext`, &opts.Exts)
+	return opts, err
 }

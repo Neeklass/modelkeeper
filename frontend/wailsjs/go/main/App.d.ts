@@ -14,6 +14,8 @@ export function DetachAnchor(arg1:number,arg2:number,arg3:string):Promise<void>;
 
 export function DismissSuggestion(arg1:number,arg2:string):Promise<void>;
 
+export function GetFilterOptions():Promise<catalog.FilterOptions>;
+
 export function GetModel(arg1:number):Promise<catalog.ModelDetail>;
 
 export function GetRootStats(arg1:number):Promise<catalog.RootStats>;

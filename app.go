@@ -421,3 +421,12 @@ func (a *App) UpdateModel(id int64, u catalog.ModelUpdate) error {
 	}
 	return wrapDB(catalog.UpdateModel(a.ctx, a.db, id, u))
 }
+
+// GetFilterOptions returns the creators and file types for the filter dropdowns.
+func (a *App) GetFilterOptions() (catalog.FilterOptions, error) {
+	if err := a.ready(); err != nil {
+		return catalog.FilterOptions{}, err
+	}
+	o, err := catalog.GetFilterOptions(a.ctx, a.db)
+	return o, wrapDB(err)
+}
