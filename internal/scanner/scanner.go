@@ -257,19 +257,21 @@ type scan struct {
 }
 
 func (s *scan) run(ctx context.Context) {
-	status, errKey := s.execute(ctx)
+	status, errKey, detail := s.execute(ctx)
 	if ctx.Err() != nil && status == StatusDone {
 		status = StatusCancelled
 	}
-	s.finish(status, errKey)
+	s.finish(status, errKey, detail)
 }
 
-func (s *scan) execute(ctx context.Context) (status, errKey string) {
+// execute runs the phases. detail is the technical error text for failures;
+// it is stored with the run and shown to the user.
+func (s *scan) execute(ctx context.Context) (status, errKey, detail string) {
 	res, err := s.db.Exec(`INSERT INTO scan_run (root_id, mode, status, started_at) VALUES (?, 'incremental', ?, ?)`,
 		s.root.ID, StatusRunning, s.t.snapshot().Started)
 	if err != nil {
 		log.Printf("scan: create run: %v", err)
-		return StatusFailed, "scan.error.database"
+		return StatusFailed, "scan.error.database", err.Error()
 	}
 	s.runID, _ = res.LastInsertId()
 	s.t.update(func(p *Progress) { p.RunID = s.runID })
@@ -277,7 +279,7 @@ func (s *scan) execute(ctx context.Context) (status, errKey string) {
 	// E3: an unreachable root keeps its entries and is shown as offline.
 	if !rootReachable(s.root.Path) {
 		s.db.Exec(`UPDATE root SET status = 'offline' WHERE id = ?`, s.root.ID)
-		return StatusOffline, "scan.error.offline"
+		return StatusOffline, "scan.error.offline", ""
 	}
 	s.db.Exec(`UPDATE root SET status = 'online' WHERE id = ?`, s.root.ID)
 
@@ -291,31 +293,31 @@ func (s *scan) execute(ctx context.Context) (status, errKey string) {
 	}
 	for _, step := range steps {
 		if ctx.Err() != nil {
-			return StatusCancelled, ""
+			return StatusCancelled, "", ""
 		}
 		s.t.update(func(p *Progress) { p.Phase, p.Current = step.phase, "" })
 		if err := step.fn(ctx); err != nil {
 			if errors.Is(err, context.Canceled) {
-				return StatusCancelled, ""
+				return StatusCancelled, "", ""
 			}
 			var oe *offlineError
 			if errors.As(err, &oe) {
 				s.db.Exec(`UPDATE root SET status = 'offline' WHERE id = ?`, s.root.ID)
-				return StatusOffline, "scan.error.offline"
+				return StatusOffline, "scan.error.offline", ""
 			}
 			log.Printf("scan %s: %v", step.phase, err)
-			return StatusFailed, "scan.error.database"
+			return StatusFailed, "scan.error.database", step.phase + ": " + err.Error()
 		}
 	}
-	return StatusDone, ""
+	return StatusDone, "", ""
 }
 
-func (s *scan) finish(status, errKey string) {
+func (s *scan) finish(status, errKey, detail string) {
 	now := nowMs()
 	s.t.update(func(p *Progress) {
 		p.Phase, p.Status, p.Running, p.Finished, p.Current = PhaseFinished, status, false, now, ""
 		if errKey != "" {
-			e := msg.New(errKey, "path", s.root.Path)
+			e := msg.New(errKey, "path", s.root.Path, "detail", detail)
 			p.Error = &e
 		}
 	})

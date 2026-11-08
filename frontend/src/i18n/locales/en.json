@@ -72,7 +72,7 @@
       "busy": "This folder is being scanned right now.",
       "offline": "{{path}} is not reachable. Entries are kept and shown as offline.",
       "interrupted": "The scan was interrupted (app closed unexpectedly).",
-      "database": "Database error during the scan."
+      "database": "Database error during the scan: {{detail}}"
     },
     "issue": {
       "readError": "Could not read {{path}}: {{detail}}"

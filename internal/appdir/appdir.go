@@ -17,6 +17,7 @@ type Layout struct {
 	Catalog    string // .../data/catalog.db
 	Settings   string // .../data/settings.json
 	Thumbnails string // .../data/thumbnails
+	Log        string // .../data/modelkeeper.log
 }
 
 // Resolve returns the data folder layout: <dir of exe>/data, unless
@@ -47,6 +48,7 @@ func NewLayout(root string) Layout {
 		Catalog:    filepath.Join(root, "catalog.db"),
 		Settings:   filepath.Join(root, "settings.json"),
 		Thumbnails: filepath.Join(root, "thumbnails"),
+		Log:        filepath.Join(root, "modelkeeper.log"),
 	}
 }
 
@@ -65,4 +67,18 @@ func (l Layout) Ensure() error {
 	name := probe.Name()
 	probe.Close()
 	return os.Remove(name)
+}
+
+// maxLogSize: a larger log is cut to its last part at startup.
+const maxLogSize = 5 << 20
+
+// OpenLog opens the log file for appending, keeping only the last ~1 MB if
+// it grew beyond maxLogSize.
+func (l Layout) OpenLog() (*os.File, error) {
+	if fi, err := os.Stat(l.Log); err == nil && fi.Size() > maxLogSize {
+		if b, err := os.ReadFile(l.Log); err == nil {
+			os.WriteFile(l.Log, b[len(b)-(1<<20):], 0o644)
+		}
+	}
+	return os.OpenFile(l.Log, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
 }

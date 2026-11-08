@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // offlineError signals that the root vanished while scanning (NAS dropped).
@@ -216,6 +218,14 @@ func (b *batch) flush(ctx context.Context) error {
 	if len(b.stmts) == 0 {
 		return nil
 	}
+	if err := withRetry(ctx, b.flushOnce); err != nil {
+		return err
+	}
+	b.stmts = b.stmts[:0]
+	return nil
+}
+
+func (b *batch) flushOnce(ctx context.Context) error {
 	tx, err := b.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -226,9 +236,27 @@ func (b *batch) flush(ctx context.Context) error {
 			return err
 		}
 	}
-	if err := tx.Commit(); err != nil {
-		return err
+	return tx.Commit()
+}
+
+// retryDelays are the pauses between attempts of a failed write transaction.
+// Another program (indexer, antivirus, backup) can briefly lock the catalog;
+// every attempt is a fresh transaction, so a retry never writes twice.
+var retryDelays = []time.Duration{200 * time.Millisecond, time.Second, 3 * time.Second}
+
+func withRetry(ctx context.Context, fn func(context.Context) error) error {
+	err := fn(ctx)
+	for _, d := range retryDelays {
+		if err == nil || ctx.Err() != nil {
+			return err
+		}
+		log.Printf("catalog write failed, retrying in %v: %v", d, err)
+		select {
+		case <-time.After(d):
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+		err = fn(ctx)
 	}
-	b.stmts = b.stmts[:0]
-	return nil
+	return err
 }

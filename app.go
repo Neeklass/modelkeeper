@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"io"
 	"log"
+	"os"
 
 	"modelkeeper/internal/appdir"
 	"modelkeeper/internal/catalog"
@@ -28,6 +30,7 @@ type App struct {
 	settings *settings.Store
 	db       *sql.DB
 	scans    *scanner.Manager
+	logFile  *os.File
 
 	// startupErr is set when the data folder or catalog could not be opened;
 	// the frontend shows it instead of the main UI.
@@ -53,6 +56,12 @@ func (a *App) init() error {
 	a.layout = layout
 	if err := layout.Ensure(); err != nil {
 		return msg.Wrap(err, "error.dataDirNotWritable", "path", layout.Root)
+	}
+	if f, err := layout.OpenLog(); err == nil {
+		// A GUI app has no console: errors go to data/modelkeeper.log.
+		log.SetOutput(io.MultiWriter(f, os.Stderr)) // file first: GUI builds have no valid stderr
+		a.logFile = f
+		log.Printf("modelkeeper started, data folder %s", layout.Root)
 	}
 	st, err := settings.Load(layout.Settings)
 	if err != nil {
@@ -82,6 +91,10 @@ func (a *App) shutdown(ctx context.Context) {
 		if err := db.Close(a.db); err != nil {
 			log.Printf("closing catalog: %v", err)
 		}
+	}
+	if a.logFile != nil {
+		log.Printf("modelkeeper stopped")
+		a.logFile.Close()
 	}
 }
 

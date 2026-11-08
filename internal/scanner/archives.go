@@ -91,6 +91,10 @@ func (s *scan) archiveReadError(ctx context.Context, j hashJob, err error) error
 }
 
 func (s *scan) storeArchive(ctx context.Context, j hashJob, sum [32]byte, res archiveResult) error {
+	return withRetry(ctx, func(ctx context.Context) error { return s.storeArchiveOnce(ctx, j, sum, res) })
+}
+
+func (s *scan) storeArchiveOnce(ctx context.Context, j hashJob, sum [32]byte, res archiveResult) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

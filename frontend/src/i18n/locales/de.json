@@ -72,7 +72,7 @@
       "busy": "Dieser Ordner wird gerade gescannt.",
       "offline": "{{path}} ist nicht erreichbar. Die Einträge bleiben erhalten und werden als offline angezeigt.",
       "interrupted": "Der Scan wurde unterbrochen (App unerwartet beendet).",
-      "database": "Datenbankfehler während des Scans."
+      "database": "Datenbankfehler während des Scans: {{detail}}"
     },
     "issue": {
       "readError": "{{path}} konnte nicht gelesen werden: {{detail}}"

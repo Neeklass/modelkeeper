@@ -177,6 +177,10 @@ func unchanged(abs string, j hashJob) bool {
 }
 
 func (s *scan) storeHashes(ctx context.Context, rs []hashResult) error {
+	return withRetry(ctx, func(ctx context.Context) error { return s.storeHashesOnce(ctx, rs) })
+}
+
+func (s *scan) storeHashesOnce(ctx context.Context, rs []hashResult) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
