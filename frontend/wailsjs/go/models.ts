@@ -102,6 +102,7 @@ export namespace catalog {
 	    notes: string;
 	    printStatus: string;
 	    supports: string;
+	    supportsManual: boolean;
 	    anchors: ModelAnchor[];
 	    variants: string[];
 	    tags: string[];
@@ -122,6 +123,7 @@ export namespace catalog {
 	        this.notes = source["notes"];
 	        this.printStatus = source["printStatus"];
 	        this.supports = source["supports"];
+	        this.supportsManual = source["supportsManual"];
 	        this.anchors = this.convertValues(source["anchors"], ModelAnchor);
 	        this.variants = source["variants"];
 	        this.tags = source["tags"];
@@ -159,6 +161,7 @@ export namespace catalog {
 	    roots: number;
 	    missing: number;
 	    tagSuggest: number;
+	    tags: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelRow(source);
@@ -175,6 +178,7 @@ export namespace catalog {
 	        this.roots = source["roots"];
 	        this.missing = source["missing"];
 	        this.tagSuggest = source["tagSuggest"];
+	        this.tags = source["tags"];
 	    }
 	}
 	export class ModelPage {
@@ -209,7 +213,39 @@ export namespace catalog {
 		    return a;
 		}
 	}
+	export class ModelQuery {
+	    text: string;
+	    untagged: boolean;
 	
+	    static createFrom(source: any = {}) {
+	        return new ModelQuery(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.text = source["text"];
+	        this.untagged = source["untagged"];
+	    }
+	}
+	
+	export class ModelUpdate {
+	    name?: string;
+	    notes?: string;
+	    printStatus?: string;
+	    supports?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelUpdate(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.notes = source["notes"];
+	        this.printStatus = source["printStatus"];
+	        this.supports = source["supports"];
+	    }
+	}
 	export class Root {
 	    id: number;
 	    path: string;
@@ -260,6 +296,22 @@ export namespace catalog {
 	        this.archivesPending = source["archivesPending"];
 	        this.archiveMembers = source["archiveMembers"];
 	        this.duplicateFiles = source["duplicateFiles"];
+	    }
+	}
+	export class TagCount {
+	    id: number;
+	    name: string;
+	    models: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new TagCount(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.models = source["models"];
 	    }
 	}
 

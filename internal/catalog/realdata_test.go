@@ -24,7 +24,7 @@ func TestRealDataSearch(t *testing.T) {
 	ctx := context.Background()
 	for _, q := range []string{"", os.Getenv("MODELKEEPER_DEBUG_QUERY")} {
 		start := time.Now()
-		page, err := SearchModels(ctx, conn, q, 0, 100)
+		page, err := SearchModels(ctx, conn, ModelQuery{Text: q}, 0, 100)
 		if err != nil {
 			t.Fatal(err)
 		}

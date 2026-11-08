@@ -178,3 +178,22 @@ input[type=checkbox] { margin: 0 6px 0 0; }
 .anchor-box code { word-break: break-all; }
 .subfolders li { padding: 2px 0; }
 .detail h3 .link { font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; }
+
+/* Tags and editing */
+.nowrap { white-space: nowrap; }
+.chip.tag { background: var(--surface); display: inline-flex; align-items: center; gap: 2px; }
+.chip-x { border: none; background: none; padding: 0 0 0 4px; font-size: 10px; color: var(--muted); cursor: pointer; }
+.chip-x:hover { color: var(--danger); }
+.chip.suggestion { display: inline-flex; align-items: center; }
+.chip.suggestion .link { font-size: 11px; }
+.suggestions { margin-top: 6px; gap: 4px; }
+.tag-input { margin-top: 6px; gap: 4px; }
+.tag-input input, .name-input, textarea.notes {
+    font: inherit; color: var(--text); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px;
+}
+.tag-input input { width: 160px; }
+.name-input { font-size: 16px; font-weight: 600; flex: 1; }
+textarea.notes { width: 100%; box-sizing: border-box; resize: vertical; }
+.detail h2.row { gap: 6px; }
+.props select { padding: 2px 6px; }

@@ -6,12 +6,20 @@ export function AddRoot(arg1) {
   return window['go']['main']['App']['AddRoot'](arg1);
 }
 
+export function AddTags(arg1, arg2) {
+  return window['go']['main']['App']['AddTags'](arg1, arg2);
+}
+
 export function CancelScan() {
   return window['go']['main']['App']['CancelScan']();
 }
 
 export function DetachAnchor(arg1, arg2, arg3) {
   return window['go']['main']['App']['DetachAnchor'](arg1, arg2, arg3);
+}
+
+export function DismissSuggestion(arg1, arg2) {
+  return window['go']['main']['App']['DismissSuggestion'](arg1, arg2);
 }
 
 export function GetModel(arg1) {
@@ -36,6 +44,10 @@ export function ListLastScanIssues(arg1) {
 
 export function ListRoots() {
   return window['go']['main']['App']['ListRoots']();
+}
+
+export function ListTags() {
+  return window['go']['main']['App']['ListTags']();
 }
 
 export function MarkFolderModel(arg1, arg2) {
@@ -66,6 +78,10 @@ export function RemoveRoot(arg1) {
   return window['go']['main']['App']['RemoveRoot'](arg1);
 }
 
+export function RemoveTag(arg1, arg2) {
+  return window['go']['main']['App']['RemoveTag'](arg1, arg2);
+}
+
 export function ResetCorrections(arg1) {
   return window['go']['main']['App']['ResetCorrections'](arg1);
 }
@@ -92,4 +108,8 @@ export function SplitModel(arg1) {
 
 export function StartScan(arg1) {
   return window['go']['main']['App']['StartScan'](arg1);
+}
+
+export function UpdateModel(arg1, arg2) {
+  return window['go']['main']['App']['UpdateModel'](arg1, arg2);
 }

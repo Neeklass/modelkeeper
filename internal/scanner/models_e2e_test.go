@@ -22,14 +22,14 @@ func TestScanDetectsAndSearchesModels(t *testing.T) {
 	expect(t, "models created", p.ModelsCreated, 3)
 
 	ctx := context.Background()
-	all, err := catalog.SearchModels(ctx, e.db, "", 0, 50)
+	all, err := catalog.SearchModels(ctx, e.db, catalog.ModelQuery{Text: ""}, 0, 50)
 	if err != nil {
 		t.Fatal(err)
 	}
 	expect(t, "total", all.Total, 3)
 	expect(t, "first by name", all.Items[0].Name, "Orc Warband")
 
-	hits, err := catalog.SearchModels(ctx, e.db, "stel bu", 0, 50)
+	hits, err := catalog.SearchModels(ctx, e.db, catalog.ModelQuery{Text: "stel bu"}, 0, 50)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func TestScanDetectsAndSearchesModels(t *testing.T) {
 	expect(t, "files", bust.Files, 2)
 	expect(t, "tag suggestions", bust.Suggestion, 1)
 
-	full, _ := catalog.SearchModels(ctx, e.db, "full", 0, 50)
+	full, _ := catalog.SearchModels(ctx, e.db, catalog.ModelQuery{Text: "full"}, 0, 50)
 	if full.Total != 1 || len(full.Items[0].Variants) != 2 || full.Items[0].Variants[0] != "S" {
 		t.Fatalf("full = %+v", full)
 	}
@@ -58,7 +58,7 @@ func TestScanDetectsAndSearchesModels(t *testing.T) {
 
 	// Unchanged rescan keeps model IDs.
 	e.scan()
-	again, _ := catalog.SearchModels(ctx, e.db, "stella bust", 0, 50)
+	again, _ := catalog.SearchModels(ctx, e.db, catalog.ModelQuery{Text: "stella bust"}, 0, 50)
 	expect(t, "stable id", again.Items[0].ID, bust.ID)
 
 	// Redetect alone works too.

@@ -19,6 +19,33 @@ type ModelRow struct {
 	Roots      int      `json:"roots"`      // roots where the model has present files
 	Missing    int      `json:"missing"`    // files gone since the last scan
 	Suggestion int      `json:"tagSuggest"` // open tag suggestions
+	Tags       []string `json:"tags"`
+}
+
+// ModelQuery selects models for the list. Empty fields do not filter.
+type ModelQuery struct {
+	Text     string `json:"text"`     // full-text search (H1)
+	Untagged bool   `json:"untagged"` // only models without tags (G4)
+}
+
+// where builds the FROM/WHERE part and the ORDER BY for a query.
+func (q ModelQuery) where() (from, order string, args []any) {
+	var conds []string
+	from = `FROM model m`
+	order = `ORDER BY m.name COLLATE NOCASE, m.id`
+	if fts := ftsQuery(q.Text); fts != "" {
+		from = `FROM model_fts f JOIN model m ON m.id = f.rowid`
+		conds = append(conds, `model_fts MATCH ?`)
+		args = append(args, fts)
+		order = `ORDER BY bm25(model_fts, 10, 5, 5, 1, 1), m.name COLLATE NOCASE`
+	}
+	if q.Untagged {
+		conds = append(conds, `NOT EXISTS (SELECT 1 FROM model_tag mt WHERE mt.model_id = m.id)`)
+	}
+	if len(conds) > 0 {
+		from += ` WHERE ` + strings.Join(conds, ` AND `)
+	}
+	return from, order, args
 }
 
 // ModelPage is a window of the model list.
@@ -39,18 +66,11 @@ func ftsQuery(text string) string {
 	return strings.Join(parts, " ")
 }
 
-// SearchModels returns a page of models matching the text (H1), sorted by
-// relevance when searching and by name otherwise.
-func SearchModels(ctx context.Context, db *sql.DB, text string, offset, limit int) (ModelPage, error) {
+// SearchModels returns a page of models matching the query, sorted by
+// relevance when searching text and by name otherwise.
+func SearchModels(ctx context.Context, db *sql.DB, query ModelQuery, offset, limit int) (ModelPage, error) {
 	page := ModelPage{Items: []ModelRow{}}
-	q := ftsQuery(text)
-	from, order := `FROM model m`, `ORDER BY m.name COLLATE NOCASE, m.id`
-	var args []any
-	if q != "" {
-		from = `FROM model_fts f JOIN model m ON m.id = f.rowid WHERE model_fts MATCH ?`
-		order = `ORDER BY bm25(model_fts, 10, 5, 5, 1, 1), m.name COLLATE NOCASE`
-		args = append(args, q)
-	}
+	from, order, args := query.where()
 	if err := db.QueryRowContext(ctx, `SELECT count(*) `+from, args...).Scan(&page.Total); err != nil {
 		return page, err
 	}
@@ -63,7 +83,9 @@ func SearchModels(ctx context.Context, db *sql.DB, text string, offset, limit in
 				AND l.category IN ('model', 'slicer', 'archive')),
 			(SELECT count(DISTINCT l.root_id) FROM location l WHERE l.model_id = m.id AND l.present = 1),
 			(SELECT count(*) FROM location l WHERE l.model_id = m.id AND l.present = 0),
-			(SELECT count(*) FROM tag_suggestion s WHERE s.model_id = m.id AND s.state = 'open')
+			(SELECT count(*) FROM tag_suggestion s WHERE s.model_id = m.id AND s.state = 'open'),
+			coalesce((SELECT group_concat(name, char(31)) FROM (SELECT t.name FROM model_tag mt
+				JOIN tag t ON t.id = mt.tag_id WHERE mt.model_id = m.id ORDER BY t.name COLLATE NOCASE)), '')
 		`+from+` `+order+` LIMIT ? OFFSET ?`, append(args, limit, offset)...)
 	if err != nil {
 		return page, err
@@ -71,15 +93,12 @@ func SearchModels(ctx context.Context, db *sql.DB, text string, offset, limit in
 	defer rows.Close()
 	for rows.Next() {
 		var r ModelRow
-		var variants string
+		var variants, tags string
 		if err := rows.Scan(&r.ID, &r.Name, &r.Creator, &r.Supports, &variants, &r.Files, &r.Roots,
-			&r.Missing, &r.Suggestion); err != nil {
+			&r.Missing, &r.Suggestion, &tags); err != nil {
 			return page, err
 		}
-		r.Variants = []string{}
-		if variants != "" {
-			r.Variants = strings.Split(variants, "\x1f")
-		}
+		r.Variants, r.Tags = splitList(variants), splitList(tags)
 		page.Items = append(page.Items, r)
 	}
 	return page, rows.Err()
@@ -87,18 +106,20 @@ func SearchModels(ctx context.Context, db *sql.DB, text string, offset, limit in
 
 // ModelDetail is everything the detail view shows (H4).
 type ModelDetail struct {
-	ID           int64         `json:"id"`
-	UID          string        `json:"uid"`
-	Name         string        `json:"name"`
-	Creator      string        `json:"creator"`
-	Notes        string        `json:"notes"`
-	PrintStatus  string        `json:"printStatus"`
-	Supports     string        `json:"supports"`
-	Anchors      []ModelAnchor `json:"anchors"`
-	Variants     []string      `json:"variants"`
-	Tags         []string      `json:"tags"`
-	TagSuggested []string      `json:"tagSuggestions"`
-	Files        []ModelFile   `json:"files"`
+	ID          int64  `json:"id"`
+	UID         string `json:"uid"`
+	Name        string `json:"name"`
+	Creator     string `json:"creator"`
+	Notes       string `json:"notes"`
+	PrintStatus string `json:"printStatus"`
+	Supports    string `json:"supports"`
+	// SupportsManual: the user set supports; detection no longer changes it.
+	SupportsManual bool          `json:"supportsManual"`
+	Anchors        []ModelAnchor `json:"anchors"`
+	Variants       []string      `json:"variants"`
+	Tags           []string      `json:"tags"`
+	TagSuggested   []string      `json:"tagSuggestions"`
+	Files          []ModelFile   `json:"files"`
 	// HasCorrections: manual corrections exist at or below the model's folders.
 	HasCorrections bool `json:"hasCorrections"`
 }
@@ -138,9 +159,9 @@ const maxDetailFiles = 2000
 func GetModel(ctx context.Context, db *sql.DB, id int64) (ModelDetail, error) {
 	var d ModelDetail
 	var supports sql.NullString
-	err := db.QueryRowContext(ctx, `SELECT m.id, m.uid, m.name, coalesce(c.name, ''), m.notes, m.print_status, m.supports
-		FROM model m LEFT JOIN creator c ON c.id = m.creator_id WHERE m.id = ?`, id).
-		Scan(&d.ID, &d.UID, &d.Name, &d.Creator, &d.Notes, &d.PrintStatus, &supports)
+	err := db.QueryRowContext(ctx, `SELECT m.id, m.uid, m.name, coalesce(c.name, ''), m.notes, m.print_status, m.supports,
+		m.supports_manual FROM model m LEFT JOIN creator c ON c.id = m.creator_id WHERE m.id = ?`, id).
+		Scan(&d.ID, &d.UID, &d.Name, &d.Creator, &d.Notes, &d.PrintStatus, &supports, &d.SupportsManual)
 	if err != nil {
 		return d, err
 	}
@@ -232,4 +253,12 @@ func LocationPath(ctx context.Context, db *sql.DB, locationID int64) (string, er
 		return "", err
 	}
 	return joinRoot(root, p), nil
+}
+
+// splitList splits a group_concat(…, char(31)) result.
+func splitList(s string) []string {
+	if s == "" {
+		return []string{}
+	}
+	return strings.Split(s, "\x1f")
 }

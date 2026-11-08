@@ -231,15 +231,15 @@ func (a *App) GetScanProgress() *scanner.Progress {
 	return a.scans.Progress()
 }
 
-// SearchModels returns a page of the model list; text filters via full-text search (H1).
-func (a *App) SearchModels(text string, offset, limit int) (catalog.ModelPage, error) {
+// SearchModels returns a page of the model list for a query (H1, H2).
+func (a *App) SearchModels(query catalog.ModelQuery, offset, limit int) (catalog.ModelPage, error) {
 	if err := a.ready(); err != nil {
 		return catalog.ModelPage{}, err
 	}
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	p, err := catalog.SearchModels(a.ctx, a.db, text, offset, limit)
+	p, err := catalog.SearchModels(a.ctx, a.db, query, offset, limit)
 	return p, wrapDB(err)
 }
 
@@ -379,4 +379,45 @@ func (a *App) MergeModels(targetID int64, sourceIDs []int64) error {
 // ResetCorrections removes all manual corrections at a model's folders.
 func (a *App) ResetCorrections(id int64) error {
 	return a.correct(func(ctx context.Context) ([]int64, error) { return corrections.Reset(ctx, a.db, id) })
+}
+
+// ListTags returns all tags with usage counts.
+func (a *App) ListTags() ([]catalog.TagCount, error) {
+	if err := a.ready(); err != nil {
+		return nil, err
+	}
+	t, err := catalog.ListTags(a.ctx, a.db)
+	return t, wrapDB(err)
+}
+
+// AddTags adds tags to one or more models (G2).
+func (a *App) AddTags(modelIDs []int64, names []string) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	return wrapDB(catalog.AddTags(a.ctx, a.db, modelIDs, names))
+}
+
+// RemoveTag removes a tag from one or more models.
+func (a *App) RemoveTag(modelIDs []int64, name string) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	return wrapDB(catalog.RemoveTag(a.ctx, a.db, modelIDs, name))
+}
+
+// DismissSuggestion hides a tag suggestion (F5).
+func (a *App) DismissSuggestion(modelID int64, name string) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	return wrapDB(catalog.DismissSuggestion(a.ctx, a.db, modelID, name))
+}
+
+// UpdateModel edits name, notes, print status (L1) or supports (L2).
+func (a *App) UpdateModel(id int64, u catalog.ModelUpdate) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	return wrapDB(catalog.UpdateModel(a.ctx, a.db, id, u))
 }

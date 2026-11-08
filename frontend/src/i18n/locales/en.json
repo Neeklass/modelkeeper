@@ -28,7 +28,8 @@
     "rootNotFolder": "{{path}} is not a reachable folder.",
     "rootOverlap": "{{path}} overlaps with the existing root folder {{other}}.",
     "database": "Database error: {{detail}}",
-    "modelNotFound": "This model no longer exists."
+    "modelNotFound": "This model no longer exists.",
+    "invalidValue": "Invalid value."
   },
   "roots": {
     "title": "Root folders",
@@ -125,12 +126,20 @@
     "noVariant": "Without variant",
     "showInExplorer": "Show in Explorer",
     "fileMissing": "missing",
-    "copies": "{{n}} identical copies"
+    "copies": "{{n}} identical copies",
+    "printStatus": "Print status",
+    "notes": "Notes",
+    "notesPlaceholder": "Notes, print settings…",
+    "rename": "Rename",
+    "nameEmpty": "The name must not be empty."
   },
   "supports": {
     "presupported": "Presupported",
     "unsupported": "Unsupported",
-    "both": "Pre- & unsupported"
+    "both": "Pre- & unsupported",
+    "none": "None",
+    "auto": "Automatic",
+    "autoWith": "Automatic ({{value}})"
   },
   "archiveStatus": {
     "pending": "not checked yet",
@@ -160,5 +169,27 @@
     "invalidFolder": "This folder cannot be used for this correction.",
     "nothingToSplit": "This model has no subfolders to split into.",
     "nothingToDetach": "This model has only one location."
+  },
+  "tags": {
+    "title": "Tags",
+    "none": "No tags yet",
+    "add": "Add",
+    "addPlaceholder": "Add tag…",
+    "removePlaceholder": "Remove tag…",
+    "removeButton": "Remove",
+    "remove": "Remove tag {{name}}",
+    "accept": "Add as tag",
+    "dismiss": "Dismiss suggestion {{name}}",
+    "untaggedOnly": "Untagged only",
+    "added_one": "Tagged {{count}} model with {{tags}}.",
+    "added_other": "Tagged {{count}} models with {{tags}}.",
+    "removed_one": "Removed {{tags}} from {{count}} model.",
+    "removed_other": "Removed {{tags}} from {{count}} models.",
+    "invalid": "Tags must not be empty and can have at most {{max}} characters."
+  },
+  "printStatus": {
+    "not_printed": "Not printed",
+    "printed": "Printed successfully",
+    "failed": "Print failed"
   }
 }

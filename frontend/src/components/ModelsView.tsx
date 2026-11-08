@@ -1,42 +1,49 @@
 import {useCallback, useEffect, useRef, useState} from 'react'
 import {useTranslation} from 'react-i18next'
-import {
-    DetachAnchor, GetModel, MarkFolderModel, MarkFolderNotModel, MergeModels, ResetCorrections, SearchModels,
-    ShowInExplorer, SplitModel,
-} from '../../wailsjs/go/main/App'
+import {AddTags, ListTags, MergeModels, RemoveTag, SearchModels} from '../../wailsjs/go/main/App'
 import {catalog} from '../../wailsjs/go/models'
 import {EventsOn} from '../../wailsjs/runtime/runtime'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
-import {formatBytes, formatNumber} from '../format'
+import {formatNumber} from '../format'
+import {ModelDetailPanel} from './ModelDetail'
+import {TagInput} from './TagInput'
 
 const ROW_HEIGHT = 56
 const PAGE_SIZE = 100
 const OVERSCAN = 8
+const ROW_TAGS = 3
+
+type Query = { text: string; untagged: boolean }
 
 /** Model list with live search (H1), virtual scrolling (C3), selection and detail panel (H4). */
 export function ModelsView() {
     const {t} = useTranslation()
-    const [query, setQuery] = useState('')
+    const [query, setQuery] = useState<Query>({text: '', untagged: false})
     const [total, setTotal] = useState(0)
     const [selected, setSelected] = useState<number | null>(null)
     const [multi, setMulti] = useState<Map<number, string>>(new Map()) // id -> name
     const [anchorIndex, setAnchorIndex] = useState<number | null>(null)
     const [error, setError] = useState<Msg | null>(null)
-    const [version, setVersion] = useState(0) // bumps to reload after scans and corrections
+    const [version, setVersion] = useState(0) // bumps to reload after scans and edits
+    const [allTags, setAllTags] = useState<catalog.TagCount[]>([])
     const refresh = useCallback(() => setVersion(v => v + 1), [])
+
+    useEffect(() => {
+        ListTags().then(setAllTags).catch(() => setAllTags([]))
+    }, [version])
 
     // Page cache for the current query: page index -> rows.
     const pages = useRef(new Map<number, catalog.ModelRow[]>())
     const loading = useRef(new Set<number>())
-    const queryRef = useRef(query)
+    const queryRef = useRef('')
     const [, forceRender] = useState(0)
 
     const loadPage = useCallback((page: number) => {
         if (pages.current.has(page) || loading.current.has(page)) return
         loading.current.add(page)
-        const q = queryRef.current
-        SearchModels(q, page * PAGE_SIZE, PAGE_SIZE).then(res => {
-            if (q !== queryRef.current) return // outdated
+        const key = queryRef.current
+        SearchModels(catalog.ModelQuery.createFrom(JSON.parse(key)), page * PAGE_SIZE, PAGE_SIZE).then(res => {
+            if (key !== queryRef.current) return // outdated
             pages.current.set(page, res.items)
             setTotal(res.total)
             forceRender(n => n + 1)
@@ -44,25 +51,25 @@ export function ModelsView() {
     }, [])
 
     const listRef = useRef<HTMLDivElement>(null)
-    const queryChanged = useRef(false)
-    useEffect(() => { queryChanged.current = true }, [query])
+    const queryKey = JSON.stringify(query)
+    const lastKey = useRef('')
 
     // New query (debounced while typing) or data changed: reset the cache.
     useEffect(() => {
         const handle = setTimeout(() => {
-            queryRef.current = query
+            queryRef.current = queryKey
             pages.current = new Map()
             loading.current = new Set()
             setError(null)
             loadPage(0)
-            if (queryChanged.current) {
+            if (lastKey.current !== queryKey) {
                 listRef.current?.scrollTo({top: 0})
-                queryChanged.current = false
+                lastKey.current = queryKey
             }
             forceRender(n => n + 1)
         }, 120)
         return () => clearTimeout(handle)
-    }, [query, version, loadPage])
+    }, [queryKey, version, loadPage])
 
     // Reload when a scan or detection finishes.
     useEffect(() => EventsOn('scan:progress', (p: { running: boolean }) => {
@@ -132,55 +139,66 @@ export function ModelsView() {
         <div className="models">
             <div className="models-list">
                 <div className="row search">
-                    <input type="search" autoFocus placeholder={t('models.searchPlaceholder')} value={query}
-                           onChange={e => setQuery(e.target.value)}/>
-                    <span className="muted small">{t('models.count', {count: total, n: formatNumber(total)})}</span>
+                    <input type="search" autoFocus placeholder={t('models.searchPlaceholder')} value={query.text}
+                           onChange={e => setQuery(q => ({...q, text: e.target.value}))}/>
+                    <label className="small nowrap">
+                        <input type="checkbox" checked={query.untagged}
+                               onChange={e => setQuery(q => ({...q, untagged: e.target.checked}))}/>
+                        {t('tags.untaggedOnly')}
+                    </label>
+                    <span className="muted small nowrap">{t('models.count', {count: total, n: formatNumber(total)})}</span>
                 </div>
                 {multi.size > 1 && (
-                    <SelectionBar selection={multi} onDone={() => {
-                        setMulti(new Map())
-                        refresh()
-                    }} onClear={() => setMulti(new Map())} onSelect={setSelected}/>
+                    <SelectionBar selection={multi} allTags={allTags} onChanged={refresh}
+                                  onMerged={target => {
+                                      setMulti(new Map())
+                                      setSelected(target)
+                                      refresh()
+                                  }}
+                                  onClear={() => setMulti(new Map())}/>
                 )}
                 {error && <p className="error">{translateMsg(error)}</p>}
                 <div className="vlist" ref={listRef} onScroll={e => setScrollTop(e.currentTarget.scrollTop)}>
                     <div style={{height: total * ROW_HEIGHT, position: 'relative'}}>{rows}</div>
                     {total === 0 && !error && (
-                        <p className="muted center-text">{query ? t('models.noResults') : t('models.empty')}</p>
+                        <p className="muted center-text">
+                            {query.text || query.untagged ? t('models.noResults') : t('models.empty')}
+                        </p>
                     )}
                 </div>
             </div>
             {selected !== null && multi.size === 0 &&
-                <ModelDetailPanel id={selected} version={version} onChanged={refresh}
+                <ModelDetailPanel id={selected} version={version} allTags={allTags} onChanged={refresh}
                                   onClose={() => setSelected(null)}/>}
         </div>
     )
 }
 
-/** Actions for several selected models (merge; tags follow). */
-function SelectionBar({selection, onDone, onClear, onSelect}: {
+/** Actions for several selected models: tags (G2) and merge (F4d). */
+function SelectionBar({selection, allTags, onChanged, onMerged, onClear}: {
     selection: Map<number, string>
-    onDone: () => void
+    allTags: catalog.TagCount[]
+    onChanged: () => void
+    onMerged: (target: number) => void
     onClear: () => void
-    onSelect: (id: number) => void
 }) {
     const {t} = useTranslation()
     const ids = [...selection.keys()]
     const [target, setTarget] = useState<number>(ids[0])
     const [error, setError] = useState<Msg | null>(null)
     const [busy, setBusy] = useState(false)
+    const [done, setDone] = useState<string | null>(null)
     useEffect(() => {
         if (!selection.has(target)) setTarget(ids[0])
     }, [selection]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    const merge = async () => {
-        if (!window.confirm(t('corrections.confirmMerge', {count: ids.length, name: selection.get(target)}))) return
+    const run = async (fn: () => Promise<void>, doneText?: string) => {
         setBusy(true)
         setError(null)
+        setDone(null)
         try {
-            await MergeModels(target, ids.filter(id => id !== target))
-            onSelect(target)
-            onDone()
+            await fn()
+            if (doneText) setDone(doneText)
         } catch (e) {
             setError(toMsg(e))
         } finally {
@@ -188,11 +206,32 @@ function SelectionBar({selection, onDone, onClear, onSelect}: {
         }
     }
 
+    const merge = () => {
+        if (!window.confirm(t('corrections.confirmMerge', {count: ids.length, name: selection.get(target)}))) return
+        run(async () => {
+            await MergeModels(target, ids.filter(id => id !== target))
+            onMerged(target)
+        })
+    }
+
     return (
         <div className="selection-bar">
             <div className="row">
                 <strong>{t('selection.count', {n: ids.length})}</strong>
                 <button className="link" onClick={onClear}>{t('selection.clear')}</button>
+                {done && <span className="small muted">{done}</span>}
+            </div>
+            <div className="row wrap">
+                <TagInput allTags={allTags} placeholder={t('tags.addPlaceholder')} buttonLabel={t('tags.add')}
+                          disabled={busy} onSubmit={names => run(async () => {
+                    await AddTags(ids, names)
+                    onChanged()
+                }, t('tags.added', {count: ids.length, tags: names.join(', ')}))}/>
+                <TagInput allTags={allTags} placeholder={t('tags.removePlaceholder')} buttonLabel={t('tags.removeButton')}
+                          disabled={busy} onSubmit={names => run(async () => {
+                    for (const n of names) await RemoveTag(ids, n)
+                    onChanged()
+                }, t('tags.removed', {count: ids.length, tags: names.join(', ')}))}/>
             </div>
             <div className="row">
                 <label>
@@ -221,216 +260,12 @@ function ModelRowView({row}: { row: catalog.ModelRow }) {
             </div>
             <div className="row small muted">
                 <span className="ellipsis">{row.creator || t('models.noCreator')}</span>
-                <span>· {t('models.files', {count: row.files, n: formatNumber(row.files)})}</span>
-                {row.roots > 1 && <span>· {t('models.roots', {n: row.roots})}</span>}
-                {row.missing > 0 && <span className="warn-text">· {t('models.missing', {n: row.missing})}</span>}
+                <span className="nowrap">· {t('models.files', {count: row.files, n: formatNumber(row.files)})}</span>
+                {row.roots > 1 && <span className="nowrap">· {t('models.roots', {n: row.roots})}</span>}
+                {row.missing > 0 && <span className="warn-text nowrap">· {t('models.missing', {n: row.missing})}</span>}
+                {row.tags.slice(0, ROW_TAGS).map(tag => <span key={tag} className="chip tag">{tag}</span>)}
+                {row.tags.length > ROW_TAGS && <span>+{row.tags.length - ROW_TAGS}</span>}
             </div>
         </>
     )
-}
-
-function ModelDetailPanel({id, version, onChanged, onClose}: {
-    id: number
-    version: number
-    onChanged: () => void
-    onClose: () => void
-}) {
-    const {t} = useTranslation()
-    const [d, setD] = useState<catalog.ModelDetail | null>(null)
-    const [error, setError] = useState<Msg | null>(null)
-    const [busy, setBusy] = useState(false)
-
-    useEffect(() => {
-        setError(null)
-        GetModel(id).then(setD).catch(e => {
-            const m = toMsg(e)
-            if (m.key === 'error.modelNotFound') onClose() // merged or split away
-            else setError(m)
-        })
-    }, [id, version]) // eslint-disable-line react-hooks/exhaustive-deps
-
-    const act = async (fn: () => Promise<void>, confirmText?: string) => {
-        if (confirmText && !window.confirm(confirmText)) return
-        setBusy(true)
-        setError(null)
-        try {
-            await fn()
-            onChanged()
-        } catch (e) {
-            setError(toMsg(e))
-        } finally {
-            setBusy(false)
-        }
-    }
-
-    if (!d) {
-        return <aside className="detail">{error ? <p className="error">{translateMsg(error)}</p> :
-            <p className="muted">{t('app.loading')}</p>}</aside>
-    }
-
-    const groups = new Map<string, catalog.ModelFile[]>()
-    for (const f of d.files) {
-        const key = f.variant || ''
-        groups.set(key, [...(groups.get(key) ?? []), f])
-    }
-
-    return (
-        <aside className="detail">
-            <div className="row spread">
-                <h2>{d.name}</h2>
-                <button onClick={onClose} aria-label={t('models.close')}>✕</button>
-            </div>
-            {error && <p className="error">{translateMsg(error)}</p>}
-            <dl className="props">
-                <dt>{t('models.creator')}</dt><dd>{d.creator || '—'}</dd>
-                <dt>{t('models.supportsLabel')}</dt><dd>{d.supports ? t(`supports.${d.supports}`) : '—'}</dd>
-                {d.variants.length > 0 && <><dt>{t('models.variants')}</dt><dd>{d.variants.join(', ')}</dd></>}
-                {d.tagSuggestions.length > 0 && <>
-                    <dt>{t('models.tagSuggestions')}</dt>
-                    <dd>{d.tagSuggestions.map(s => <span key={s} className="chip suggestion">{s}</span>)}</dd>
-                </>}
-            </dl>
-
-            <h3>{t('models.locations')}</h3>
-            <ul className="plain small">
-                {d.anchors.map(a => (
-                    <li key={a.rootId + a.path}>
-                        <span className={`badge status-${a.online ? 'online' : 'offline'}`}>{t(`roots.kind.${a.rootKind}`)}</span>
-                        {' '}<code>{a.rootPath}\{a.path.replaceAll('/', '\\')}</code>
-                    </li>
-                ))}
-            </ul>
-
-            <Corrections d={d} busy={busy} act={act}/>
-
-            <h3>{t('models.filesTitle', {n: d.files.length})}</h3>
-            {[...groups.entries()].map(([variant, files]) => (
-                <div key={variant}>
-                    {groups.size > 1 && <h4>{variant || t('models.noVariant')}</h4>}
-                    <ul className="files">
-                        {files.map(f => (
-                            <li key={f.locationId} className={f.present ? '' : 'missing'}>
-                                <div className="row spread">
-                                    <span className="ellipsis" title={f.archivePath ? `${f.archivePath} › ${f.path}` : f.path}>
-                                        {f.archivePath && <span className="muted">{basename(f.archivePath)} › </span>}
-                                        {basename(f.path)}
-                                    </span>
-                                    <button className="link small" onClick={() => ShowInExplorer(f.locationId).catch(e => setError(toMsg(e)))}>
-                                        {t('models.showInExplorer')}
-                                    </button>
-                                </div>
-                                <div className="row small muted">
-                                    <span>{f.ext.toUpperCase()}</span>
-                                    <span>{formatBytes(f.size)}</span>
-                                    {!f.present && <span className="warn-text">{t('models.fileMissing')}</span>}
-                                    {f.copies > 1 && <span>{t('models.copies', {n: f.copies})}</span>}
-                                    {f.archiveStatus && f.archiveStatus !== 'ok' &&
-                                        <span className="warn-text">{t(`archiveStatus.${f.archiveStatus}`)}</span>}
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            ))}
-        </aside>
-    )
-}
-
-/** Manual corrections of the detection (F4d): folder-level actions for each location. */
-function Corrections({d, busy, act}: {
-    d: catalog.ModelDetail
-    busy: boolean
-    act: (fn: () => Promise<void>, confirmText?: string) => void
-}) {
-    const {t} = useTranslation()
-    const [open, setOpen] = useState(false)
-
-    return (
-        <>
-            <h3>
-                <button className="link" onClick={() => setOpen(o => !o)}>
-                    {open ? '▾' : '▸'} {t('corrections.title')}
-                </button>
-            </h3>
-            {open && (
-                <div className="corrections">
-                    <p className="small muted">{t('corrections.hint')}</p>
-                    {d.anchors.map(a => {
-                        const segs = a.path.split('/')
-                        const minModelDepth = a.creatorLevel ? 2 : 1
-                        const parent = segs.slice(0, -1).join('/')
-                        const subs = a.kind === 'folder' ? subfolders(d.files, a) : []
-                        return (
-                            <div key={a.rootId + a.path} className="anchor-box">
-                                <code className="small">{a.path}</code>
-                                <div className="row wrap">
-                                    {a.kind === 'folder' && segs.length - 1 >= minModelDepth && (
-                                        <button disabled={busy} onClick={() => act(() => MarkFolderModel(a.rootId, parent))}
-                                                title={t('corrections.parentIsModelHint', {name: segs[segs.length - 2]})}>
-                                            {t('corrections.parentIsModel')}
-                                        </button>
-                                    )}
-                                    {a.kind === 'folder' && segs.length > minModelDepth && (
-                                        <button disabled={busy} onClick={() => act(() => MarkFolderNotModel(a.rootId, a.path))}>
-                                            {t('corrections.notModel')}
-                                        </button>
-                                    )}
-                                    {d.anchors.length > 1 && (
-                                        <button disabled={busy} onClick={() => act(() => DetachAnchor(d.id, a.rootId, a.path))}>
-                                            {t('corrections.detach')}
-                                        </button>
-                                    )}
-                                </div>
-                                {subs.length > 0 && (
-                                    <ul className="plain small subfolders">
-                                        {subs.map(s => (
-                                            <li key={s.path} className="row spread">
-                                                <span className="ellipsis">{s.name} <span className="muted">({s.files})</span></span>
-                                                <button className="link" disabled={busy}
-                                                        onClick={() => act(() => MarkFolderModel(a.rootId, s.path))}>
-                                                    {t('corrections.ownModel')}
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
-                        )
-                    })}
-                    <div className="row wrap">
-                        {d.anchors.some(a => a.kind === 'folder' && subfolders(d.files, a).length > 1) && (
-                            <button disabled={busy}
-                                    onClick={() => act(() => SplitModel(d.id), t('corrections.confirmSplit'))}>
-                                {t('corrections.split')}
-                            </button>
-                        )}
-                        {d.hasCorrections && (
-                            <button disabled={busy}
-                                    onClick={() => act(() => ResetCorrections(d.id), t('corrections.confirmReset'))}>
-                                {t('corrections.reset')}
-                            </button>
-                        )}
-                    </div>
-                </div>
-            )}
-        </>
-    )
-}
-
-/** Direct subfolders of a folder anchor that contain files of the model. */
-function subfolders(files: catalog.ModelFile[], a: catalog.ModelAnchor) {
-    const prefix = a.path + '/'
-    const counts = new Map<string, number>()
-    for (const f of files) {
-        if (f.archivePath || !f.present || f.rootId !== a.rootId || !f.path.startsWith(prefix)) continue
-        const rest = f.path.slice(prefix.length)
-        const i = rest.indexOf('/')
-        if (i > 0) counts.set(rest.slice(0, i), (counts.get(rest.slice(0, i)) ?? 0) + 1)
-    }
-    return [...counts.entries()].sort().map(([name, n]) => ({name, path: prefix + name, files: n}))
-}
-
-function basename(p: string): string {
-    const i = p.lastIndexOf('/')
-    return i >= 0 ? p.slice(i + 1) : p
 }

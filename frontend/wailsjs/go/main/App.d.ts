@@ -6,9 +6,13 @@ import {main} from '../models';
 
 export function AddRoot(arg1:string):Promise<catalog.Root>;
 
+export function AddTags(arg1:Array<number>,arg2:Array<string>):Promise<void>;
+
 export function CancelScan():Promise<void>;
 
 export function DetachAnchor(arg1:number,arg2:number,arg3:string):Promise<void>;
+
+export function DismissSuggestion(arg1:number,arg2:string):Promise<void>;
 
 export function GetModel(arg1:number):Promise<catalog.ModelDetail>;
 
@@ -21,6 +25,8 @@ export function GetStatus():Promise<main.AppStatus>;
 export function ListLastScanIssues(arg1:number):Promise<Array<catalog.Issue>>;
 
 export function ListRoots():Promise<Array<catalog.Root>>;
+
+export function ListTags():Promise<Array<catalog.TagCount>>;
 
 export function MarkFolderModel(arg1:number,arg2:string):Promise<void>;
 
@@ -36,9 +42,11 @@ export function RedetectRoot(arg1:number):Promise<void>;
 
 export function RemoveRoot(arg1:number):Promise<void>;
 
+export function RemoveTag(arg1:Array<number>,arg2:string):Promise<void>;
+
 export function ResetCorrections(arg1:number):Promise<void>;
 
-export function SearchModels(arg1:string,arg2:number,arg3:number):Promise<catalog.ModelPage>;
+export function SearchModels(arg1:catalog.ModelQuery,arg2:number,arg3:number):Promise<catalog.ModelPage>;
 
 export function SetLanguage(arg1:string):Promise<void>;
 
@@ -49,3 +57,5 @@ export function ShowInExplorer(arg1:number):Promise<void>;
 export function SplitModel(arg1:number):Promise<void>;
 
 export function StartScan(arg1:number):Promise<void>;
+
+export function UpdateModel(arg1:number,arg2:catalog.ModelUpdate):Promise<void>;

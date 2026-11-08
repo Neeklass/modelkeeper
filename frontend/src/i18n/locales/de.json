@@ -28,7 +28,8 @@
     "rootNotFolder": "{{path}} ist kein erreichbarer Ordner.",
     "rootOverlap": "{{path}} überschneidet sich mit dem vorhandenen Stammordner {{other}}.",
     "database": "Datenbankfehler: {{detail}}",
-    "modelNotFound": "Dieses Modell existiert nicht mehr."
+    "modelNotFound": "Dieses Modell existiert nicht mehr.",
+    "invalidValue": "Ungültiger Wert."
   },
   "roots": {
     "title": "Stammordner",
@@ -125,12 +126,20 @@
     "noVariant": "Ohne Variante",
     "showInExplorer": "Im Explorer zeigen",
     "fileMissing": "fehlt",
-    "copies": "{{n}} identische Kopien"
+    "copies": "{{n}} identische Kopien",
+    "printStatus": "Druckstatus",
+    "notes": "Notizen",
+    "notesPlaceholder": "Notizen, Druckeinstellungen…",
+    "rename": "Umbenennen",
+    "nameEmpty": "Der Name darf nicht leer sein."
   },
   "supports": {
     "presupported": "Vorgestützt",
     "unsupported": "Ungestützt",
-    "both": "Vor- & ungestützt"
+    "both": "Vor- & ungestützt",
+    "none": "Keine",
+    "auto": "Automatisch",
+    "autoWith": "Automatisch ({{value}})"
   },
   "archiveStatus": {
     "pending": "noch nicht geprüft",
@@ -160,5 +169,27 @@
     "invalidFolder": "Dieser Ordner kann für diese Korrektur nicht verwendet werden.",
     "nothingToSplit": "Dieses Modell hat keine Unterordner zum Aufteilen.",
     "nothingToDetach": "Dieses Modell hat nur einen Ort."
+  },
+  "tags": {
+    "title": "Tags",
+    "none": "Noch keine Tags",
+    "add": "Hinzufügen",
+    "addPlaceholder": "Tag hinzufügen…",
+    "removePlaceholder": "Tag entfernen…",
+    "removeButton": "Entfernen",
+    "remove": "Tag {{name}} entfernen",
+    "accept": "Als Tag übernehmen",
+    "dismiss": "Vorschlag {{name}} verwerfen",
+    "untaggedOnly": "Nur ohne Tags",
+    "added_one": "{{count}} Modell mit {{tags}} getaggt.",
+    "added_other": "{{count}} Modelle mit {{tags}} getaggt.",
+    "removed_one": "{{tags}} von {{count}} Modell entfernt.",
+    "removed_other": "{{tags}} von {{count}} Modellen entfernt.",
+    "invalid": "Tags dürfen nicht leer sein und höchstens {{max}} Zeichen haben."
+  },
+  "printStatus": {
+    "not_printed": "Nicht gedruckt",
+    "printed": "Erfolgreich gedruckt",
+    "failed": "Druck fehlgeschlagen"
   }
 }
