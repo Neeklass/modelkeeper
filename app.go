@@ -10,7 +10,9 @@ import (
 
 	"modelkeeper/internal/appdir"
 	"modelkeeper/internal/catalog"
+	"modelkeeper/internal/corrections"
 	"modelkeeper/internal/db"
+	"modelkeeper/internal/detect"
 	"modelkeeper/internal/msg"
 	"modelkeeper/internal/osopen"
 	"modelkeeper/internal/scanner"
@@ -250,6 +252,9 @@ func (a *App) GetModel(id int64) (catalog.ModelDetail, error) {
 	if errors.Is(err, sql.ErrNoRows) {
 		return d, msg.Wrap(nil, "error.modelNotFound")
 	}
+	if err == nil {
+		d.HasCorrections, err = corrections.HasCorrections(a.ctx, a.db, id)
+	}
 	return d, wrapDB(err)
 }
 
@@ -316,4 +321,62 @@ func (a *App) detectExisting() {
 		}
 		a.scans.Wait()
 	}
+}
+
+// correct runs a manual correction and re-detects the affected roots, while
+// no scan runs (F4d). Corrections are stored as overrides and survive rescans (F4e).
+func (a *App) correct(op func(ctx context.Context) ([]int64, error)) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	return wrapDB(a.scans.Exclusive(func(ctx context.Context) error {
+		roots, err := op(ctx)
+		if err != nil {
+			return err
+		}
+		for _, r := range roots {
+			if _, err := detect.Apply(ctx, a.db, r, a.scans.DetectRules()); err != nil {
+				return err
+			}
+		}
+		return nil
+	}))
+}
+
+// MarkFolderModel marks a folder as a model: everything below belongs to it.
+func (a *App) MarkFolderModel(rootID int64, path string) error {
+	return a.correct(func(ctx context.Context) ([]int64, error) {
+		return corrections.MarkModel(ctx, a.db, rootID, path)
+	})
+}
+
+// MarkFolderNotModel merges a detected model folder into the folder above.
+func (a *App) MarkFolderNotModel(rootID int64, path string) error {
+	return a.correct(func(ctx context.Context) ([]int64, error) {
+		return corrections.MarkNotModel(ctx, a.db, rootID, path)
+	})
+}
+
+// SplitModel makes every subfolder of the model a model of its own.
+func (a *App) SplitModel(id int64) error {
+	return a.correct(func(ctx context.Context) ([]int64, error) { return corrections.Split(ctx, a.db, id) })
+}
+
+// DetachAnchor splits one location off a model that has several.
+func (a *App) DetachAnchor(id, rootID int64, path string) error {
+	return a.correct(func(ctx context.Context) ([]int64, error) {
+		return corrections.Detach(ctx, a.db, id, rootID, path)
+	})
+}
+
+// MergeModels merges the source models into the target.
+func (a *App) MergeModels(targetID int64, sourceIDs []int64) error {
+	return a.correct(func(ctx context.Context) ([]int64, error) {
+		return corrections.Merge(ctx, a.db, targetID, sourceIDs)
+	})
+}
+
+// ResetCorrections removes all manual corrections at a model's folders.
+func (a *App) ResetCorrections(id int64) error {
+	return a.correct(func(ctx context.Context) ([]int64, error) { return corrections.Reset(ctx, a.db, id) })
 }

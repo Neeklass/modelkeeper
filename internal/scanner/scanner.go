@@ -408,3 +408,29 @@ func (s *scan) detectModels(ctx context.Context) error {
 	log.Printf("detect root %d: %+v", s.root.ID, res)
 	return nil
 }
+
+// Exclusive runs fn while no scan or detection may start, and fails if one
+// is running. Used for manual corrections, which re-run detection themselves.
+func (m *Manager) Exclusive(fn func(ctx context.Context) error) error {
+	m.mu.Lock()
+	if m.done != nil {
+		select {
+		case <-m.done:
+		default:
+			m.mu.Unlock()
+			return msg.Wrap(nil, "scan.error.alreadyRunning")
+		}
+	}
+	done := make(chan struct{})
+	m.done = done
+	m.cancel = func() {}
+	m.mu.Unlock()
+	defer close(done)
+	return fn(context.Background())
+}
+
+// DetectRules returns the detection rules from the current settings.
+func (m *Manager) DetectRules() detect.Rules {
+	st := m.settings()
+	return detect.Rules{PartNames: st.PartNames, SizeTokens: st.SizeTokens}
+}

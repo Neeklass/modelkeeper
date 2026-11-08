@@ -10,6 +10,10 @@ export function CancelScan() {
   return window['go']['main']['App']['CancelScan']();
 }
 
+export function DetachAnchor(arg1, arg2, arg3) {
+  return window['go']['main']['App']['DetachAnchor'](arg1, arg2, arg3);
+}
+
 export function GetModel(arg1) {
   return window['go']['main']['App']['GetModel'](arg1);
 }
@@ -34,6 +38,18 @@ export function ListRoots() {
   return window['go']['main']['App']['ListRoots']();
 }
 
+export function MarkFolderModel(arg1, arg2) {
+  return window['go']['main']['App']['MarkFolderModel'](arg1, arg2);
+}
+
+export function MarkFolderNotModel(arg1, arg2) {
+  return window['go']['main']['App']['MarkFolderNotModel'](arg1, arg2);
+}
+
+export function MergeModels(arg1, arg2) {
+  return window['go']['main']['App']['MergeModels'](arg1, arg2);
+}
+
 export function OpenDataFolder() {
   return window['go']['main']['App']['OpenDataFolder']();
 }
@@ -50,6 +66,10 @@ export function RemoveRoot(arg1) {
   return window['go']['main']['App']['RemoveRoot'](arg1);
 }
 
+export function ResetCorrections(arg1) {
+  return window['go']['main']['App']['ResetCorrections'](arg1);
+}
+
 export function SearchModels(arg1, arg2, arg3) {
   return window['go']['main']['App']['SearchModels'](arg1, arg2, arg3);
 }
@@ -64,6 +84,10 @@ export function SetRootCreatorLevel(arg1, arg2) {
 
 export function ShowInExplorer(arg1) {
   return window['go']['main']['App']['ShowInExplorer'](arg1);
+}
+
+export function SplitModel(arg1) {
+  return window['go']['main']['App']['SplitModel'](arg1);
 }
 
 export function StartScan(arg1) {

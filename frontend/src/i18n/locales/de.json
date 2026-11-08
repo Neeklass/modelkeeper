@@ -137,5 +137,28 @@
     "broken": "beschädigt",
     "encrypted": "passwortgeschützt",
     "unsupported": "nicht lesbar"
+  },
+  "selection": {
+    "count": "{{n}} ausgewählt",
+    "clear": "Auswahl aufheben"
+  },
+  "corrections": {
+    "title": "Korrigieren",
+    "hint": "Die Erkennung macht nur Vorschläge. Korrekturen bleiben bei jedem neuen Scan erhalten.",
+    "parentIsModel": "Übergeordneter Ordner ist das Modell",
+    "parentIsModelHint": "Alles in „{{name}}“ wird ein Modell",
+    "notModel": "Kein eigenes Modell",
+    "detach": "Diesen Ort abtrennen",
+    "ownModel": "Eigenes Modell",
+    "split": "In Unterordner aufteilen",
+    "confirmSplit": "Jeden Unterordner zu einem eigenen Modell machen?",
+    "reset": "Korrekturen zurücknehmen",
+    "confirmReset": "Alle Korrekturen für dieses Modell zurücknehmen? Die Erkennung entscheidet dann neu.",
+    "mergeInto": "Zusammenführen in",
+    "merge": "Zusammenführen",
+    "confirmMerge": "{{count}} Modelle in „{{name}}“ zusammenführen? Tags und Notizen bleiben erhalten.",
+    "invalidFolder": "Dieser Ordner kann für diese Korrektur nicht verwendet werden.",
+    "nothingToSplit": "Dieses Modell hat keine Unterordner zum Aufteilen.",
+    "nothingToDetach": "Dieses Modell hat nur einen Ort."
   }
 }

@@ -99,6 +99,8 @@ type ModelDetail struct {
 	Tags         []string      `json:"tags"`
 	TagSuggested []string      `json:"tagSuggestions"`
 	Files        []ModelFile   `json:"files"`
+	// HasCorrections: manual corrections exist at or below the model's folders.
+	HasCorrections bool `json:"hasCorrections"`
 }
 
 // ModelAnchor is a place where the model was detected.
@@ -106,9 +108,11 @@ type ModelAnchor struct {
 	RootID   int64  `json:"rootId"`
 	RootPath string `json:"rootPath"`
 	RootKind string `json:"rootKind"`
-	Online   bool   `json:"online"`
-	Path     string `json:"path"`
-	Kind     string `json:"kind"`
+	// CreatorLevel: the root's first folder level is the creator (limits corrections).
+	CreatorLevel bool   `json:"creatorLevel"`
+	Online       bool   `json:"online"`
+	Path         string `json:"path"`
+	Kind         string `json:"kind"`
 }
 
 // ModelFile is one location of the model.
@@ -170,7 +174,7 @@ func GetModel(ctx context.Context, db *sql.DB, id int64) (ModelDetail, error) {
 		return d, err
 	}
 
-	rows, err := db.QueryContext(ctx, `SELECT a.root_id, r.path, r.kind, r.status <> 'offline', a.path, a.kind
+	rows, err := db.QueryContext(ctx, `SELECT a.root_id, r.path, r.kind, r.creator_level, r.status <> 'offline', a.path, a.kind
 		FROM model_anchor a JOIN root r ON r.id = a.root_id WHERE a.model_id = ? ORDER BY r.path, a.path`, id)
 	if err != nil {
 		return d, err
@@ -178,7 +182,7 @@ func GetModel(ctx context.Context, db *sql.DB, id int64) (ModelDetail, error) {
 	d.Anchors = []ModelAnchor{}
 	for rows.Next() {
 		var a ModelAnchor
-		if err := rows.Scan(&a.RootID, &a.RootPath, &a.RootKind, &a.Online, &a.Path, &a.Kind); err != nil {
+		if err := rows.Scan(&a.RootID, &a.RootPath, &a.RootKind, &a.CreatorLevel, &a.Online, &a.Path, &a.Kind); err != nil {
 			rows.Close()
 			return d, err
 		}

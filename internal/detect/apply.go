@@ -34,6 +34,11 @@ func Apply(ctx context.Context, db *sql.DB, rootID int64, rules Rules) (Result, 
 		return res, err
 	}
 	rules.CreatorLevel = creatorLevel
+	ov, err := loadOverrides(ctx, db, rootID)
+	if err != nil {
+		return res, err
+	}
+	rules.IsModel, rules.NotModel, rules.Detached = ov.isModel, ov.notModel, ov.detached
 
 	entries, err := loadEntries(ctx, db, rootID)
 	if err != nil {
@@ -48,7 +53,7 @@ func Apply(ctx context.Context, db *sql.DB, rootID int64, rules Rules) (Result, 
 	}
 	defer tx.Rollback()
 
-	m, err := newMatcher(ctx, tx, rootID, cands)
+	m, err := newMatcher(ctx, tx, rootID, cands, ov)
 	if err != nil {
 		return res, err
 	}
@@ -64,6 +69,7 @@ func Apply(ctx context.Context, db *sql.DB, rootID int64, rules Rules) (Result, 
 	defer w.close()
 
 	touched := map[int64]bool{}
+	matched := map[int64]bool{} // models that got a candidate in this run
 	for i := range cands {
 		cd := &cands[i]
 		modelID, how := m.match(cd)
@@ -78,8 +84,12 @@ func Apply(ctx context.Context, db *sql.DB, rootID int64, rules Rules) (Result, 
 		case matchLinked:
 			res.Linked++
 		}
-		if err := w.updateModel(modelID, cd); err != nil {
-			return res, err
+		matched[modelID] = true
+		// A folder merged into another model by the user does not rename it.
+		if how != matchMerged {
+			if err := w.updateModel(modelID, cd); err != nil {
+				return res, err
+			}
 		}
 		if err := w.anchor(rootID, modelID, cd, m.movedFrom[cd.Anchor]); err != nil {
 			return res, err
@@ -99,6 +109,18 @@ func Apply(ctx context.Context, db *sql.DB, rootID int64, rules Rules) (Result, 
 	// (they may become garbage or need a search-index update).
 	for id := range m.orphanModels {
 		touched[id] = true
+	}
+	// Stale anchors of models that live on elsewhere (e.g. after a correction).
+	for id, paths := range m.orphanPaths {
+		if !matched[id] {
+			continue
+		}
+		for _, p := range paths {
+			if _, err := tx.ExecContext(ctx, `DELETE FROM model_anchor WHERE root_id = ? AND path = ? AND model_id = ?`,
+				rootID, p, id); err != nil {
+				return res, err
+			}
+		}
 	}
 
 	if err := Cleanup(ctx, tx); err != nil {
@@ -143,6 +165,7 @@ type matchKind int
 
 const (
 	matchAnchor matchKind = iota // same root + path as before
+	matchMerged                  // the user merged this folder into another model
 	matchMoved                   // anchor gone, same content found elsewhere in this root
 	matchLinked                  // same content on another root
 	matchNew
@@ -158,10 +181,12 @@ type matcher struct {
 	rootModels   map[int64]bool           // models that already have an anchor in this root
 	used         map[int64]bool           // models claimed in this run
 	movedFrom    map[string]string        // new anchor path -> old anchor path
+	ov           overrides
+	exists       map[int64]bool // all model ids (merge targets must exist)
 }
 
-func newMatcher(ctx context.Context, tx *sql.Tx, rootID int64, cands []Candidate) (*matcher, error) {
-	m := &matcher{
+func newMatcher(ctx context.Context, tx *sql.Tx, rootID int64, cands []Candidate, ov overrides) (*matcher, error) {
+	m := &matcher{ov: ov, exists: map[int64]bool{},
 		anchors: map[string]int64{}, orphanModels: map[int64]bool{}, orphanPaths: map[int64][]string{},
 		files: map[int64]map[int64]bool{}, byFile: map[int64][]int64{}, byFileOther: map[int64][]int64{},
 		rootModels: map[int64]bool{}, used: map[int64]bool{}, movedFrom: map[string]string{},
@@ -169,7 +194,23 @@ func newMatcher(ctx context.Context, tx *sql.Tx, rootID int64, cands []Candidate
 	detected := map[string]bool{}
 	for _, c := range cands {
 		detected[c.Anchor] = true
+		for _, x := range c.Extra {
+			detected[x] = true
+		}
 	}
+	ids, err := tx.QueryContext(ctx, `SELECT id FROM model`)
+	if err != nil {
+		return nil, err
+	}
+	for ids.Next() {
+		var id int64
+		if err := ids.Scan(&id); err != nil {
+			ids.Close()
+			return nil, err
+		}
+		m.exists[id] = true
+	}
+	ids.Close()
 	rows, err := tx.QueryContext(ctx, `SELECT path, model_id FROM model_anchor WHERE root_id = ?`, rootID)
 	if err != nil {
 		return nil, err
@@ -246,11 +287,11 @@ func contentSet(cd *Candidate) map[int64]bool {
 }
 
 // best returns the unused model with the highest overlap >= MinOverlap.
-func (m *matcher) best(set map[int64]bool, index map[int64][]int64) int64 {
+func (m *matcher) best(set map[int64]bool, index map[int64][]int64, exclude map[int64]bool) int64 {
 	common := map[int64]int{}
 	for fid := range set {
 		for _, mid := range index[fid] {
-			if !m.used[mid] {
+			if !m.used[mid] && !exclude[mid] {
 				common[mid]++
 			}
 		}
@@ -279,13 +320,29 @@ func (m *matcher) best(set map[int64]bool, index map[int64][]int64) int64 {
 }
 
 func (m *matcher) match(cd *Candidate) (int64, matchKind) {
-	if id, ok := m.anchors[cd.Anchor]; ok {
-		m.used[id] = true
-		return id, matchAnchor
+	paths := append([]string{cd.Anchor}, cd.Extra...)
+	for _, p := range paths {
+		if t, ok := m.ov.mergeInto[p]; ok && m.exists[t] {
+			delete(m.orphanModels, t)
+			return t, matchMerged
+		}
+	}
+	// Detached by the user: never match the model it was split from.
+	exclude := map[int64]bool{}
+	for _, p := range paths {
+		if id := m.ov.splitFrom[p]; id != 0 {
+			exclude[id] = true
+		}
+	}
+	for _, p := range paths {
+		if id, ok := m.anchors[p]; ok && !exclude[id] {
+			m.used[id] = true
+			return id, matchAnchor
+		}
 	}
 	set := contentSet(cd)
 	if len(set) > 0 {
-		if id := m.best(set, m.byFile); id != 0 {
+		if id := m.best(set, m.byFile, exclude); id != 0 {
 			m.used[id] = true
 			delete(m.orphanModels, id)
 			if paths := m.orphanPaths[id]; len(paths) > 0 {
@@ -294,7 +351,7 @@ func (m *matcher) match(cd *Candidate) (int64, matchKind) {
 			}
 			return id, matchMoved
 		}
-		if id := m.best(set, m.byFileOther); id != 0 {
+		if id := m.best(set, m.byFileOther, exclude); id != 0 {
 			m.used[id] = true
 			return id, matchLinked
 		}
@@ -386,13 +443,19 @@ func (w *writer) anchor(rootID, modelID int64, cd *Candidate, oldPath string) er
 			WHERE root_id = ? AND model_id = ? AND present = 0`, rootID, modelID); err != nil {
 			return err
 		}
-		_, err := w.tx.ExecContext(w.ctx, `UPDATE model_anchor SET path = ?, kind = ? WHERE root_id = ? AND path = ?`,
-			cd.Anchor, cd.Kind, rootID, oldPath)
-		return err
+		if _, err := w.tx.ExecContext(w.ctx, `UPDATE model_anchor SET path = ?, kind = ? WHERE root_id = ? AND path = ?`,
+			cd.Anchor, cd.Kind, rootID, oldPath); err != nil {
+			return err
+		}
 	}
-	_, err := w.tx.ExecContext(w.ctx, `INSERT INTO model_anchor (model_id, root_id, path, kind) VALUES (?, ?, ?, ?)
-		ON CONFLICT (root_id, path) DO UPDATE SET kind = excluded.kind`, modelID, rootID, cd.Anchor, cd.Kind)
-	return err
+	for _, p := range append([]string{cd.Anchor}, cd.Extra...) {
+		if _, err := w.tx.ExecContext(w.ctx, `INSERT INTO model_anchor (model_id, root_id, path, kind) VALUES (?, ?, ?, ?)
+			ON CONFLICT (root_id, path) DO UPDATE SET model_id = excluded.model_id, kind = excluded.kind`,
+			modelID, rootID, p, cd.Kind); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (w *writer) variantID(modelID int64, label string) (any, error) {
@@ -493,4 +556,40 @@ func RefreshSearchFor(ctx context.Context, tx *sql.Tx, idQuery string, args ...a
 		FROM model m LEFT JOIN creator c ON c.id = m.creator_id
 		WHERE m.id IN (`+idQuery+`)`, args...)
 	return err
+}
+
+// overrides are the manual corrections of one root (F4d, F4e).
+type overrides struct {
+	isModel, notModel, detached map[string]bool
+	mergeInto                   map[string]int64 // anchor path -> target model
+	splitFrom                   map[string]int64 // anchor path -> model it must not join
+}
+
+func loadOverrides(ctx context.Context, db *sql.DB, rootID int64) (overrides, error) {
+	ov := overrides{isModel: map[string]bool{}, notModel: map[string]bool{}, detached: map[string]bool{},
+		mergeInto: map[string]int64{}, splitFrom: map[string]int64{}}
+	rows, err := db.QueryContext(ctx, `SELECT kind, path, coalesce(model_id, 0) FROM override WHERE root_id = ? ORDER BY id`, rootID)
+	if err != nil {
+		return ov, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var kind, p string
+		var mid int64
+		if err := rows.Scan(&kind, &p, &mid); err != nil {
+			return ov, err
+		}
+		switch kind {
+		case "is_model":
+			ov.isModel[p] = true
+		case "not_model":
+			ov.notModel[p] = true
+		case "merge":
+			ov.mergeInto[p] = mid
+		case "split":
+			ov.splitFrom[p] = mid
+			ov.detached[p] = true
+		}
+	}
+	return ov, rows.Err()
 }

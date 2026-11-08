@@ -137,5 +137,28 @@
     "broken": "damaged",
     "encrypted": "password-protected",
     "unsupported": "not readable"
+  },
+  "selection": {
+    "count": "{{n}} selected",
+    "clear": "Clear selection"
+  },
+  "corrections": {
+    "title": "Correct",
+    "hint": "Detection only suggests. Corrections are kept on every rescan.",
+    "parentIsModel": "Folder above is the model",
+    "parentIsModelHint": "Everything in “{{name}}” becomes one model",
+    "notModel": "Not a model of its own",
+    "detach": "Split off this location",
+    "ownModel": "Own model",
+    "split": "Split into subfolders",
+    "confirmSplit": "Make every subfolder a model of its own?",
+    "reset": "Undo corrections",
+    "confirmReset": "Undo all corrections for this model? Detection decides again.",
+    "mergeInto": "Merge into",
+    "merge": "Merge",
+    "confirmMerge": "Merge {{count}} models into “{{name}}”? Tags and notes are kept.",
+    "invalidFolder": "This folder cannot be used for this correction.",
+    "nothingToSplit": "This model has no subfolders to split into.",
+    "nothingToDetach": "This model has only one location."
   }
 }

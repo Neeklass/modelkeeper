@@ -332,3 +332,40 @@ func TestSplitTreesMerge(t *testing.T) {
 		t.Errorf("models = %d: %v", len(res), res)
 	}
 }
+
+func TestUserCorrections(t *testing.T) {
+	es := entries(
+		"Creator/Pack/Orc/orc.stl",
+		"Creator/Pack/Elf/elf.stl",
+		"Creator/Pack/pack.zip",
+		"Creator/Chibis/Jinx/a.stl",
+		"Creator/Chibis/Vi/b.stl",
+		"Creator/Line/Pre-Supported/Knight/k_sup.stl",
+		"Creator/Line/Knight/k.stl",
+	)
+	r := defaultRules()
+	res := summarize(es, Detect(es, r))
+	if len(res) != 6 { // Orc, Elf, pack.zip, Jinx, Vi, Knight (merged trees)
+		t.Fatalf("baseline = %d: %v", len(res), res)
+	}
+
+	r.IsModel = map[string]bool{"Creator/Pack": true}
+	r.NotModel = map[string]bool{"Creator/Chibis/Jinx": true}
+	r.Detached = map[string]bool{"Creator/Line/Pre-Supported/Knight": true}
+	res = summarize(es, Detect(es, r))
+	if p := res["Creator/Pack"]; len(p.Files) != 3 {
+		t.Errorf("pack (is_model) = %#v", p)
+	}
+	if c := res["Creator/Chibis"]; len(c.Files) != 1 {
+		t.Errorf("chibis (jinx not a model) = %#v", c)
+	}
+	if _, ok := res["Creator/Chibis/Vi"]; !ok {
+		t.Errorf("vi should stay: %v", res)
+	}
+	if _, ok := res["Creator/Line/Pre-Supported/Knight"]; !ok {
+		t.Errorf("detached tree merged again: %v", res)
+	}
+	if k := res["Creator/Line/Knight"]; len(k.Files) != 1 {
+		t.Errorf("knight = %#v", k)
+	}
+}

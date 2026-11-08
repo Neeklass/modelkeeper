@@ -40,6 +40,7 @@ export namespace catalog {
 	    rootId: number;
 	    rootPath: string;
 	    rootKind: string;
+	    creatorLevel: boolean;
 	    online: boolean;
 	    path: string;
 	    kind: string;
@@ -53,6 +54,7 @@ export namespace catalog {
 	        this.rootId = source["rootId"];
 	        this.rootPath = source["rootPath"];
 	        this.rootKind = source["rootKind"];
+	        this.creatorLevel = source["creatorLevel"];
 	        this.online = source["online"];
 	        this.path = source["path"];
 	        this.kind = source["kind"];
@@ -105,6 +107,7 @@ export namespace catalog {
 	    tags: string[];
 	    tagSuggestions: string[];
 	    files: ModelFile[];
+	    hasCorrections: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelDetail(source);
@@ -124,6 +127,7 @@ export namespace catalog {
 	        this.tags = source["tags"];
 	        this.tagSuggestions = source["tagSuggestions"];
 	        this.files = this.convertValues(source["files"], ModelFile);
+	        this.hasCorrections = source["hasCorrections"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

@@ -51,6 +51,11 @@ type Rules struct {
 	CreatorLevel bool
 	PartNames    []string
 	SizeTokens   []string
+
+	// Manual corrections (F4d), keyed by path relative to the root:
+	IsModel  map[string]bool // "this folder is a model": everything below belongs to it
+	NotModel map[string]bool // "not a model": the folder merges into the one above
+	Detached map[string]bool // split off from a merged model: never merged with parallel trees
 }
 
 // Candidate is a suggested model.
@@ -77,10 +82,13 @@ type rules struct {
 	creatorDepth int
 	parts        map[string]bool
 	sizes        []string
+	isModel      map[string]bool
+	notModel     map[string]bool
+	detached     map[string]bool
 }
 
 func compile(r Rules) rules {
-	c := rules{parts: map[string]bool{}}
+	c := rules{parts: map[string]bool{}, isModel: r.IsModel, notModel: r.NotModel, detached: r.Detached}
 	if r.CreatorLevel {
 		c.creatorDepth = 1
 	}
@@ -216,7 +224,29 @@ func Detect(entries []Entry, r Rules) []Candidate {
 	}
 
 	// resolve climbs from folder dir to its model folder.
+	// userAnchor returns the deepest folder at or above dir that the user marked as a model.
+	userAnchor := func(dir string) (string, bool) {
+		if len(c.isModel) == 0 {
+			return "", false
+		}
+		for p := dir; ; p = parentPath(p) {
+			if c.isModel[p] {
+				return p, true
+			}
+			if p == "" {
+				return "", false
+			}
+		}
+	}
+
 	resolve := func(dir string) string {
+		if a, ok := userAnchor(dir); ok {
+			for p := dir; p != a; p = parentPath(p) {
+				folderAnchor[p] = a
+			}
+			folderAnchor[a] = a
+			return a
+		}
 		cur := splitPath(dir)
 		visited := []string{}
 		for len(cur) > c.creatorDepth+1 {
@@ -228,7 +258,7 @@ func Detect(entries []Entry, r Rules) []Candidate {
 			// Never via a part folder: "Pack/Pre-Supported/Orc" must not merge into "Pack".
 			single := len(children[parent]) == 1 && !c.isPart(path.Base(parent))
 			merge := c.isPart(name) || c.variantOf(name) != "" || single ||
-				c.isWeakPart(name, path.Base(parent))
+				c.isWeakPart(name, path.Base(parent)) || c.notModel[strings.Join(cur, "/")]
 			if !merge {
 				break
 			}
@@ -267,7 +297,18 @@ func Detect(entries []Entry, r Rules) []Candidate {
 		depth := len(splitPath(dir))
 		base := path.Base(e.Path)
 
+		_, marked := userAnchor(dir)
 		switch {
+		case marked:
+			// Below a folder the user marked as a model: belongs to it, archives included.
+			anchor := resolve(dir)
+			cd := get(anchor, "folder")
+			v := variantBetween(anchor, dir)
+			if e.Category == CatArchive {
+				addArchive(cd, e, v, c)
+			} else {
+				cd.Assign = append(cd.Assign, Assign{LocID: e.LocID, FileID: e.FileID, Content: true, Variant: v})
+			}
 		case e.Category == CatArchive && depth > c.creatorDepth && (c.isPart(stem(base)) ||
 			c.variantOf(stem(base)) != "" || c.isWeakPart(stem(base), path.Base(dir)) ||
 			c.isPart(path.Base(dir)) || c.variantOf(path.Base(dir)) != ""):
@@ -346,7 +387,7 @@ func mergeSplitTrees(cands map[string]*Candidate, c rules) []Candidate {
 	var order []string
 	for _, cd := range cands {
 		key := cd.Kind + ":" + cd.Anchor
-		if cd.Kind == "folder" {
+		if cd.Kind == "folder" && !c.isModel[cd.Anchor] && !c.detached[cd.Anchor] {
 			var segs []string
 			for _, seg := range splitPath(cd.Anchor) {
 				if !c.isPart(seg) {
@@ -594,4 +635,12 @@ func cleanName(name string) string {
 		return strings.TrimSpace(name)
 	}
 	return n
+}
+
+// parentPath returns the parent of a '/'-path ("" for top-level entries).
+func parentPath(p string) string {
+	if i := strings.LastIndex(p, "/"); i >= 0 {
+		return p[:i]
+	}
+	return ""
 }
