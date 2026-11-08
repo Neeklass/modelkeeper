@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "name": "English"
+  },
+  "app": {
+    "title": "modelkeeper",
+    "loading": "Loading…"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "languageSystem": "System default ({{name}})",
+    "dataFolder": "Data folder",
+    "openDataFolder": "Open data folder"
+  },
+  "error": {
+    "unknown": "Unexpected error: {{detail}}",
+    "notReady": "The app is not ready yet.",
+    "startupTitle": "modelkeeper could not start",
+    "dataDirResolve": "Could not determine the data folder: {{detail}}",
+    "dataDirNotWritable": "The data folder {{path}} is not writable. Move modelkeeper to a writable folder (not C:\\Program Files). Details: {{detail}}",
+    "settingsLoad": "Could not read the settings file {{path}}: {{detail}}",
+    "settingsSave": "Could not save the settings: {{detail}}",
+    "catalogOpen": "Could not open the catalog {{path}}: {{detail}}",
+    "openFolder": "Could not open the folder {{path}}: {{detail}}",
+    "rootNotFound": "The root folder no longer exists in the catalog.",
+    "rootInvalid": "Invalid path: {{path}}",
+    "rootNotFolder": "{{path}} is not a reachable folder.",
+    "rootOverlap": "{{path}} overlaps with the existing root folder {{other}}.",
+    "database": "Database error: {{detail}}"
+  },
+  "roots": {
+    "title": "Root folders",
+    "add": "Add folder…",
+    "remove": "Remove",
+    "empty": "No root folder yet. Add a local folder or a NAS path (\\\\fritz.nas\\…).",
+    "confirmRemove": "Remove {{path}} from the catalog? Files on disk are not touched.",
+    "lastScan": "Last scan: {{when}}",
+    "neverScanned": "Not scanned yet",
+    "kind": {
+      "local": "Local",
+      "nas": "NAS"
+    },
+    "status": {
+      "unknown": "Not checked",
+      "online": "Online",
+      "offline": "Offline"
+    }
+  },
+  "scan": {
+    "start": "Scan",
+    "cancel": "Cancel",
+    "phase": {
+      "checking": "Checking folder…",
+      "walking": "Listing files…",
+      "hashing": "Hashing files…",
+      "archives": "Checking archives…",
+      "finished": "Finished"
+    },
+    "found_one": "{{n}} file found",
+    "found_other": "{{n}} files found",
+    "issues_one": "{{count}} problem in the last scan",
+    "issues_other": "{{count}} problems in the last scan",
+    "result": {
+      "done": "Scan finished: {{new}} new, {{changed}} changed, {{missing}} missing, {{hashed}} hashed.",
+      "cancelled": "Scan cancelled. Progress so far is saved: {{new}} new, {{hashed}} hashed.",
+      "offline": "Scan not possible.",
+      "failed": "Scan failed."
+    },
+    "error": {
+      "alreadyRunning": "A scan is already running.",
+      "busy": "This folder is being scanned right now.",
+      "offline": "{{path}} is not reachable. Entries are kept and shown as offline.",
+      "interrupted": "The scan was interrupted (app closed unexpectedly).",
+      "database": "Database error during the scan."
+    },
+    "issue": {
+      "readError": "Could not read {{path}}: {{detail}}"
+    },
+    "archive": {
+      "broken": "Archive {{path}} is damaged: {{detail}}",
+      "encrypted": "Archive {{path}} is password-protected and could not be checked.",
+      "unsupported": "Archive format or compression method not supported."
+    }
+  },
+  "stats": {
+    "files": "Files",
+    "size": "Size",
+    "duplicates": "Duplicated contents",
+    "archives": "Archives",
+    "archiveMembers": "Files in archives",
+    "archivesBroken": "Damaged archives",
+    "archivesEncrypted": "Password-protected",
+    "missing": "Missing",
+    "pending": "Not yet processed"
+  }
+}

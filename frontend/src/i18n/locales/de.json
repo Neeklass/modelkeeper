@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "name": "Deutsch"
+  },
+  "app": {
+    "title": "modelkeeper",
+    "loading": "Wird geladen…"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "language": "Sprache",
+    "languageSystem": "Systemstandard ({{name}})",
+    "dataFolder": "Datenordner",
+    "openDataFolder": "Datenordner öffnen"
+  },
+  "error": {
+    "unknown": "Unerwarteter Fehler: {{detail}}",
+    "notReady": "Die App ist noch nicht bereit.",
+    "startupTitle": "modelkeeper konnte nicht starten",
+    "dataDirResolve": "Der Datenordner konnte nicht ermittelt werden: {{detail}}",
+    "dataDirNotWritable": "Der Datenordner {{path}} ist nicht beschreibbar. Verschiebe modelkeeper in einen beschreibbaren Ordner (nicht C:\\Programme). Details: {{detail}}",
+    "settingsLoad": "Die Einstellungsdatei {{path}} konnte nicht gelesen werden: {{detail}}",
+    "settingsSave": "Die Einstellungen konnten nicht gespeichert werden: {{detail}}",
+    "catalogOpen": "Der Katalog {{path}} konnte nicht geöffnet werden: {{detail}}",
+    "openFolder": "Der Ordner {{path}} konnte nicht geöffnet werden: {{detail}}",
+    "rootNotFound": "Der Stammordner existiert nicht mehr im Katalog.",
+    "rootInvalid": "Ungültiger Pfad: {{path}}",
+    "rootNotFolder": "{{path}} ist kein erreichbarer Ordner.",
+    "rootOverlap": "{{path}} überschneidet sich mit dem vorhandenen Stammordner {{other}}.",
+    "database": "Datenbankfehler: {{detail}}"
+  },
+  "roots": {
+    "title": "Stammordner",
+    "add": "Ordner hinzufügen…",
+    "remove": "Entfernen",
+    "empty": "Noch kein Stammordner. Füge einen lokalen Ordner oder einen NAS-Pfad (\\\\fritz.nas\\…) hinzu.",
+    "confirmRemove": "{{path}} aus dem Katalog entfernen? Dateien auf der Festplatte bleiben unberührt.",
+    "lastScan": "Letzter Scan: {{when}}",
+    "neverScanned": "Noch nicht gescannt",
+    "kind": {
+      "local": "Lokal",
+      "nas": "NAS"
+    },
+    "status": {
+      "unknown": "Nicht geprüft",
+      "online": "Online",
+      "offline": "Offline"
+    }
+  },
+  "scan": {
+    "start": "Scannen",
+    "cancel": "Abbrechen",
+    "phase": {
+      "checking": "Ordner wird geprüft…",
+      "walking": "Dateien werden aufgelistet…",
+      "hashing": "Dateien werden gehasht…",
+      "archives": "Archive werden geprüft…",
+      "finished": "Fertig"
+    },
+    "found_one": "{{n}} Datei gefunden",
+    "found_other": "{{n}} Dateien gefunden",
+    "issues_one": "{{count}} Problem beim letzten Scan",
+    "issues_other": "{{count}} Probleme beim letzten Scan",
+    "result": {
+      "done": "Scan abgeschlossen: {{new}} neu, {{changed}} geändert, {{missing}} fehlen, {{hashed}} gehasht.",
+      "cancelled": "Scan abgebrochen. Der bisherige Fortschritt ist gespeichert: {{new}} neu, {{hashed}} gehasht.",
+      "offline": "Scan nicht möglich.",
+      "failed": "Scan fehlgeschlagen."
+    },
+    "error": {
+      "alreadyRunning": "Es läuft bereits ein Scan.",
+      "busy": "Dieser Ordner wird gerade gescannt.",
+      "offline": "{{path}} ist nicht erreichbar. Die Einträge bleiben erhalten und werden als offline angezeigt.",
+      "interrupted": "Der Scan wurde unterbrochen (App unerwartet beendet).",
+      "database": "Datenbankfehler während des Scans."
+    },
+    "issue": {
+      "readError": "{{path}} konnte nicht gelesen werden: {{detail}}"
+    },
+    "archive": {
+      "broken": "Archiv {{path}} ist beschädigt: {{detail}}",
+      "encrypted": "Archiv {{path}} ist passwortgeschützt und konnte nicht geprüft werden.",
+      "unsupported": "Archivformat oder Komprimierungsverfahren wird nicht unterstützt."
+    }
+  },
+  "stats": {
+    "files": "Dateien",
+    "size": "Größe",
+    "duplicates": "Doppelte Inhalte",
+    "archives": "Archive",
+    "archiveMembers": "Dateien in Archiven",
+    "archivesBroken": "Beschädigte Archive",
+    "archivesEncrypted": "Passwortgeschützt",
+    "missing": "Fehlend",
+    "pending": "Noch nicht verarbeitet"
+  }
+}
