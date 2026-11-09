@@ -31,12 +31,17 @@ import (
 	"modelkeeper/internal/scanner"
 	"modelkeeper/internal/settings"
 	"modelkeeper/internal/thumbs"
+	"modelkeeper/internal/watch"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // EventScanProgress carries scanner.Progress to the frontend.
 const EventScanProgress = "scan:progress"
+
+// EventRootsChanged tells the frontend to reload the root folders (e.g. the
+// live-watching state changed).
+const EventRootsChanged = "roots:changed"
 
 // App is bound to the frontend. Bound methods stay thin and delegate to
 // internal packages. Errors returned to the frontend are *msg.Error.
@@ -46,6 +51,7 @@ type App struct {
 	settings *settings.Store
 	db       *sql.DB
 	scans    *scanner.Manager
+	watch    *watch.Watcher // live watching of local roots (E4); nil if unavailable
 	logFile  *os.File
 
 	// startupErr is set when the data folder or catalog could not be opened;
@@ -91,16 +97,48 @@ func (a *App) init() error {
 	a.db = conn
 	scans, err := scanner.NewManager(conn, st.Get, func(p scanner.Progress) {
 		runtime.EventsEmit(a.ctx, EventScanProgress, p)
+		if !p.Running {
+			// A root's first scan makes it eligible for watching.
+			go a.syncWatch()
+		}
 	}, scanner.Options{ThumbDir: layout.Thumbnails})
 	if err != nil {
 		return msg.Wrap(err, "error.catalogOpen", "path", layout.Catalog)
 	}
 	a.scans = scans
 	go a.detectExisting()
+
+	w, err := watch.New(conn, scans, watch.Options{
+		Exclude: layout.Root,
+		Relevant: func(name string) bool {
+			return a.settings.Get().ExtCategory(filepath.Ext(name)) != ""
+		},
+	})
+	if err != nil {
+		log.Printf("live watching unavailable: %v", err) // scans still work manually
+	} else {
+		a.watch = w
+		go a.syncWatch()
+	}
 	return nil
 }
 
+// syncWatch aligns the watched folders with the root folders in the catalog.
+func (a *App) syncWatch() {
+	if a.watch == nil {
+		return
+	}
+	if err := a.watch.Sync(context.Background()); err != nil {
+		log.Printf("watch: %v", err)
+		return
+	}
+	runtime.EventsEmit(a.ctx, EventRootsChanged)
+}
+
 func (a *App) shutdown(ctx context.Context) {
+	if a.watch != nil {
+		a.watch.Close() // before the scanner, so no new scan starts
+	}
 	if a.scans != nil {
 		a.scans.Close() // committed scan work is kept
 	}
@@ -176,6 +214,11 @@ func (a *App) ListRoots() ([]catalog.Root, error) {
 		return nil, err
 	}
 	roots, err := catalog.ListRoots(a.ctx, a.db)
+	if a.watch != nil {
+		for i := range roots {
+			roots[i].Live = a.watch.Live(roots[i].ID)
+		}
+	}
 	return roots, wrapDB(err)
 }
 
@@ -201,7 +244,11 @@ func (a *App) RemoveRoot(id int64) error {
 	if p := a.scans.Progress(); p != nil && p.Running && p.RootID == id {
 		return msg.Wrap(nil, "scan.error.busy")
 	}
-	return wrapDB(catalog.RemoveRoot(a.ctx, a.db, id))
+	if err := catalog.RemoveRoot(a.ctx, a.db, id); err != nil {
+		return wrapDB(err)
+	}
+	go a.syncWatch()
+	return nil
 }
 
 // GetRootStats returns catalog statistics for a root.

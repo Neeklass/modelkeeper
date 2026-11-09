@@ -332,6 +332,7 @@ export namespace catalog {
 	    creatorLevel: boolean;
 	    status: string;
 	    lastScanAt?: number;
+	    live: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Root(source);
@@ -345,6 +346,7 @@ export namespace catalog {
 	        this.creatorLevel = source["creatorLevel"];
 	        this.status = source["status"];
 	        this.lastScanAt = source["lastScanAt"];
+	        this.live = source["live"];
 	    }
 	}
 	export class RootStats {

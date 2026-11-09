@@ -39,6 +39,8 @@
     "confirmRemove": "{{path}} aus dem Katalog entfernen? Dateien auf der Festplatte bleiben unberührt.",
     "lastScan": "Letzter Scan: {{when}}",
     "neverScanned": "Noch nicht gescannt",
+    "live": "Live",
+    "liveHint": "Änderungen in diesem Ordner werden automatisch übernommen.",
     "kind": {
       "local": "Lokal",
       "nas": "NAS"

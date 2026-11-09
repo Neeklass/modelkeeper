@@ -39,6 +39,8 @@
     "confirmRemove": "Remove {{path}} from the catalog? Files on disk are not touched.",
     "lastScan": "Last scan: {{when}}",
     "neverScanned": "Not scanned yet",
+    "live": "Live",
+    "liveHint": "Changes in this folder are picked up automatically.",
     "kind": {
       "local": "Local",
       "nas": "NAS"

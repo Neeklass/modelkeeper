@@ -186,6 +186,21 @@ func (m *Manager) start(rootID int64, detectOnly bool) error {
 	return nil
 }
 
+// Busy reports whether a scan is running.
+func (m *Manager) Busy() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.done == nil {
+		return false
+	}
+	select {
+	case <-m.done:
+		return false
+	default:
+		return true
+	}
+}
+
 // Cancel stops the running scan, if any. Work done so far is kept.
 func (m *Manager) Cancel() {
 	m.mu.Lock()

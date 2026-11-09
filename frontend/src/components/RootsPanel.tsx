@@ -23,10 +23,15 @@ export function RootsPanel() {
     useEffect(() => {
         reload()
         GetScanProgress().then(p => p && setProgress(p))
-        return EventsOn('scan:progress', (p: scanner.Progress) => {
+        const offProgress = EventsOn('scan:progress', (p: scanner.Progress) => {
             setProgress(p)
             if (!p.running) reload()
         })
+        const offRoots = EventsOn('roots:changed', reload)
+        return () => {
+            offProgress()
+            offRoots()
+        }
     }, [reload])
 
     const run = (fn: () => Promise<unknown>) => {
@@ -104,6 +109,7 @@ function RootRow(props: {
                     <div className="row small muted">
                         <span className="badge">{t(`roots.kind.${root.kind}`)}</span>
                         <span className={`badge status-${root.status}`}>{t(`roots.status.${root.status}`)}</span>
+                        {root.live && <span className="badge status-online" title={t('roots.liveHint')}>{t('roots.live')}</span>}
                         <span>{root.lastScanAt
                             ? t('roots.lastScan', {when: formatDateTime(root.lastScanAt)})
                             : t('roots.neverScanned')}</span>

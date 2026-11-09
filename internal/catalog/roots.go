@@ -23,6 +23,7 @@ type Root struct {
 	CreatorLevel bool   `json:"creatorLevel"`
 	Status       string `json:"status"` // unknown | online | offline
 	LastScanAt   *int64 `json:"lastScanAt,omitempty"`
+	Live         bool   `json:"live"` // changes are picked up automatically (E4); set by the app
 }
 
 const rootCols = `id, path, kind, creator_level, status, last_scan_at`
