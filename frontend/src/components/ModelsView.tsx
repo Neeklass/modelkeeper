@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react'
 import {useTranslation} from 'react-i18next'
-import {AddTags, ListTags, MergeModels, RemoveTag, SearchModels} from '../../wailsjs/go/main/App'
+import {AddTags, ListTags, MergeModels, RemoveTag, SearchModels, SetFavorite} from '../../wailsjs/go/main/App'
 import {catalog} from '../../wailsjs/go/models'
 import {EventsOn} from '../../wailsjs/runtime/runtime'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
@@ -9,6 +9,7 @@ import {ModelDetailPanel} from './ModelDetail'
 import {TagInput} from './TagInput'
 import {Thumb} from './Thumb'
 import {activeFilters, emptyQuery, FilterPanel, Query} from './FilterPanel'
+import {FavoriteStar} from './FavoriteStar'
 
 const ROW_HEIGHT = 60
 const TILE_WIDTH = 190 // minimum grid tile width; tiles stretch to fill the row
@@ -166,7 +167,7 @@ export function ModelsView() {
         rows.push(
             <div key={i} className={`${view === 'grid' ? 'model-tile' : 'model-row'}${isSel ? ' selected' : ''}`}
                  style={style} onClick={e => row && onRowClick(i, row, e)}>
-                {row ? (view === 'grid' ? <ModelTileView row={row}/> : <ModelRowView row={row}/>)
+                {row ? (view === 'grid' ? <ModelTileView row={row} onChanged={refresh}/> : <ModelRowView row={row} onChanged={refresh}/>)
                     : <span className="muted">…</span>}
             </div>,
         )
@@ -178,6 +179,11 @@ export function ModelsView() {
                 <div className="row search">
                     <input type="search" autoFocus placeholder={t('models.searchPlaceholder')} value={query.text}
                            onChange={e => setQuery(q => ({...q, text: e.target.value}))}/>
+                    <button className={query.favorites ? 'active' : ''} aria-pressed={query.favorites}
+                            title={t('favorites.showOnly')}
+                            onClick={() => setQuery(q => ({...q, favorites: !q.favorites}))}>
+                        {query.favorites ? '★' : '☆'} {t('favorites.title')}
+                    </button>
                     <button className={showFilters || activeFilters(query) > 0 ? 'active' : ''}
                             onClick={() => setShowFilters(s => !s)} aria-expanded={showFilters}>
                         {t('filters.button')}{activeFilters(query) > 0 && ` (${activeFilters(query)})`}
@@ -205,7 +211,8 @@ export function ModelsView() {
                     <div style={{height: rowCount * itemH, position: 'relative'}}>{rows}</div>
                     {total === 0 && !error && (
                         <p className="muted center-text">
-                            {query.text || activeFilters(query) > 0 ? t('models.noResults') : t('models.empty')}
+                            {query.favorites && !query.text && activeFilters(query) === 0 ? t('favorites.empty')
+                                : query.text || query.favorites || activeFilters(query) > 0 ? t('models.noResults') : t('models.empty')}
                         </p>
                     )}
                 </div>
@@ -265,6 +272,16 @@ function SelectionBar({selection, allTags, onChanged, onMerged, onClear}: {
                 {done && <span className="small muted">{done}</span>}
             </div>
             <div className="row wrap">
+                <button disabled={busy} onClick={() => run(async () => {
+                    await SetFavorite(ids, true)
+                    onChanged()
+                }, t('favorites.added', {count: ids.length}))}>★ {t('favorites.addSelected')}</button>
+                <button disabled={busy} onClick={() => run(async () => {
+                    await SetFavorite(ids, false)
+                    onChanged()
+                }, t('favorites.removed', {count: ids.length}))}>{t('favorites.removeSelected')}</button>
+            </div>
+            <div className="row wrap">
                 <TagInput allTags={allTags} placeholder={t('tags.addPlaceholder')} buttonLabel={t('tags.add')}
                           disabled={busy} onSubmit={names => run(async () => {
                     await AddTags(ids, names)
@@ -290,11 +307,12 @@ function SelectionBar({selection, allTags, onChanged, onMerged, onClear}: {
     )
 }
 
-function ModelTileView({row}: { row: catalog.ModelRow }) {
+function ModelTileView({row, onChanged}: { row: catalog.ModelRow; onChanged: () => void }) {
     const {t} = useTranslation()
     return (
         <>
             <Thumb src={row.thumb} className="tile-thumb"/>
+            <FavoriteStar id={row.id} on={row.favorite} onChanged={onChanged} className="tile-star"/>
             <div className="tile-text">
                 <strong className="ellipsis" title={row.name}>{row.name}</strong>
                 <span className="row small muted">
@@ -306,10 +324,11 @@ function ModelTileView({row}: { row: catalog.ModelRow }) {
     )
 }
 
-function ModelRowView({row}: { row: catalog.ModelRow }) {
+function ModelRowView({row, onChanged}: { row: catalog.ModelRow; onChanged: () => void }) {
     const {t} = useTranslation()
     return (
         <div className="row row-with-thumb">
+            <FavoriteStar id={row.id} on={row.favorite} onChanged={onChanged}/>
             <Thumb src={row.thumb} className="row-thumb"/>
             <div className="row-body">
             <div className="row spread">

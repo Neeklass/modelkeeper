@@ -148,9 +148,12 @@ func TestMergeAndDetach(t *testing.T) {
 	body, weapons := f.model("Creator/Orc Body"), f.model("Creator/Orc Weapons")
 	f.db.Exec(`INSERT INTO tag (name) VALUES ('orc')`)
 	f.db.Exec(`INSERT INTO model_tag (model_id, tag_id) SELECT ?, id FROM tag`, weapons)
-	f.db.Exec(`UPDATE model SET notes = 'axes!' WHERE id = ?`, weapons)
+	f.db.Exec(`UPDATE model SET notes = 'axes!', favorite = 1 WHERE id = ?`, weapons)
 
 	f.must(Merge(context.Background(), f.db, body, []int64{weapons}))
+	if f.n(`SELECT favorite FROM model WHERE id = ?`, body) != 1 {
+		t.Errorf("favorite not carried over by the merge")
+	}
 	if f.modelOfFile("Creator/Orc Weapons/axe.stl") != body {
 		t.Fatalf("not merged")
 	}

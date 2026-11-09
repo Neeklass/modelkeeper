@@ -27,6 +27,7 @@ import (
 	"modelkeeper/internal/corrections"
 	"modelkeeper/internal/db"
 	"modelkeeper/internal/detect"
+	"modelkeeper/internal/hashshare"
 	"modelkeeper/internal/msg"
 	"modelkeeper/internal/osopen"
 	"modelkeeper/internal/preview"
@@ -435,6 +436,86 @@ func (a *App) StartFullCheck(id int64) error {
 	return wrapDB(a.scans.StartFull(id))
 }
 
+// recognizedExts lists all file types of the current settings.
+func (a *App) recognizedExts() []string {
+	ft := a.settings.Get().FileTypes
+	var out []string
+	for _, l := range [][]string{ft.Model, ft.Slicer, ft.Archive, ft.Supplementary} {
+		out = append(out, l...)
+	}
+	return out
+}
+
+var hashFileFilter = []runtime.FileFilter{{DisplayName: "modelkeeper hashes (*.mkhashes)", Pattern: "*.mkhashes"}}
+
+// ExportHashes saves the hashes of a root to a file the user chooses, for
+// another user of the same folder (e.g. the same NAS). Returns nil if the
+// dialog was cancelled.
+func (a *App) ExportHashes(rootID int64) (*hashshare.ExportResult, error) {
+	if err := a.ready(); err != nil {
+		return nil, err
+	}
+	root, err := catalog.GetRoot(a.ctx, a.db, rootID)
+	if err != nil {
+		return nil, wrapDB(err)
+	}
+	file, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		DefaultFilename: filepath.Base(root.Path) + ".mkhashes",
+		Filters:         hashFileFilter,
+	})
+	if err != nil || file == "" {
+		return nil, err
+	}
+	if !strings.HasSuffix(strings.ToLower(file), ".mkhashes") {
+		file += ".mkhashes"
+	}
+	res, err := hashshare.ExportFile(a.ctx, a.db, rootID, a.recognizedExts(), file)
+	if err != nil {
+		return nil, msg.Wrap(err, "hashshare.exportFailed")
+	}
+	return &res, nil
+}
+
+// ImportResult is the outcome of ImportHashes.
+type ImportResult struct {
+	hashshare.ImportResult
+	ScanStarted bool `json:"scanStarted"` // false: another scan runs; the hashes wait for the next scan
+}
+
+// ImportHashes reads a hash file of the same folder chosen by the user and
+// starts a scan, which takes over every file whose path, size and date match.
+// Returns nil if the dialog was cancelled.
+func (a *App) ImportHashes(rootID int64) (*ImportResult, error) {
+	if err := a.ready(); err != nil {
+		return nil, err
+	}
+	root, err := catalog.GetRoot(a.ctx, a.db, rootID)
+	if err != nil {
+		return nil, wrapDB(err)
+	}
+	file, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{Filters: hashFileFilter})
+	if err != nil || file == "" {
+		return nil, err
+	}
+	res, err := hashshare.ImportFile(a.ctx, a.db, rootID, root.Path, a.recognizedExts(), file)
+	switch {
+	case errors.Is(err, hashshare.ErrNotAnExport):
+		return nil, msg.Wrap(nil, "hashshare.notAnExport")
+	case errors.Is(err, hashshare.ErrNewer):
+		return nil, msg.Wrap(nil, "hashshare.newer")
+	case errors.Is(err, hashshare.ErrInvalid):
+		return nil, msg.Wrap(err, "hashshare.invalid")
+	case errors.Is(err, hashshare.ErrNoMatch):
+		return nil, msg.Wrap(nil, "hashshare.noMatch", "path", root.Path, "checked", res.Checked, "matching", res.Matching)
+	case err != nil:
+		return nil, msg.Wrap(err, "hashshare.importFailed")
+	}
+	log.Printf("hashes imported into root %d: %+v", rootID, res)
+	out := &ImportResult{ImportResult: res}
+	out.ScanStarted = a.scans.Start(rootID) == nil
+	return out, nil
+}
+
 // CancelScan stops the running scan; work done so far is kept.
 func (a *App) CancelScan() {
 	if a.scans != nil {
@@ -635,6 +716,14 @@ func (a *App) DismissSuggestion(modelID int64, name string) error {
 		return err
 	}
 	return wrapDB(catalog.DismissSuggestion(a.ctx, a.db, modelID, name))
+}
+
+// SetFavorite adds models to the favorites or removes them.
+func (a *App) SetFavorite(modelIDs []int64, on bool) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	return wrapDB(catalog.SetFavorite(a.ctx, a.db, modelIDs, on))
 }
 
 // UpdateModel edits name, notes, print status (L1) or supports (L2).

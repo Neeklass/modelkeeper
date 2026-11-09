@@ -177,3 +177,22 @@ func TestDeletedWithoutCopyStaysMissing(t *testing.T) {
 		t.Error("lost model no longer shows its missing files")
 	}
 }
+
+// A favorite is user data: copy-then-delete moves it to the new place (F6).
+func TestCopyThenDeleteKeepsFavorite(t *testing.T) {
+	f := newFixture(t)
+	r := f.root(`C:\models`)
+	old := f.file(r, "Creator/Orc/orc.stl", "orc")
+	f.file(r, "Creator/Orc/orc_base.stl", "orc-base")
+	f.apply(r)
+	orc := f.modelOf(old)
+	f.exec(`UPDATE model SET favorite = 1 WHERE id = ?`, orc)
+	c1 := f.file(r, "Other/Orc/orc.stl", "orc")
+	f.file(r, "Other/Orc/orc_base.stl", "orc-base")
+	f.apply(r)
+	f.exec(`UPDATE location SET present = 0 WHERE path LIKE 'Creator/Orc/%'`)
+	f.apply(r)
+	if f.modelOf(c1) != orc || f.count(`SELECT favorite FROM model WHERE id = ?`, orc) != 1 {
+		t.Fatal("favorite lost when the model moved")
+	}
+}

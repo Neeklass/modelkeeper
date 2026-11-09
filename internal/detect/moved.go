@@ -25,7 +25,7 @@ import (
 // userDataCond is true for models with anything the user entered (the
 // counterpart of the garbage condition in Cleanup).
 const userDataCond = `(m.notes <> '' OR m.name_manual = 1 OR m.creator_manual = 1 OR m.supports_manual = 1
-	OR m.print_status <> 'not_printed' OR coalesce(m.thumb_source, '') = 'manual'
+	OR m.print_status <> 'not_printed' OR coalesce(m.thumb_source, '') = 'manual' OR m.favorite = 1
 	OR EXISTS (SELECT 1 FROM model_tag t WHERE t.model_id = m.id)
 	OR EXISTS (SELECT 1 FROM override o WHERE o.model_id = m.id))`
 

@@ -10,6 +10,7 @@ import {Thumb} from './Thumb'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
 import {formatBytes} from '../format'
 import {TagInput} from './TagInput'
+import {FavoriteStar} from './FavoriteStar'
 import {canPreview, defaultPreviewFile, Preview3D} from './Preview3D'
 
 const PRINT_STATUSES = ['not_printed', 'printed', 'failed']
@@ -69,7 +70,10 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose}: {
     return (
         <aside className="detail" key={d.id}>
             <div className="row spread">
-                <EditableName name={d.name} disabled={busy} onSave={name => update({name})}/>
+                <span className="row detail-title">
+                    <FavoriteStar id={d.id} on={d.favorite} onChanged={onChanged}/>
+                    <EditableName name={d.name} disabled={busy} onSave={name => update({name})}/>
+                </span>
                 <button onClick={onClose} aria-label={t('models.close')}>✕</button>
             </div>
             {error && <p className="error">{translateMsg(error)}</p>}

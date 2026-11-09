@@ -223,7 +223,8 @@ func moveUserData(ctx context.Context, tx *sql.Tx, src, dst int64) error {
 				WHEN notes = '' THEN (SELECT notes FROM model WHERE id = ?1)
 				ELSE notes || char(10) || char(10) || (SELECT notes FROM model WHERE id = ?1) END,
 			print_status = CASE WHEN print_status = 'not_printed'
-				THEN (SELECT print_status FROM model WHERE id = ?1) ELSE print_status END
+				THEN (SELECT print_status FROM model WHERE id = ?1) ELSE print_status END,
+			favorite = max(favorite, (SELECT favorite FROM model WHERE id = ?1))
 			WHERE id = ?2`,
 		// Corrections that pointed at the source now point at the target.
 		`UPDATE override SET model_id = ?2 WHERE model_id = ?1 AND kind = 'merge'`,
@@ -231,7 +232,7 @@ func moveUserData(ctx context.Context, tx *sql.Tx, src, dst int64) error {
 		// The emptied source is removed by detection's cleanup.
 		`DELETE FROM model_tag WHERE model_id = ?1`,
 		`UPDATE model SET notes = '', print_status = 'not_printed', name_manual = 0, creator_manual = 0,
-			supports_manual = 0, thumb_source = NULL WHERE id = ?1`,
+			supports_manual = 0, thumb_source = NULL, favorite = 0 WHERE id = ?1`,
 	} {
 		if _, err := tx.ExecContext(ctx, q, src, dst); err != nil {
 			return err

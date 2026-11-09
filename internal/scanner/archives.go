@@ -18,6 +18,9 @@ import (
 // archives is phase 3: hash each pending archive and read all of its members (F7, F11).
 // Archives are processed one at a time to bound memory use.
 func (s *scan) archives(ctx context.Context) error {
+	if err := s.storeImportedArchives(); err != nil {
+		return err
+	}
 	buf := make([]byte, 1<<20)
 	for i, j := range s.pendingArchives {
 		if err := ctx.Err(); err != nil {
