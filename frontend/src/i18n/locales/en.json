@@ -320,5 +320,33 @@
     "removed_one": "{{count}} model removed from the favorites.",
     "removed_other": "{{count}} models removed from the favorites.",
     "empty": "No favorites yet. Click ☆ next to a model to add it."
+  },
+  "share": {
+    "label": "Share hashes",
+    "export": "Export…",
+    "import": "Import…",
+    "exportHint": "Save the hashes of this folder to a file for someone who scans the same folder (e.g. the same NAS). Tags, notes and favorites are not included.",
+    "importHint": "Take over the hashes from such a file; the next scan then only reads files that changed since.",
+    "exported_one": "{{n}} file exported.",
+    "exported_other": "{{n}} files exported.",
+    "exportedUnhashed_one": "{{n}} file was not hashed yet and is not included.",
+    "exportedUnhashed_other": "{{n}} files were not hashed yet and are not included.",
+    "imported_one": "Hashes of {{n}} file imported.",
+    "imported_other": "Hashes of {{n}} files imported.",
+    "mapped": "(paths adjusted: folder \"{{folder}}\")",
+    "archivesReread_one": "{{n}} archive is read again because this catalog recognizes more file types.",
+    "archivesReread_other": "{{n}} archives are read again because this catalog recognizes more file types.",
+    "scanStarted": "The scan has started and only reads files that changed.",
+    "scanLater": "Another scan is running; the hashes are used by the next scan of this folder.",
+    "resultImported_one": "{{n}} taken over from the imported hashes.",
+    "resultImported_other": "{{n}} taken over from the imported hashes."
+  },
+  "hashshare": {
+    "exportFailed": "The hashes could not be exported: {{detail}}",
+    "importFailed": "The hashes could not be imported: {{detail}}",
+    "notAnExport": "This is not a modelkeeper hash file.",
+    "newer": "This hash file comes from a newer modelkeeper. Please update.",
+    "invalid": "The hash file is damaged or invalid; nothing was imported. ({{detail}})",
+    "noMatch": "The hash file does not belong to {{path}}: of {{checked}} sampled files, {{matching}} were found with the same size and date. Choose the root folder that shows the same files."
   }
 }

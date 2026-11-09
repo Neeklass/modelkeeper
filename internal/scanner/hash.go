@@ -64,6 +64,9 @@ func (s *scan) pendingWork(ctx context.Context) (files, archives []hashJob, err 
 	if err != nil {
 		return nil, nil, err
 	}
+	if files, archives, err = s.takeImported(ctx, files, archives); err != nil {
+		return nil, nil, err
+	}
 	var bytes int64
 	for _, j := range files {
 		bytes += j.size
@@ -89,6 +92,9 @@ func (s *scan) hashFiles(ctx context.Context) error {
 		return err
 	}
 	s.pendingArchives = archives
+	if err := s.storeImportedFiles(); err != nil {
+		return err
+	}
 	if len(files) == 0 {
 		return nil
 	}

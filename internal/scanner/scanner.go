@@ -93,6 +93,10 @@ type Progress struct {
 	ThumbsTotal int `json:"thumbsTotal"`
 	ThumbsDone  int `json:"thumbsDone"`
 
+	// Imported counts files and archives whose hashes were taken from an
+	// imported hash file instead of reading them.
+	Imported int `json:"imported"`
+
 	// HashChanged counts files whose content changed at unchanged size and
 	// modification time (F8).
 	HashChanged int `json:"hashChanged"`
@@ -325,8 +329,11 @@ type scan struct {
 	runID int64
 
 	pendingArchives []hashJob // loaded in phase 2, processed in phase 3
-	detectOnly      bool
-	full            bool // F9: re-hash everything
+	// From hash_import, stored instead of reading the files (hashshare).
+	importedFiles    []hashResult
+	importedArchives []importedArchive
+	detectOnly       bool
+	full             bool // F9: re-hash everything
 }
 
 func (s *scan) run(ctx context.Context) {
@@ -436,8 +443,10 @@ func (s *scan) finish(status, errKey, detail string) {
 		s.db.Exec(`UPDATE root SET last_scan_at = ? WHERE id = ?`, now, s.root.ID)
 	}
 	if status == StatusDone {
-		// Everything pending was processed: leftover checkpoints are stale.
+		// Everything pending was processed: leftover checkpoints are stale,
+		// and imported hashes have done their job.
 		s.db.Exec(`DELETE FROM hash_progress WHERE location_id IN (SELECT id FROM location WHERE root_id = ?)`, s.root.ID)
+		s.db.Exec(`DELETE FROM hash_import WHERE root_id = ?`, s.root.ID)
 	}
 }
 

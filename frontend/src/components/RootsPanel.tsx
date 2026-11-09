@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
-    AddRoot, CancelScan, GetRootStats, GetScanProgress, ListLastScanIssues, ListRoots, PickFolder, RedetectRoot, RemoveRoot,
+    AddRoot, CancelScan, ExportHashes, GetRootStats, ImportHashes, GetScanProgress, ListLastScanIssues, ListRoots, PickFolder, RedetectRoot, RemoveRoot,
     SetRootCreatorLevel, StartFullCheck, StartScan,
 } from '../../wailsjs/go/main/App'
 import {catalog, scanner} from '../../wailsjs/go/models'
@@ -15,6 +15,7 @@ export function RootsPanel() {
     const [roots, setRoots] = useState<catalog.Root[]>([])
     const [progress, setProgress] = useState<scanner.Progress | null>(null)
     const [error, setError] = useState<Msg | null>(null)
+    const [notice, setNotice] = useState<{ rootId: number; text: string } | null>(null)
 
     const reload = useCallback(() => {
         ListRoots().then(setRoots).catch(e => setError(toMsg(e)))
@@ -36,8 +37,27 @@ export function RootsPanel() {
 
     const run = (fn: () => Promise<unknown>) => {
         setError(null)
+        setNotice(null)
         fn().catch(e => setError(toMsg(e)))
     }
+
+    const exportHashes = (r: catalog.Root) => run(async () => {
+        const res = await ExportHashes(r.id)
+        if (!res) return // cancelled
+        let text = t('share.exported', {count: res.files, n: formatNumber(res.files)})
+        if (res.unhashed > 0) text += ' ' + t('share.exportedUnhashed', {count: res.unhashed, n: formatNumber(res.unhashed)})
+        setNotice({rootId: r.id, text})
+    })
+
+    const importHashes = (r: catalog.Root) => run(async () => {
+        const res = await ImportHashes(r.id)
+        if (!res) return
+        const parts = [t('share.imported', {count: res.files, n: formatNumber(res.files)})]
+        if (res.prefix) parts.push(t('share.mapped', {folder: res.prefix.slice(1)}))
+        if (res.archivesReread > 0) parts.push(t('share.archivesReread', {count: res.archivesReread, n: formatNumber(res.archivesReread)}))
+        parts.push(res.scanStarted ? t('share.scanStarted') : t('share.scanLater'))
+        setNotice({rootId: r.id, text: parts.join(' ')})
+    })
 
     const addRoot = () => run(async () => {
         const path = await PickFolder()
@@ -76,7 +96,10 @@ export function RootsPanel() {
                              reload()
                          })}
                          onCancel={() => CancelScan()}
-                         onRemove={() => removeRoot(r)}/>
+                         onRemove={() => removeRoot(r)}
+                         onExport={() => exportHashes(r)}
+                         onImport={() => importHashes(r)}
+                         notice={notice?.rootId === r.id ? notice.text : null}/>
             ))}
             {error && <p className="error">{translateMsg(error)}</p>}
         </section>
@@ -93,6 +116,9 @@ function RootRow(props: {
     onCreatorLevel: (on: boolean) => void
     onCancel: () => void
     onRemove: () => void
+    onExport: () => void
+    onImport: () => void
+    notice: string | null
 }) {
     const {t} = useTranslation()
     const {root, progress} = props
@@ -139,6 +165,15 @@ function RootRow(props: {
                        onChange={e => props.onCreatorLevel(e.target.checked)}/>
                 {t('roots.creatorLevel')}
             </label>
+
+            <div className="row small share-row">
+                <span className="muted">{t('share.label')}:</span>
+                <button className="link small" onClick={props.onExport} disabled={!root.lastScanAt || props.scanning}
+                        title={t('share.exportHint')}>{t('share.export')}</button>
+                <button className="link small" onClick={props.onImport} disabled={props.scanning}
+                        title={t('share.importHint')}>{t('share.import')}</button>
+            </div>
+            {props.notice && <p className="small">{props.notice}</p>}
 
             {progress && <ScanProgressView p={progress}/>}
 
@@ -193,6 +228,7 @@ function ScanProgressView({p}: { p: scanner.Progress }) {
                     missing: formatNumber(p.filesMissing), hashed: formatNumber(p.hashDone),
                     archives: formatNumber(p.archivesDone),
                 })}
+                {p.imported > 0 && <> {t('share.resultImported', {count: p.imported, n: formatNumber(p.imported)})}</>}
                 {p.hashChanged > 0 && <> {t('scan.hashChanged', {count: p.hashChanged, n: formatNumber(p.hashChanged)})}</>}
                 {p.status === 'done' && p.modelsFound > 0 && <> {t('scan.modelsResult', {
                     n: formatNumber(p.modelsFound), created: formatNumber(p.modelsCreated),

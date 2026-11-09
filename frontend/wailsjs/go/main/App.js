@@ -22,6 +22,10 @@ export function DismissSuggestion(arg1, arg2) {
   return window['go']['main']['App']['DismissSuggestion'](arg1, arg2);
 }
 
+export function ExportHashes(arg1) {
+  return window['go']['main']['App']['ExportHashes'](arg1);
+}
+
 export function GetDetectionSettings() {
   return window['go']['main']['App']['GetDetectionSettings']();
 }
@@ -44,6 +48,10 @@ export function GetScanProgress() {
 
 export function GetStatus() {
   return window['go']['main']['App']['GetStatus']();
+}
+
+export function ImportHashes(arg1) {
+  return window['go']['main']['App']['ImportHashes'](arg1);
 }
 
 export function ListLastScanIssues(arg1) {

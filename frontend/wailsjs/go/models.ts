@@ -420,6 +420,27 @@ export namespace catalog {
 
 }
 
+export namespace hashshare {
+	
+	export class ExportResult {
+	    files: number;
+	    archives: number;
+	    unhashed: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ExportResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.files = source["files"];
+	        this.archives = source["archives"];
+	        this.unhashed = source["unhashed"];
+	    }
+	}
+
+}
+
 export namespace main {
 	
 	export class AppStatus {
@@ -524,6 +545,30 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class ImportResult {
+	    files: number;
+	    archives: number;
+	    archivesReread: number;
+	    prefix: string;
+	    checked: number;
+	    matching: number;
+	    scanStarted: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ImportResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.files = source["files"];
+	        this.archives = source["archives"];
+	        this.archivesReread = source["archivesReread"];
+	        this.prefix = source["prefix"];
+	        this.checked = source["checked"];
+	        this.matching = source["matching"];
+	        this.scanStarted = source["scanStarted"];
+	    }
+	}
 
 }
 
@@ -574,6 +619,7 @@ export namespace scanner {
 	    modelsCreated: number;
 	    thumbsTotal: number;
 	    thumbsDone: number;
+	    imported: number;
 	    hashChanged: number;
 	    issues: number;
 	    error?: msg.Msg;
@@ -609,6 +655,7 @@ export namespace scanner {
 	        this.modelsCreated = source["modelsCreated"];
 	        this.thumbsTotal = source["thumbsTotal"];
 	        this.thumbsDone = source["thumbsDone"];
+	        this.imported = source["imported"];
 	        this.hashChanged = source["hashChanged"];
 	        this.issues = source["issues"];
 	        this.error = this.convertValues(source["error"], msg.Msg);

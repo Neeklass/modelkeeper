@@ -320,5 +320,33 @@
     "removed_one": "{{count}} Modell aus den Favoriten entfernt.",
     "removed_other": "{{count}} Modelle aus den Favoriten entfernt.",
     "empty": "Noch keine Favoriten. Auf ☆ bei einem Modell klicken, um es hinzuzufügen."
+  },
+  "share": {
+    "label": "Hashes teilen",
+    "export": "Exportieren…",
+    "import": "Importieren…",
+    "exportHint": "Die Hashes dieses Ordners in eine Datei speichern, für jemanden, der denselben Ordner scannt (z. B. dasselbe NAS). Tags, Notizen und Favoriten sind nicht enthalten.",
+    "importHint": "Die Hashes aus so einer Datei übernehmen; der nächste Scan liest dann nur Dateien, die sich seitdem geändert haben.",
+    "exported_one": "{{n}} Datei exportiert.",
+    "exported_other": "{{n}} Dateien exportiert.",
+    "exportedUnhashed_one": "{{n}} Datei war noch nicht gehasht und ist nicht enthalten.",
+    "exportedUnhashed_other": "{{n}} Dateien waren noch nicht gehasht und sind nicht enthalten.",
+    "imported_one": "Hashes von {{n}} Datei importiert.",
+    "imported_other": "Hashes von {{n}} Dateien importiert.",
+    "mapped": "(Pfade angepasst: Ordner „{{folder}}“)",
+    "archivesReread_one": "{{n}} Archiv wird neu gelesen, weil dieser Katalog mehr Dateitypen erkennt.",
+    "archivesReread_other": "{{n}} Archive werden neu gelesen, weil dieser Katalog mehr Dateitypen erkennt.",
+    "scanStarted": "Der Scan läuft und liest nur geänderte Dateien.",
+    "scanLater": "Ein anderer Scan läuft; die Hashes werden beim nächsten Scan dieses Ordners verwendet.",
+    "resultImported_one": "{{n}} aus den importierten Hashes übernommen.",
+    "resultImported_other": "{{n}} aus den importierten Hashes übernommen."
+  },
+  "hashshare": {
+    "exportFailed": "Die Hashes konnten nicht exportiert werden: {{detail}}",
+    "importFailed": "Die Hashes konnten nicht importiert werden: {{detail}}",
+    "notAnExport": "Das ist keine modelkeeper-Hash-Datei.",
+    "newer": "Diese Hash-Datei stammt von einer neueren modelkeeper-Version. Bitte aktualisieren.",
+    "invalid": "Die Hash-Datei ist beschädigt oder ungültig; es wurde nichts importiert. ({{detail}})",
+    "noMatch": "Die Hash-Datei gehört nicht zu {{path}}: Von {{checked}} geprüften Dateien wurden {{matching}} mit gleicher Größe und gleichem Datum gefunden. Bitte den Stammordner wählen, der dieselben Dateien zeigt."
   }
 }
