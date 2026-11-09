@@ -260,3 +260,17 @@ div.detail-thumb { height: 160px; }
 .list-add { width: 130px; padding: 2px 6px; font-size: 12px; }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 button.primary:disabled { opacity: .45; }
+
+/* Favorites */
+button.star {
+    border: none; background: none; padding: 0 2px; font-size: 18px; line-height: 1;
+    color: var(--muted); cursor: pointer; flex-shrink: 0;
+}
+button.star:hover { color: #e3a008; }
+button.star.on { color: #e3a008; }
+.tile-star {
+    position: absolute; top: 12px; right: 12px; font-size: 20px;
+    text-shadow: 0 0 3px rgba(0, 0, 0, .6); color: #fff; opacity: .85;
+}
+.tile-star.on { color: #f5b400; opacity: 1; }
+.detail-title { gap: 6px; min-width: 0; }

@@ -110,6 +110,24 @@ type ModelUpdate struct {
 	Supports *string `json:"supports,omitempty"`
 }
 
+// SetFavorite adds models to the favorites or removes them.
+func SetFavorite(ctx context.Context, db *sql.DB, modelIDs []int64, on bool) error {
+	return inTx(ctx, db, func(tx *sql.Tx) error {
+		v := 0
+		if on {
+			v = 1
+		}
+		// updated_at stays: it versions the thumbnail URL, which need not reload.
+		for _, id := range modelIDs {
+			if _, err := tx.ExecContext(ctx, `UPDATE model SET favorite = ? WHERE id = ? AND favorite <> ?`,
+				v, id, v); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 // UpdateModel applies a ModelUpdate. Edited fields are protected from detection.
 func UpdateModel(ctx context.Context, db *sql.DB, id int64, u ModelUpdate) error {
 	return inTx(ctx, db, func(tx *sql.Tx) error {

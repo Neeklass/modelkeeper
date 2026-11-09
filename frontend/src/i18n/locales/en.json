@@ -307,5 +307,18 @@
     "encrypted": "The archive is password-protected.",
     "failed": "The file could not be loaded: {{detail}}",
     "parseFailed": "The file could not be read as a 3D model: {{detail}}"
+  },
+  "favorites": {
+    "title": "Favorites",
+    "showOnly": "Show only favorites",
+    "add": "Add to favorites",
+    "remove": "Remove from favorites",
+    "addSelected": "Add to favorites",
+    "removeSelected": "Remove from favorites",
+    "added_one": "{{count}} model added to the favorites.",
+    "added_other": "{{count}} models added to the favorites.",
+    "removed_one": "{{count}} model removed from the favorites.",
+    "removed_other": "{{count}} models removed from the favorites.",
+    "empty": "No favorites yet. Click ☆ next to a model to add it."
   }
 }

@@ -22,6 +22,7 @@ type ModelRow struct {
 	Suggestion int      `json:"tagSuggest"` // open tag suggestions
 	Tags       []string `json:"tags"`
 	Thumb      string   `json:"thumb"` // URL of the thumbnail, "" if none
+	Favorite   bool     `json:"favorite"`
 }
 
 // ThumbURL is the address under which the app serves a thumbnail file; the
@@ -35,8 +36,9 @@ func ThumbURL(file string, version int64) string {
 
 // ModelQuery selects models for the list (H1, H2). Empty fields do not filter.
 type ModelQuery struct {
-	Text     string `json:"text"`     // full-text search (H1)
-	Untagged bool   `json:"untagged"` // only models without tags (G4)
+	Text      string `json:"text"`      // full-text search (H1)
+	Untagged  bool   `json:"untagged"`  // only models without tags (G4)
+	Favorites bool   `json:"favorites"` // only favorites
 
 	TagID       int64  `json:"tagId"`       // has this tag
 	CreatorID   int64  `json:"creatorId"`   // by this creator
@@ -69,6 +71,9 @@ func (q ModelQuery) where() (from, order string, args []any) {
 	}
 	if q.Untagged {
 		conds = append(conds, `NOT EXISTS (SELECT 1 FROM model_tag mt WHERE mt.model_id = m.id)`)
+	}
+	if q.Favorites {
+		conds = append(conds, `m.favorite = 1`)
 	}
 	add := func(cond string, a ...any) {
 		conds = append(conds, cond)
@@ -162,7 +167,7 @@ func SearchModels(ctx context.Context, db *sql.DB, query ModelQuery, offset, lim
 			(SELECT count(*) FROM tag_suggestion s WHERE s.model_id = m.id AND s.state = 'open'),
 			coalesce((SELECT group_concat(name, char(31)) FROM (SELECT t.name FROM model_tag mt
 				JOIN tag t ON t.id = mt.tag_id WHERE mt.model_id = m.id ORDER BY t.name COLLATE NOCASE)), ''),
-			coalesce(m.thumb_file, ''), m.updated_at
+			coalesce(m.thumb_file, ''), m.updated_at, m.favorite
 		`+from+` `+order+` LIMIT ? OFFSET ?`, append(args, limit, offset)...)
 	if err != nil {
 		return page, err
@@ -173,7 +178,7 @@ func SearchModels(ctx context.Context, db *sql.DB, query ModelQuery, offset, lim
 		var variants, tags, thumb string
 		var updated int64
 		if err := rows.Scan(&r.ID, &r.Name, &r.Creator, &r.Supports, &variants, &r.Files, &r.Roots,
-			&r.Missing, &r.Suggestion, &tags, &thumb, &updated); err != nil {
+			&r.Missing, &r.Suggestion, &tags, &thumb, &updated, &r.Favorite); err != nil {
 			return page, err
 		}
 		r.Thumb = ThumbURL(thumb, updated)
@@ -194,6 +199,7 @@ type ModelDetail struct {
 	Supports    string `json:"supports"`
 	// SupportsManual: the user set supports; detection no longer changes it.
 	SupportsManual bool          `json:"supportsManual"`
+	Favorite       bool          `json:"favorite"`
 	Thumb          string        `json:"thumb"`       // URL, "" if none
 	ThumbSource    string        `json:"thumbSource"` // manual | image | embedded | rendered | ""
 	Anchors        []ModelAnchor `json:"anchors"`
@@ -243,10 +249,10 @@ func GetModel(ctx context.Context, db *sql.DB, id int64) (ModelDetail, error) {
 	var thumbFile string
 	var updated int64
 	err := db.QueryRowContext(ctx, `SELECT m.id, m.uid, m.name, coalesce(c.name, ''), m.notes, m.print_status, m.supports,
-		m.supports_manual, coalesce(m.thumb_file, ''), coalesce(m.thumb_source, ''), m.updated_at
+		m.supports_manual, coalesce(m.thumb_file, ''), coalesce(m.thumb_source, ''), m.updated_at, m.favorite
 		FROM model m LEFT JOIN creator c ON c.id = m.creator_id WHERE m.id = ?`, id).
 		Scan(&d.ID, &d.UID, &d.Name, &d.Creator, &d.Notes, &d.PrintStatus, &supports, &d.SupportsManual,
-			&thumbFile, &d.ThumbSource, &updated)
+			&thumbFile, &d.ThumbSource, &updated, &d.Favorite)
 	if err != nil {
 		return d, err
 	}

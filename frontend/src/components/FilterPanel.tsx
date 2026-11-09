@@ -7,6 +7,7 @@ import {catalog} from '../../wailsjs/go/models'
 export interface Query {
     text: string
     untagged: boolean
+    favorites: boolean
     tagId: number
     creatorId: number
     rootId: number
@@ -22,7 +23,7 @@ export interface Query {
 }
 
 export const emptyQuery: Query = {
-    text: '', untagged: false, tagId: 0, creatorId: 0, rootId: 0, ext: '', supports: '', printStatus: '',
+    text: '', untagged: false, favorites: false, tagId: 0, creatorId: 0, rootId: 0, ext: '', supports: '', printStatus: '',
     duplicates: false, singleLocation: false, offline: false, brokenArchives: false,
     extractedAndArchive: false, missing: false,
 }
@@ -30,11 +31,11 @@ export const emptyQuery: Query = {
 const FLAGS = ['untagged', 'duplicates', 'singleLocation', 'offline', 'brokenArchives', 'extractedAndArchive',
     'missing'] as const
 
-/** Number of active filters, not counting the search text. */
+/** Number of active filters, not counting the search text and the favorites toggle (own button). */
 export function activeFilters(q: Query): number {
     let n = 0
     for (const [k, v] of Object.entries(q)) {
-        if (k !== 'text' && v !== (emptyQuery as unknown as Record<string, unknown>)[k]) n++
+        if (k !== 'text' && k !== 'favorites' && v !== (emptyQuery as unknown as Record<string, unknown>)[k]) n++
     }
     return n
 }

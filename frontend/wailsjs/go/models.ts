@@ -167,6 +167,7 @@ export namespace catalog {
 	    printStatus: string;
 	    supports: string;
 	    supportsManual: boolean;
+	    favorite: boolean;
 	    thumb: string;
 	    thumbSource: string;
 	    anchors: ModelAnchor[];
@@ -190,6 +191,7 @@ export namespace catalog {
 	        this.printStatus = source["printStatus"];
 	        this.supports = source["supports"];
 	        this.supportsManual = source["supportsManual"];
+	        this.favorite = source["favorite"];
 	        this.thumb = source["thumb"];
 	        this.thumbSource = source["thumbSource"];
 	        this.anchors = this.convertValues(source["anchors"], ModelAnchor);
@@ -231,6 +233,7 @@ export namespace catalog {
 	    tagSuggest: number;
 	    tags: string[];
 	    thumb: string;
+	    favorite: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelRow(source);
@@ -249,6 +252,7 @@ export namespace catalog {
 	        this.tagSuggest = source["tagSuggest"];
 	        this.tags = source["tags"];
 	        this.thumb = source["thumb"];
+	        this.favorite = source["favorite"];
 	    }
 	}
 	export class ModelPage {
@@ -286,6 +290,7 @@ export namespace catalog {
 	export class ModelQuery {
 	    text: string;
 	    untagged: boolean;
+	    favorites: boolean;
 	    tagId: number;
 	    creatorId: number;
 	    rootId: number;
@@ -307,6 +312,7 @@ export namespace catalog {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.text = source["text"];
 	        this.untagged = source["untagged"];
+	        this.favorites = source["favorites"];
 	        this.tagId = source["tagId"];
 	        this.creatorId = source["creatorId"];
 	        this.rootId = source["rootId"];

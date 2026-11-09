@@ -118,6 +118,10 @@ export function SearchModels(arg1, arg2, arg3) {
   return window['go']['main']['App']['SearchModels'](arg1, arg2, arg3);
 }
 
+export function SetFavorite(arg1, arg2) {
+  return window['go']['main']['App']['SetFavorite'](arg1, arg2);
+}
+
 export function SetLanguage(arg1) {
   return window['go']['main']['App']['SetLanguage'](arg1);
 }

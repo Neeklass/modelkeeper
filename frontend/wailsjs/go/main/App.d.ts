@@ -64,6 +64,8 @@ export function SaveFileTypes(arg1:settings.FileTypes):Promise<catalog.FileTypes
 
 export function SearchModels(arg1:catalog.ModelQuery,arg2:number,arg3:number):Promise<catalog.ModelPage>;
 
+export function SetFavorite(arg1:Array<number>,arg2:boolean):Promise<void>;
+
 export function SetLanguage(arg1:string):Promise<void>;
 
 export function SetNASRescanHours(arg1:number):Promise<void>;

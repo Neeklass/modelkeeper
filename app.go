@@ -637,6 +637,14 @@ func (a *App) DismissSuggestion(modelID int64, name string) error {
 	return wrapDB(catalog.DismissSuggestion(a.ctx, a.db, modelID, name))
 }
 
+// SetFavorite adds models to the favorites or removes them.
+func (a *App) SetFavorite(modelIDs []int64, on bool) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	return wrapDB(catalog.SetFavorite(a.ctx, a.db, modelIDs, on))
+}
+
 // UpdateModel edits name, notes, print status (L1) or supports (L2).
 func (a *App) UpdateModel(id int64, u catalog.ModelUpdate) error {
 	if err := a.ready(); err != nil {
