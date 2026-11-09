@@ -1,0 +1,311 @@
+{
+  "meta": {
+    "name": "English"
+  },
+  "app": {
+    "title": "modelkeeper",
+    "loading": "Loading…"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "languageSystem": "System default ({{name}})",
+    "dataFolder": "Data folder",
+    "openDataFolder": "Open data folder",
+    "nasRescan": "Rescan NAS folders automatically",
+    "nasRescanEvery": {
+      "0": "Off",
+      "1": "Every hour",
+      "6": "Every 6 hours",
+      "12": "Every 12 hours",
+      "24": "Daily",
+      "168": "Weekly"
+    },
+    "nasRescanHint": "NAS folders are not watched live. They are rescanned incrementally (only new and changed files) when their last scan is older than this; a manual scan resets the timer. Local folders are watched and need no schedule.",
+    "save": "Save",
+    "discard": "Discard changes",
+    "defaults": "Reset to defaults",
+    "saved": "Saved.",
+    "removeEntry": "Remove {{name}}",
+    "types": {
+      "title": "File types",
+      "hint": "Only files of these types are cataloged. Changes apply to all folders.",
+      "model": "3D models",
+      "slicer": "Slicer files",
+      "archive": "Archives",
+      "supplementary": "Images and documents",
+      "addPlaceholder": "add, e.g. lys",
+      "confirmRemoved": "Files of the removed types ({{list}}) are dropped from the catalog. The files themselves are not touched.",
+      "confirmAdded": "To find files of the new types inside archives, all archives are read again on the next scan. Over the NAS this can take a long time.",
+      "resultRemoved_one": "{{n}} entry of removed types was dropped.",
+      "resultRemoved_other": "{{n}} entries of removed types were dropped.",
+      "resultArchives_one": "{{n}} archive will be read again on the next scan.",
+      "resultArchives_other": "{{n}} archives will be read again on the next scan.",
+      "resultScan": "Scan the folders to find files of the new types."
+    },
+    "rules": {
+      "title": "Model detection",
+      "partNames": "Part folders",
+      "partNamesHint": "folders with these names are merged into the model above (e.g. Supported, STL)",
+      "sizeTokens": "Size variants",
+      "sizeTokensHint": "used as prefix or suffix of a folder name, e.g. S matches S_Orc, XL matches Orc_XL",
+      "addPlaceholder": "add…",
+      "resultRedetect": "Models are detected again in the background; your corrections are kept."
+    },
+    "error": {
+      "invalidExt": "\"{{value}}\" is not a valid file extension.",
+      "extTwice": "\".{{value}}\" is listed in more than one category.",
+      "noModelTypes": "At least one 3D model type is needed.",
+      "tooMany": "Too many entries.",
+      "tooLong": "\"{{value}}\" is too long."
+    }
+  },
+  "error": {
+    "unknown": "Unexpected error: {{detail}}",
+    "notReady": "The app is not ready yet.",
+    "startupTitle": "modelkeeper could not start",
+    "dataDirResolve": "Could not determine the data folder: {{detail}}",
+    "dataDirNotWritable": "The data folder {{path}} is not writable. Move modelkeeper to a writable folder (not C:\\Program Files). Details: {{detail}}",
+    "settingsLoad": "Could not read the settings file {{path}}: {{detail}}",
+    "settingsSave": "Could not save the settings: {{detail}}",
+    "catalogOpen": "Could not open the catalog {{path}}: {{detail}}",
+    "openFolder": "Could not open the folder {{path}}: {{detail}}",
+    "rootNotFound": "The root folder no longer exists in the catalog.",
+    "rootInvalid": "Invalid path: {{path}}",
+    "rootNotFolder": "{{path}} is not a reachable folder.",
+    "rootOverlap": "{{path}} overlaps with the existing root folder {{other}}.",
+    "database": "Database error: {{detail}}",
+    "modelNotFound": "This model no longer exists.",
+    "invalidValue": "Invalid value."
+  },
+  "roots": {
+    "title": "Root folders",
+    "add": "Add folder…",
+    "remove": "Remove",
+    "empty": "No root folder yet. Add a local folder or a NAS path (\\\\fritz.nas\\…).",
+    "confirmRemove": "Remove {{path}} from the catalog? Files on disk are not touched.",
+    "lastScan": "Last scan: {{when}}",
+    "neverScanned": "Not scanned yet",
+    "live": "Live",
+    "liveHint": "Changes in this folder are picked up automatically.",
+    "kind": {
+      "local": "Local",
+      "nas": "NAS"
+    },
+    "status": {
+      "unknown": "Not checked",
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "creatorLevel": "First folder level is the creator"
+  },
+  "scan": {
+    "start": "Scan",
+    "cancel": "Cancel",
+    "phase": {
+      "checking": "Checking folder…",
+      "walking": "Listing files…",
+      "hashing": "Hashing files…",
+      "archives": "Checking archives…",
+      "finished": "Finished",
+      "detecting": "Detecting models…",
+      "thumbnails": "Creating thumbnails…"
+    },
+    "found_one": "{{n}} file found",
+    "found_other": "{{n}} files found",
+    "issues_one": "{{count}} problem in the last scan",
+    "issues_other": "{{count}} problems in the last scan",
+    "result": {
+      "done": "Scan finished: {{new}} new, {{changed}} changed, {{missing}} missing, {{hashed}} hashed.",
+      "cancelled": "Scan cancelled. Progress so far is saved: {{new}} new, {{hashed}} hashed.",
+      "offline": "Scan not possible.",
+      "failed": "Scan failed.",
+      "fullDone": "Full check finished: {{hashed}} files and {{archives}} archives checked."
+    },
+    "error": {
+      "alreadyRunning": "A scan is already running.",
+      "busy": "This folder is being scanned right now.",
+      "offline": "{{path}} is not reachable. Entries are kept and shown as offline.",
+      "interrupted": "The scan was interrupted (app closed unexpectedly).",
+      "database": "Database error during the scan: {{detail}}"
+    },
+    "issue": {
+      "readError": "Could not read {{path}}: {{detail}}",
+      "hashChanged": "{{path}} changed although its size and date did not (hash {{old}} → {{new}}). The file may be damaged."
+    },
+    "archive": {
+      "broken": "Archive {{path}} is damaged: {{detail}}",
+      "encrypted": "Archive {{path}} is password-protected and could not be checked.",
+      "unsupported": "Archive format or compression method not supported."
+    },
+    "redetect": "Detect models",
+    "modelsResult": "{{n}} models ({{created}} new).",
+    "fullCheck": "Full check",
+    "fullCheckHint": "Reads and hashes every file again, regardless of size and date, to find damaged or silently changed files.",
+    "fullCheckConfirm": "Read every file of this folder again? This finds damaged or silently changed files and can take a while.",
+    "fullCheckConfirmNas": "Read every file of this NAS folder again? Over the network this can take hours. You can cancel at any time; nothing is lost.",
+    "hashChanged_one": "{{n}} file changed although its size and date did not: possibly damaged, see the problems list.",
+    "hashChanged_other": "{{n}} files changed although their size and date did not: possibly damaged, see the problems list."
+  },
+  "stats": {
+    "files": "Files",
+    "size": "Size",
+    "duplicates": "Duplicated contents",
+    "archives": "Archives",
+    "archiveMembers": "Files in archives",
+    "archivesBroken": "Damaged archives",
+    "archivesEncrypted": "Password-protected",
+    "missing": "Missing",
+    "pending": "Not yet processed"
+  },
+  "tabs": {
+    "models": "Models",
+    "folders": "Folders",
+    "settings": "Settings"
+  },
+  "models": {
+    "searchPlaceholder": "Search name, creator, path…",
+    "count_one": "{{n}} model",
+    "count_other": "{{n}} models",
+    "empty": "No models yet. Add a folder under “Folders” and scan it.",
+    "noResults": "No models match your search.",
+    "noCreator": "No creator",
+    "files_one": "{{n}} file",
+    "files_other": "{{n}} files",
+    "roots": "in {{n}} locations",
+    "missing": "{{n}} missing",
+    "close": "Close",
+    "creator": "Creator",
+    "supportsLabel": "Supports",
+    "variants": "Variants",
+    "tagSuggestions": "Tag suggestions",
+    "locations": "Found in",
+    "filesTitle": "Files ({{n}})",
+    "noVariant": "Without variant",
+    "showInExplorer": "Show in Explorer",
+    "fileMissing": "missing",
+    "copies": "{{n}} identical copies",
+    "printStatus": "Print status",
+    "notes": "Notes",
+    "notesPlaceholder": "Notes, print settings…",
+    "rename": "Rename",
+    "nameEmpty": "The name must not be empty."
+  },
+  "supports": {
+    "presupported": "Presupported",
+    "unsupported": "Unsupported",
+    "both": "Pre- & unsupported",
+    "none": "None",
+    "auto": "Automatic",
+    "autoWith": "Automatic ({{value}})"
+  },
+  "archiveStatus": {
+    "pending": "not checked yet",
+    "broken": "damaged",
+    "encrypted": "password-protected",
+    "unsupported": "not readable"
+  },
+  "selection": {
+    "count": "{{n}} selected",
+    "clear": "Clear selection"
+  },
+  "corrections": {
+    "title": "Correct",
+    "hint": "Detection only suggests. Corrections are kept on every rescan.",
+    "parentIsModel": "Folder above is the model",
+    "parentIsModelHint": "Everything in “{{name}}” becomes one model",
+    "notModel": "Not a model of its own",
+    "detach": "Split off this location",
+    "ownModel": "Own model",
+    "split": "Split into subfolders",
+    "confirmSplit": "Make every subfolder a model of its own?",
+    "reset": "Undo corrections",
+    "confirmReset": "Undo all corrections for this model? Detection decides again.",
+    "mergeInto": "Merge into",
+    "merge": "Merge",
+    "confirmMerge": "Merge {{count}} models into “{{name}}”? Tags and notes are kept.",
+    "invalidFolder": "This folder cannot be used for this correction.",
+    "nothingToSplit": "This model has no subfolders to split into.",
+    "nothingToDetach": "This model has only one location."
+  },
+  "tags": {
+    "title": "Tags",
+    "none": "No tags yet",
+    "add": "Add",
+    "addPlaceholder": "Add tag…",
+    "removePlaceholder": "Remove tag…",
+    "removeButton": "Remove",
+    "remove": "Remove tag {{name}}",
+    "accept": "Add as tag",
+    "dismiss": "Dismiss suggestion {{name}}",
+    "untaggedOnly": "Untagged only",
+    "added_one": "Tagged {{count}} model with {{tags}}.",
+    "added_other": "Tagged {{count}} models with {{tags}}.",
+    "removed_one": "Removed {{tags}} from {{count}} model.",
+    "removed_other": "Removed {{tags}} from {{count}} models.",
+    "invalid": "Tags must not be empty and can have at most {{max}} characters."
+  },
+  "printStatus": {
+    "not_printed": "Not printed",
+    "printed": "Printed successfully",
+    "failed": "Print failed"
+  },
+  "filters": {
+    "button": "Filter",
+    "any": "Any",
+    "tag": "Tag",
+    "creator": "Creator",
+    "root": "Folder",
+    "ext": "File type",
+    "reset": "Reset filters",
+    "untagged": "Untagged",
+    "untaggedHint": "Models without any tag",
+    "duplicates": "Duplicates",
+    "duplicatesHint": "A file of the model exists more than once",
+    "singleLocation": "Only in one place",
+    "singleLocationHint": "All files exist in only one folder – no backup on the NAS or the PC",
+    "offline": "Offline",
+    "offlineHint": "Found in a folder that is currently not reachable",
+    "brokenArchives": "Damaged archives",
+    "brokenArchivesHint": "Contains an archive that failed the checksum test",
+    "extractedAndArchive": "Extracted and as archive",
+    "extractedAndArchiveHint": "Files exist extracted and inside an archive – candidates for saving space",
+    "missing": "Missing files",
+    "missingHint": "Files disappeared since the last scan"
+  },
+  "views": {
+    "label": "View",
+    "list": "List",
+    "grid": "Grid"
+  },
+  "thumbs": {
+    "none": "No thumbnail yet",
+    "change": "Change thumbnail",
+    "noCandidates": "No images or 3D files available.",
+    "use": "Use",
+    "pickFile": "Choose image…",
+    "automatic": "Back to automatic",
+    "failed": "The thumbnail could not be created: {{detail}}",
+    "source": {
+      "manual": "Thumbnail set by you",
+      "image": "Image from the model folder",
+      "embedded": "Preview from the 3MF file",
+      "rendered": "Rendered from the STL"
+    }
+  },
+  "preview": {
+    "show": "3D preview",
+    "hide": "Show thumbnail",
+    "file": "File for the 3D preview",
+    "loading": "Loading 3D file ({{size}})…",
+    "resetView": "Reset view",
+    "useAsThumbnail": "Use view as thumbnail",
+    "hint": "Drag to rotate, right-drag to move, scroll to zoom.",
+    "notFound": "The file was not found. Rescan the folder.",
+    "tooLarge": "The file is too large for the preview.",
+    "offline": "The folder is offline.",
+    "encrypted": "The archive is password-protected.",
+    "failed": "The file could not be loaded: {{detail}}",
+    "parseFailed": "The file could not be read as a 3D model: {{detail}}"
+  }
+}

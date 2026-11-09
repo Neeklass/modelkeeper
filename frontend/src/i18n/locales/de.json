@@ -1,0 +1,311 @@
+{
+  "meta": {
+    "name": "Deutsch"
+  },
+  "app": {
+    "title": "modelkeeper",
+    "loading": "Wird geladen…"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "language": "Sprache",
+    "languageSystem": "Systemstandard ({{name}})",
+    "dataFolder": "Datenordner",
+    "openDataFolder": "Datenordner öffnen",
+    "nasRescan": "NAS-Ordner automatisch neu scannen",
+    "nasRescanEvery": {
+      "0": "Aus",
+      "1": "Stündlich",
+      "6": "Alle 6 Stunden",
+      "12": "Alle 12 Stunden",
+      "24": "Täglich",
+      "168": "Wöchentlich"
+    },
+    "nasRescanHint": "NAS-Ordner werden nicht live überwacht. Sie werden inkrementell (nur neue und geänderte Dateien) neu gescannt, wenn ihr letzter Scan älter ist; ein manueller Scan setzt die Zeit zurück. Lokale Ordner werden überwacht und brauchen keinen Zeitplan.",
+    "save": "Speichern",
+    "discard": "Änderungen verwerfen",
+    "defaults": "Auf Standard zurücksetzen",
+    "saved": "Gespeichert.",
+    "removeEntry": "{{name}} entfernen",
+    "types": {
+      "title": "Dateitypen",
+      "hint": "Nur Dateien dieser Typen werden katalogisiert. Änderungen gelten für alle Ordner.",
+      "model": "3D-Modelle",
+      "slicer": "Slicer-Dateien",
+      "archive": "Archive",
+      "supplementary": "Bilder und Dokumente",
+      "addPlaceholder": "hinzufügen, z. B. lys",
+      "confirmRemoved": "Dateien der entfernten Typen ({{list}}) werden aus dem Katalog entfernt. Die Dateien selbst bleiben unberührt.",
+      "confirmAdded": "Damit Dateien der neuen Typen auch in Archiven gefunden werden, werden beim nächsten Scan alle Archive erneut gelesen. Über das NAS kann das lange dauern.",
+      "resultRemoved_one": "{{n}} Eintrag entfernter Typen wurde aus dem Katalog entfernt.",
+      "resultRemoved_other": "{{n}} Einträge entfernter Typen wurden aus dem Katalog entfernt.",
+      "resultArchives_one": "{{n}} Archiv wird beim nächsten Scan erneut gelesen.",
+      "resultArchives_other": "{{n}} Archive werden beim nächsten Scan erneut gelesen.",
+      "resultScan": "Ordner scannen, um Dateien der neuen Typen zu finden."
+    },
+    "rules": {
+      "title": "Modellerkennung",
+      "partNames": "Teile-Ordner",
+      "partNamesHint": "Ordner mit diesen Namen werden dem Modell darüber zugeordnet (z. B. Supported, STL)",
+      "sizeTokens": "Größenvarianten",
+      "sizeTokensHint": "als Präfix oder Suffix eines Ordnernamens, z. B. S erkennt S_Orc, XL erkennt Orc_XL",
+      "addPlaceholder": "hinzufügen…",
+      "resultRedetect": "Modelle werden im Hintergrund neu erkannt; manuelle Korrekturen bleiben erhalten."
+    },
+    "error": {
+      "invalidExt": "„{{value}}“ ist keine gültige Dateiendung.",
+      "extTwice": "„.{{value}}“ steht in mehr als einer Kategorie.",
+      "noModelTypes": "Mindestens ein 3D-Modell-Typ wird benötigt.",
+      "tooMany": "Zu viele Einträge.",
+      "tooLong": "„{{value}}“ ist zu lang."
+    }
+  },
+  "error": {
+    "unknown": "Unerwarteter Fehler: {{detail}}",
+    "notReady": "Die App ist noch nicht bereit.",
+    "startupTitle": "modelkeeper konnte nicht starten",
+    "dataDirResolve": "Der Datenordner konnte nicht ermittelt werden: {{detail}}",
+    "dataDirNotWritable": "Der Datenordner {{path}} ist nicht beschreibbar. Verschiebe modelkeeper in einen beschreibbaren Ordner (nicht C:\\Programme). Details: {{detail}}",
+    "settingsLoad": "Die Einstellungsdatei {{path}} konnte nicht gelesen werden: {{detail}}",
+    "settingsSave": "Die Einstellungen konnten nicht gespeichert werden: {{detail}}",
+    "catalogOpen": "Der Katalog {{path}} konnte nicht geöffnet werden: {{detail}}",
+    "openFolder": "Der Ordner {{path}} konnte nicht geöffnet werden: {{detail}}",
+    "rootNotFound": "Der Stammordner existiert nicht mehr im Katalog.",
+    "rootInvalid": "Ungültiger Pfad: {{path}}",
+    "rootNotFolder": "{{path}} ist kein erreichbarer Ordner.",
+    "rootOverlap": "{{path}} überschneidet sich mit dem vorhandenen Stammordner {{other}}.",
+    "database": "Datenbankfehler: {{detail}}",
+    "modelNotFound": "Dieses Modell existiert nicht mehr.",
+    "invalidValue": "Ungültiger Wert."
+  },
+  "roots": {
+    "title": "Stammordner",
+    "add": "Ordner hinzufügen…",
+    "remove": "Entfernen",
+    "empty": "Noch kein Stammordner. Füge einen lokalen Ordner oder einen NAS-Pfad (\\\\fritz.nas\\…) hinzu.",
+    "confirmRemove": "{{path}} aus dem Katalog entfernen? Dateien auf der Festplatte bleiben unberührt.",
+    "lastScan": "Letzter Scan: {{when}}",
+    "neverScanned": "Noch nicht gescannt",
+    "live": "Live",
+    "liveHint": "Änderungen in diesem Ordner werden automatisch übernommen.",
+    "kind": {
+      "local": "Lokal",
+      "nas": "NAS"
+    },
+    "status": {
+      "unknown": "Nicht geprüft",
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "creatorLevel": "Erste Ordnerebene ist der Ersteller"
+  },
+  "scan": {
+    "start": "Scannen",
+    "cancel": "Abbrechen",
+    "phase": {
+      "checking": "Ordner wird geprüft…",
+      "walking": "Dateien werden aufgelistet…",
+      "hashing": "Dateien werden gehasht…",
+      "archives": "Archive werden geprüft…",
+      "finished": "Fertig",
+      "detecting": "Modelle werden erkannt…",
+      "thumbnails": "Vorschaubilder werden erstellt…"
+    },
+    "found_one": "{{n}} Datei gefunden",
+    "found_other": "{{n}} Dateien gefunden",
+    "issues_one": "{{count}} Problem beim letzten Scan",
+    "issues_other": "{{count}} Probleme beim letzten Scan",
+    "result": {
+      "done": "Scan abgeschlossen: {{new}} neu, {{changed}} geändert, {{missing}} fehlen, {{hashed}} gehasht.",
+      "cancelled": "Scan abgebrochen. Der bisherige Fortschritt ist gespeichert: {{new}} neu, {{hashed}} gehasht.",
+      "offline": "Scan nicht möglich.",
+      "failed": "Scan fehlgeschlagen.",
+      "fullDone": "Vollprüfung abgeschlossen: {{hashed}} Dateien und {{archives}} Archive geprüft."
+    },
+    "error": {
+      "alreadyRunning": "Es läuft bereits ein Scan.",
+      "busy": "Dieser Ordner wird gerade gescannt.",
+      "offline": "{{path}} ist nicht erreichbar. Die Einträge bleiben erhalten und werden als offline angezeigt.",
+      "interrupted": "Der Scan wurde unterbrochen (App unerwartet beendet).",
+      "database": "Datenbankfehler während des Scans: {{detail}}"
+    },
+    "issue": {
+      "readError": "{{path}} konnte nicht gelesen werden: {{detail}}",
+      "hashChanged": "{{path}} hat sich verändert, obwohl Größe und Datum gleich sind (Hash {{old}} → {{new}}). Die Datei ist möglicherweise beschädigt."
+    },
+    "archive": {
+      "broken": "Archiv {{path}} ist beschädigt: {{detail}}",
+      "encrypted": "Archiv {{path}} ist passwortgeschützt und konnte nicht geprüft werden.",
+      "unsupported": "Archivformat oder Komprimierungsverfahren wird nicht unterstützt."
+    },
+    "redetect": "Modelle erkennen",
+    "modelsResult": "{{n}} Modelle ({{created}} neu).",
+    "fullCheck": "Vollprüfung",
+    "fullCheckHint": "Liest und hasht alle Dateien erneut, unabhängig von Größe und Datum, um beschädigte oder unbemerkt veränderte Dateien zu finden.",
+    "fullCheckConfirm": "Alle Dateien dieses Ordners erneut lesen? Das findet beschädigte oder unbemerkt veränderte Dateien und kann eine Weile dauern.",
+    "fullCheckConfirmNas": "Alle Dateien dieses NAS-Ordners erneut lesen? Über das Netzwerk kann das Stunden dauern. Abbrechen ist jederzeit möglich, es geht nichts verloren.",
+    "hashChanged_one": "{{n}} Datei hat sich verändert, obwohl Größe und Datum gleich sind: möglicherweise beschädigt, siehe Problemliste.",
+    "hashChanged_other": "{{n}} Dateien haben sich verändert, obwohl Größe und Datum gleich sind: möglicherweise beschädigt, siehe Problemliste."
+  },
+  "stats": {
+    "files": "Dateien",
+    "size": "Größe",
+    "duplicates": "Doppelte Inhalte",
+    "archives": "Archive",
+    "archiveMembers": "Dateien in Archiven",
+    "archivesBroken": "Beschädigte Archive",
+    "archivesEncrypted": "Passwortgeschützt",
+    "missing": "Fehlend",
+    "pending": "Noch nicht verarbeitet"
+  },
+  "tabs": {
+    "models": "Modelle",
+    "folders": "Ordner",
+    "settings": "Einstellungen"
+  },
+  "models": {
+    "searchPlaceholder": "Name, Ersteller, Pfad suchen…",
+    "count_one": "{{n}} Modell",
+    "count_other": "{{n}} Modelle",
+    "empty": "Noch keine Modelle. Füge unter „Ordner“ einen Ordner hinzu und scanne ihn.",
+    "noResults": "Keine Modelle passen zur Suche.",
+    "noCreator": "Kein Ersteller",
+    "files_one": "{{n}} Datei",
+    "files_other": "{{n}} Dateien",
+    "roots": "an {{n}} Orten",
+    "missing": "{{n}} fehlen",
+    "close": "Schließen",
+    "creator": "Ersteller",
+    "supportsLabel": "Supports",
+    "variants": "Varianten",
+    "tagSuggestions": "Tag-Vorschläge",
+    "locations": "Gefunden in",
+    "filesTitle": "Dateien ({{n}})",
+    "noVariant": "Ohne Variante",
+    "showInExplorer": "Im Explorer zeigen",
+    "fileMissing": "fehlt",
+    "copies": "{{n}} identische Kopien",
+    "printStatus": "Druckstatus",
+    "notes": "Notizen",
+    "notesPlaceholder": "Notizen, Druckeinstellungen…",
+    "rename": "Umbenennen",
+    "nameEmpty": "Der Name darf nicht leer sein."
+  },
+  "supports": {
+    "presupported": "Vorgestützt",
+    "unsupported": "Ungestützt",
+    "both": "Vor- & ungestützt",
+    "none": "Keine",
+    "auto": "Automatisch",
+    "autoWith": "Automatisch ({{value}})"
+  },
+  "archiveStatus": {
+    "pending": "noch nicht geprüft",
+    "broken": "beschädigt",
+    "encrypted": "passwortgeschützt",
+    "unsupported": "nicht lesbar"
+  },
+  "selection": {
+    "count": "{{n}} ausgewählt",
+    "clear": "Auswahl aufheben"
+  },
+  "corrections": {
+    "title": "Korrigieren",
+    "hint": "Die Erkennung macht nur Vorschläge. Korrekturen bleiben bei jedem neuen Scan erhalten.",
+    "parentIsModel": "Übergeordneter Ordner ist das Modell",
+    "parentIsModelHint": "Alles in „{{name}}“ wird ein Modell",
+    "notModel": "Kein eigenes Modell",
+    "detach": "Diesen Ort abtrennen",
+    "ownModel": "Eigenes Modell",
+    "split": "In Unterordner aufteilen",
+    "confirmSplit": "Jeden Unterordner zu einem eigenen Modell machen?",
+    "reset": "Korrekturen zurücknehmen",
+    "confirmReset": "Alle Korrekturen für dieses Modell zurücknehmen? Die Erkennung entscheidet dann neu.",
+    "mergeInto": "Zusammenführen in",
+    "merge": "Zusammenführen",
+    "confirmMerge": "{{count}} Modelle in „{{name}}“ zusammenführen? Tags und Notizen bleiben erhalten.",
+    "invalidFolder": "Dieser Ordner kann für diese Korrektur nicht verwendet werden.",
+    "nothingToSplit": "Dieses Modell hat keine Unterordner zum Aufteilen.",
+    "nothingToDetach": "Dieses Modell hat nur einen Ort."
+  },
+  "tags": {
+    "title": "Tags",
+    "none": "Noch keine Tags",
+    "add": "Hinzufügen",
+    "addPlaceholder": "Tag hinzufügen…",
+    "removePlaceholder": "Tag entfernen…",
+    "removeButton": "Entfernen",
+    "remove": "Tag {{name}} entfernen",
+    "accept": "Als Tag übernehmen",
+    "dismiss": "Vorschlag {{name}} verwerfen",
+    "untaggedOnly": "Nur ohne Tags",
+    "added_one": "{{count}} Modell mit {{tags}} getaggt.",
+    "added_other": "{{count}} Modelle mit {{tags}} getaggt.",
+    "removed_one": "{{tags}} von {{count}} Modell entfernt.",
+    "removed_other": "{{tags}} von {{count}} Modellen entfernt.",
+    "invalid": "Tags dürfen nicht leer sein und höchstens {{max}} Zeichen haben."
+  },
+  "printStatus": {
+    "not_printed": "Nicht gedruckt",
+    "printed": "Erfolgreich gedruckt",
+    "failed": "Druck fehlgeschlagen"
+  },
+  "filters": {
+    "button": "Filter",
+    "any": "Alle",
+    "tag": "Tag",
+    "creator": "Ersteller",
+    "root": "Ordner",
+    "ext": "Dateityp",
+    "reset": "Filter zurücksetzen",
+    "untagged": "Ohne Tags",
+    "untaggedHint": "Modelle ohne Tag",
+    "duplicates": "Duplikate",
+    "duplicatesHint": "Eine Datei des Modells existiert mehrfach",
+    "singleLocation": "Nur an einem Ort",
+    "singleLocationHint": "Alle Dateien liegen nur in einem Ordner – keine Sicherung auf NAS oder PC",
+    "offline": "Offline",
+    "offlineHint": "Gefunden in einem Ordner, der gerade nicht erreichbar ist",
+    "brokenArchives": "Beschädigte Archive",
+    "brokenArchivesHint": "Enthält ein Archiv mit fehlerhafter Prüfsumme",
+    "extractedAndArchive": "Entpackt und als Archiv",
+    "extractedAndArchiveHint": "Dateien liegen entpackt und zusätzlich in einem Archiv – Kandidaten zum Platzsparen",
+    "missing": "Fehlende Dateien",
+    "missingHint": "Dateien sind seit dem letzten Scan verschwunden"
+  },
+  "views": {
+    "label": "Ansicht",
+    "list": "Liste",
+    "grid": "Raster"
+  },
+  "thumbs": {
+    "none": "Noch kein Vorschaubild",
+    "change": "Vorschaubild ändern",
+    "noCandidates": "Keine Bilder oder 3D-Dateien vorhanden.",
+    "use": "Verwenden",
+    "pickFile": "Bild auswählen…",
+    "automatic": "Wieder automatisch",
+    "failed": "Das Vorschaubild konnte nicht erstellt werden: {{detail}}",
+    "source": {
+      "manual": "Von dir gewähltes Vorschaubild",
+      "image": "Bild aus dem Modellordner",
+      "embedded": "Vorschau aus der 3MF-Datei",
+      "rendered": "Aus der STL gerendert"
+    }
+  },
+  "preview": {
+    "show": "3D-Vorschau",
+    "hide": "Vorschaubild zeigen",
+    "file": "Datei für die 3D-Vorschau",
+    "loading": "3D-Datei wird geladen ({{size}})…",
+    "resetView": "Ansicht zurücksetzen",
+    "useAsThumbnail": "Ansicht als Vorschaubild",
+    "hint": "Ziehen zum Drehen, mit rechter Maustaste verschieben, Mausrad zum Zoomen.",
+    "notFound": "Die Datei wurde nicht gefunden. Ordner neu scannen.",
+    "tooLarge": "Die Datei ist zu groß für die Vorschau.",
+    "offline": "Der Ordner ist offline.",
+    "encrypted": "Das Archiv ist passwortgeschützt.",
+    "failed": "Die Datei konnte nicht geladen werden: {{detail}}",
+    "parseFailed": "Die Datei konnte nicht als 3D-Modell gelesen werden: {{detail}}"
+  }
+}
