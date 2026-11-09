@@ -135,3 +135,106 @@ func (st Settings) ExtCategory(ext string) string {
 	}
 	return ""
 }
+
+// ValidationError names a setting that cannot be saved. Key is a message key
+// for the frontend (N4); Value is the offending entry.
+type ValidationError struct {
+	Key   string
+	Value string
+}
+
+func (e *ValidationError) Error() string { return e.Key + ": " + e.Value }
+
+// maxListLen bounds the editable lists.
+const maxListLen = 200
+
+// NormalizeFileTypes cleans user input for the file types (F10): lowercase,
+// without leading dot, no duplicates. An extension may belong to one category
+// only, and at least one 3D model type must remain.
+func NormalizeFileTypes(ft FileTypes) (FileTypes, error) {
+	seen := map[string]string{}
+	clean := func(cat string, list []string) ([]string, error) {
+		out := []string{}
+		for _, e := range list {
+			e = strings.ToLower(strings.TrimPrefix(strings.TrimSpace(e), "."))
+			if e == "" {
+				continue
+			}
+			if len(e) > 16 || strings.ContainsAny(e, `./\ *?"<>|:`) {
+				return nil, &ValidationError{Key: "settings.error.invalidExt", Value: e}
+			}
+			if prev, ok := seen[e]; ok {
+				if prev == cat {
+					continue
+				}
+				return nil, &ValidationError{Key: "settings.error.extTwice", Value: e}
+			}
+			seen[e] = cat
+			out = append(out, e)
+		}
+		if len(out) > maxListLen {
+			return nil, &ValidationError{Key: "settings.error.tooMany", Value: cat}
+		}
+		return out, nil
+	}
+	var res FileTypes
+	var err error
+	if res.Model, err = clean("model", ft.Model); err != nil {
+		return res, err
+	}
+	if res.Slicer, err = clean("slicer", ft.Slicer); err != nil {
+		return res, err
+	}
+	if res.Archive, err = clean("archive", ft.Archive); err != nil {
+		return res, err
+	}
+	if res.Supplementary, err = clean("supplementary", ft.Supplementary); err != nil {
+		return res, err
+	}
+	if len(res.Model) == 0 {
+		return res, &ValidationError{Key: "settings.error.noModelTypes"}
+	}
+	return res, nil
+}
+
+// NormalizeList cleans a list of names (part names, size tokens): trimmed,
+// no empty entries, no case-insensitive duplicates.
+func NormalizeList(list []string) ([]string, error) {
+	out := []string{}
+	seen := map[string]bool{}
+	for _, s := range list {
+		s = strings.TrimSpace(s)
+		k := strings.ToLower(s)
+		if s == "" || seen[k] {
+			continue
+		}
+		if len([]rune(s)) > 40 {
+			return nil, &ValidationError{Key: "settings.error.tooLong", Value: s}
+		}
+		seen[k] = true
+		out = append(out, s)
+	}
+	if len(out) > maxListLen {
+		return nil, &ValidationError{Key: "settings.error.tooMany"}
+	}
+	return out, nil
+}
+
+// Added returns the extensions in next that are not in prev.
+func (ft FileTypes) Added(prev FileTypes) []string {
+	old := map[string]bool{}
+	for _, l := range [][]string{prev.Model, prev.Slicer, prev.Archive, prev.Supplementary} {
+		for _, e := range l {
+			old[e] = true
+		}
+	}
+	var out []string
+	for _, l := range [][]string{ft.Model, ft.Slicer, ft.Archive, ft.Supplementary} {
+		for _, e := range l {
+			if !old[e] {
+				out = append(out, e)
+			}
+		}
+	}
+	return out
+}

@@ -27,3 +27,32 @@ func TestNASRescanDefault(t *testing.T) {
 		}
 	}
 }
+
+func TestNormalizeFileTypes(t *testing.T) {
+	ft, err := NormalizeFileTypes(FileTypes{Model: []string{" .STL", "obj", "stl", ""}, Archive: []string{"zip"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ft.Model) != 2 || ft.Model[0] != "stl" || ft.Model[1] != "obj" || ft.Slicer == nil {
+		t.Errorf("normalized: %+v", ft)
+	}
+	for name, in := range map[string]FileTypes{
+		"twice":    {Model: []string{"stl"}, Supplementary: []string{".stl"}},
+		"invalid":  {Model: []string{"st l"}},
+		"no model": {Archive: []string{"zip"}},
+	} {
+		if _, err := NormalizeFileTypes(in); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
+	if added := (FileTypes{Model: []string{"stl", "obj"}}).Added(FileTypes{Model: []string{"stl"}}); len(added) != 1 || added[0] != "obj" {
+		t.Errorf("added: %v", added)
+	}
+}
+
+func TestNormalizeList(t *testing.T) {
+	got, err := NormalizeList([]string{" Supported ", "supported", "", "Parts"})
+	if err != nil || len(got) != 2 || got[0] != "Supported" || got[1] != "Parts" {
+		t.Errorf("got %v, %v", got, err)
+	}
+}

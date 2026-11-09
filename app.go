@@ -18,6 +18,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"modelkeeper/internal/appdir"
@@ -53,7 +54,9 @@ type App struct {
 	db       *sql.DB
 	scans    *scanner.Manager
 	watch    *watch.Watcher // live watching of local roots (E4); nil if unavailable
-	logFile  *os.File
+
+	redetectMu sync.Mutex // serializes redetectAll
+	logFile    *os.File
 
 	// startupErr is set when the data folder or catalog could not be opened;
 	// the frontend shows it instead of the main UI.
@@ -202,6 +205,127 @@ func (a *App) SetNASRescanHours(hours int) error {
 		return msg.Wrap(err, "error.settingsSave")
 	}
 	return nil
+}
+
+// DetectionSettings are the editable lists of the settings screen (F10).
+type DetectionSettings struct {
+	FileTypes  settings.FileTypes `json:"fileTypes"`
+	PartNames  []string           `json:"partNames"`
+	SizeTokens []string           `json:"sizeTokens"`
+}
+
+// DetectionSettingsView carries the current values and the built-in defaults.
+type DetectionSettingsView struct {
+	Current  DetectionSettings `json:"current"`
+	Defaults DetectionSettings `json:"defaults"`
+}
+
+func detectionOf(st settings.Settings) DetectionSettings {
+	return DetectionSettings{FileTypes: st.FileTypes, PartNames: st.PartNames, SizeTokens: st.SizeTokens}
+}
+
+// GetDetectionSettings returns file types, part names and size tokens (F10).
+func (a *App) GetDetectionSettings() (DetectionSettingsView, error) {
+	if a.settings == nil {
+		return DetectionSettingsView{}, msg.Wrap(nil, "error.notReady")
+	}
+	return DetectionSettingsView{Current: detectionOf(a.settings.Get()), Defaults: detectionOf(settings.Defaults())}, nil
+}
+
+// settingsError maps validation errors to their message.
+func settingsError(err error) error {
+	var ve *settings.ValidationError
+	if errors.As(err, &ve) {
+		return msg.Wrap(nil, ve.Key, "value", ve.Value)
+	}
+	return msg.Wrap(err, "error.settingsSave")
+}
+
+// SaveFileTypes stores the recognized file types (F10, D2) and adapts the
+// catalog: entries of removed types are dropped, categories updated, and
+// after adding types, archives are read again on the next scan. Fails while
+// a scan runs. Model detection runs again in the background.
+func (a *App) SaveFileTypes(ft settings.FileTypes) (catalog.FileTypesChange, error) {
+	var ch catalog.FileTypesChange
+	if err := a.ready(); err != nil {
+		return ch, err
+	}
+	ft, err := settings.NormalizeFileTypes(ft)
+	if err != nil {
+		return ch, settingsError(err)
+	}
+	prev := a.settings.Get()
+	added := len(ft.Added(prev.FileTypes)) > 0
+	err = a.scans.Exclusive(func(ctx context.Context) error {
+		if err := a.settings.Update(func(s *settings.Settings) { s.FileTypes = ft }); err != nil {
+			return msg.Wrap(err, "error.settingsSave")
+		}
+		st := a.settings.Get()
+		ch, err = catalog.ApplyFileTypes(ctx, a.db, st.ExtCategory, added)
+		if err != nil {
+			a.settings.Update(func(s *settings.Settings) { s.FileTypes = prev.FileTypes })
+			return wrapDB(err)
+		}
+		return nil
+	})
+	if err != nil {
+		return ch, err
+	}
+	log.Printf("file types changed: %+v", ch)
+	if ch.Removed+ch.Recategorized > 0 {
+		go a.redetectAll()
+	}
+	runtime.EventsEmit(a.ctx, EventRootsChanged)
+	return ch, nil
+}
+
+// SaveDetectionRules stores part names and size tokens (F10, F4c, F4f) and
+// re-runs model detection for all roots in the background. Manual
+// corrections are kept (F4e).
+func (a *App) SaveDetectionRules(partNames, sizeTokens []string) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	parts, err := settings.NormalizeList(partNames)
+	if err != nil {
+		return settingsError(err)
+	}
+	sizes, err := settings.NormalizeList(sizeTokens)
+	if err != nil {
+		return settingsError(err)
+	}
+	if err := a.settings.Update(func(s *settings.Settings) { s.PartNames, s.SizeTokens = parts, sizes }); err != nil {
+		return msg.Wrap(err, "error.settingsSave")
+	}
+	go a.redetectAll()
+	return nil
+}
+
+// redetectAll re-runs model detection for every root, one after another,
+// waiting for scans that run meanwhile (e.g. started by the watcher).
+func (a *App) redetectAll() {
+	a.redetectMu.Lock() // a second call waits and then runs with the newest settings
+	defer a.redetectMu.Unlock()
+	roots, err := catalog.ListRoots(context.Background(), a.db)
+	if err != nil {
+		log.Printf("redetect all: %v", err)
+		return
+	}
+	for _, r := range roots {
+		for attempt := 0; ; attempt++ {
+			a.scans.Wait()
+			err := a.scans.Redetect(r.ID)
+			if err == nil {
+				break
+			}
+			if attempt >= 20 {
+				log.Printf("redetect root %d: %v", r.ID, err)
+				break
+			}
+			time.Sleep(500 * time.Millisecond) // another scan started in between
+		}
+	}
+	a.scans.Wait()
 }
 
 // OpenDataFolder opens the data folder in the system file manager.

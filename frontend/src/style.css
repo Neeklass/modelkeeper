@@ -250,3 +250,13 @@ div.detail-thumb { height: 160px; }
 .preview3d select { min-width: 0; flex: 1; max-width: 60%; }
 .preview3d .hint { margin: 0; }
 .link.active { color: var(--accent); font-weight: 600; }
+
+/* Settings lists (F10) */
+.settings-lists { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.settings-lists h2 { margin-bottom: 0; }
+.settings-lists p { margin: 0; }
+.list-editor { display: flex; flex-direction: column; gap: 4px; }
+.list-editor .row { gap: 4px; }
+.list-add { width: 130px; padding: 2px 6px; font-size: 12px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.primary:disabled { opacity: .45; }

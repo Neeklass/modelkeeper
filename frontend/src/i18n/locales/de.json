@@ -21,7 +21,44 @@
       "24": "Täglich",
       "168": "Wöchentlich"
     },
-    "nasRescanHint": "NAS-Ordner werden nicht live überwacht. Sie werden inkrementell (nur neue und geänderte Dateien) neu gescannt, wenn ihr letzter Scan älter ist; ein manueller Scan setzt die Zeit zurück. Lokale Ordner werden überwacht und brauchen keinen Zeitplan."
+    "nasRescanHint": "NAS-Ordner werden nicht live überwacht. Sie werden inkrementell (nur neue und geänderte Dateien) neu gescannt, wenn ihr letzter Scan älter ist; ein manueller Scan setzt die Zeit zurück. Lokale Ordner werden überwacht und brauchen keinen Zeitplan.",
+    "save": "Speichern",
+    "discard": "Änderungen verwerfen",
+    "defaults": "Auf Standard zurücksetzen",
+    "saved": "Gespeichert.",
+    "removeEntry": "{{name}} entfernen",
+    "types": {
+      "title": "Dateitypen",
+      "hint": "Nur Dateien dieser Typen werden katalogisiert. Änderungen gelten für alle Ordner.",
+      "model": "3D-Modelle",
+      "slicer": "Slicer-Dateien",
+      "archive": "Archive",
+      "supplementary": "Bilder und Dokumente",
+      "addPlaceholder": "hinzufügen, z. B. lys",
+      "confirmRemoved": "Dateien der entfernten Typen ({{list}}) werden aus dem Katalog entfernt. Die Dateien selbst bleiben unberührt.",
+      "confirmAdded": "Damit Dateien der neuen Typen auch in Archiven gefunden werden, werden beim nächsten Scan alle Archive erneut gelesen. Über das NAS kann das lange dauern.",
+      "resultRemoved_one": "{{n}} Eintrag entfernter Typen wurde aus dem Katalog entfernt.",
+      "resultRemoved_other": "{{n}} Einträge entfernter Typen wurden aus dem Katalog entfernt.",
+      "resultArchives_one": "{{n}} Archiv wird beim nächsten Scan erneut gelesen.",
+      "resultArchives_other": "{{n}} Archive werden beim nächsten Scan erneut gelesen.",
+      "resultScan": "Ordner scannen, um Dateien der neuen Typen zu finden."
+    },
+    "rules": {
+      "title": "Modellerkennung",
+      "partNames": "Teile-Ordner",
+      "partNamesHint": "Ordner mit diesen Namen werden dem Modell darüber zugeordnet (z. B. Supported, STL)",
+      "sizeTokens": "Größenvarianten",
+      "sizeTokensHint": "als Präfix oder Suffix eines Ordnernamens, z. B. S erkennt S_Orc, XL erkennt Orc_XL",
+      "addPlaceholder": "hinzufügen…",
+      "resultRedetect": "Modelle werden im Hintergrund neu erkannt; manuelle Korrekturen bleiben erhalten."
+    },
+    "error": {
+      "invalidExt": "„{{value}}“ ist keine gültige Dateiendung.",
+      "extTwice": "„.{{value}}“ steht in mehr als einer Kategorie.",
+      "noModelTypes": "Mindestens ein 3D-Modell-Typ wird benötigt.",
+      "tooMany": "Zu viele Einträge.",
+      "tooLong": "„{{value}}“ ist zu lang."
+    }
   },
   "error": {
     "unknown": "Unerwarteter Fehler: {{detail}}",

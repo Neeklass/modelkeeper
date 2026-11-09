@@ -21,7 +21,44 @@
       "24": "Daily",
       "168": "Weekly"
     },
-    "nasRescanHint": "NAS folders are not watched live. They are rescanned incrementally (only new and changed files) when their last scan is older than this; a manual scan resets the timer. Local folders are watched and need no schedule."
+    "nasRescanHint": "NAS folders are not watched live. They are rescanned incrementally (only new and changed files) when their last scan is older than this; a manual scan resets the timer. Local folders are watched and need no schedule.",
+    "save": "Save",
+    "discard": "Discard changes",
+    "defaults": "Reset to defaults",
+    "saved": "Saved.",
+    "removeEntry": "Remove {{name}}",
+    "types": {
+      "title": "File types",
+      "hint": "Only files of these types are cataloged. Changes apply to all folders.",
+      "model": "3D models",
+      "slicer": "Slicer files",
+      "archive": "Archives",
+      "supplementary": "Images and documents",
+      "addPlaceholder": "add, e.g. lys",
+      "confirmRemoved": "Files of the removed types ({{list}}) are dropped from the catalog. The files themselves are not touched.",
+      "confirmAdded": "To find files of the new types inside archives, all archives are read again on the next scan. Over the NAS this can take a long time.",
+      "resultRemoved_one": "{{n}} entry of removed types was dropped.",
+      "resultRemoved_other": "{{n}} entries of removed types were dropped.",
+      "resultArchives_one": "{{n}} archive will be read again on the next scan.",
+      "resultArchives_other": "{{n}} archives will be read again on the next scan.",
+      "resultScan": "Scan the folders to find files of the new types."
+    },
+    "rules": {
+      "title": "Model detection",
+      "partNames": "Part folders",
+      "partNamesHint": "folders with these names are merged into the model above (e.g. Supported, STL)",
+      "sizeTokens": "Size variants",
+      "sizeTokensHint": "used as prefix or suffix of a folder name, e.g. S matches S_Orc, XL matches Orc_XL",
+      "addPlaceholder": "add…",
+      "resultRedetect": "Models are detected again in the background; your corrections are kept."
+    },
+    "error": {
+      "invalidExt": "\"{{value}}\" is not a valid file extension.",
+      "extTwice": "\".{{value}}\" is listed in more than one category.",
+      "noModelTypes": "At least one 3D model type is needed.",
+      "tooMany": "Too many entries.",
+      "tooLong": "\"{{value}}\" is too long."
+    }
   },
   "error": {
     "unknown": "Unexpected error: {{detail}}",

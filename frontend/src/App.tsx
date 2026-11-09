@@ -6,6 +6,7 @@ import i18n, {languages, resolveLanguage, systemLanguage} from './i18n'
 import {Msg, toMsg, translateMsg} from './i18n/msg'
 import {RootsPanel} from './components/RootsPanel'
 import {ModelsView} from './components/ModelsView'
+import {DetectionSettingsPanel} from './components/DetectionSettings'
 
 type Tab = 'models' | 'folders' | 'settings'
 
@@ -51,7 +52,10 @@ function App() {
             </header>
             {tab === 'models' && <ModelsView/>}
             {tab === 'folders' && <main><RootsPanel/></main>}
-            {tab === 'settings' && <main><SettingsPanel status={status} onChange={setStatus}/></main>}
+            {tab === 'settings' && <main>
+                <SettingsPanel status={status} onChange={setStatus}/>
+                <DetectionSettingsPanel/>
+            </main>}
         </div>
     )
 }

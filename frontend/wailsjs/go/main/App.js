@@ -22,6 +22,10 @@ export function DismissSuggestion(arg1, arg2) {
   return window['go']['main']['App']['DismissSuggestion'](arg1, arg2);
 }
 
+export function GetDetectionSettings() {
+  return window['go']['main']['App']['GetDetectionSettings']();
+}
+
 export function GetFilterOptions() {
   return window['go']['main']['App']['GetFilterOptions']();
 }
@@ -102,6 +106,14 @@ export function ResetThumbnail(arg1) {
   return window['go']['main']['App']['ResetThumbnail'](arg1);
 }
 
+export function SaveDetectionRules(arg1, arg2) {
+  return window['go']['main']['App']['SaveDetectionRules'](arg1, arg2);
+}
+
+export function SaveFileTypes(arg1) {
+  return window['go']['main']['App']['SaveFileTypes'](arg1);
+}
+
 export function SearchModels(arg1, arg2, arg3) {
   return window['go']['main']['App']['SearchModels'](arg1, arg2, arg3);
 }
@@ -110,12 +122,12 @@ export function SetLanguage(arg1) {
   return window['go']['main']['App']['SetLanguage'](arg1);
 }
 
-export function SetRootCreatorLevel(arg1, arg2) {
-  return window['go']['main']['App']['SetRootCreatorLevel'](arg1, arg2);
-}
-
 export function SetNASRescanHours(arg1) {
   return window['go']['main']['App']['SetNASRescanHours'](arg1);
+}
+
+export function SetRootCreatorLevel(arg1, arg2) {
+  return window['go']['main']['App']['SetRootCreatorLevel'](arg1, arg2);
 }
 
 export function SetThumbnail(arg1, arg2) {
