@@ -71,6 +71,8 @@ export function ShowInExplorer(arg1:number):Promise<void>;
 
 export function SplitModel(arg1:number):Promise<void>;
 
+export function StartFullCheck(arg1:number):Promise<void>;
+
 export function StartScan(arg1:number):Promise<void>;
 
 export function UpdateModel(arg1:number,arg2:catalog.ModelUpdate):Promise<void>;

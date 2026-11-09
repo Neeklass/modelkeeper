@@ -56,11 +56,16 @@ type Issue struct {
 	CreatedAt int64   `json:"createdAt"`
 }
 
-// ListLastScanIssues returns the issues of the most recent scan of a root.
+// ListLastScanIssues returns the issues of the most recent scan of a root,
+// plus the possibly damaged files found by the most recent full check (F8):
+// those only show up in a full check and must not vanish behind the next
+// automatic incremental scan. They are listed first.
 func ListLastScanIssues(ctx context.Context, db *sql.DB, rootID int64, limit int) ([]Issue, error) {
 	rows, err := db.QueryContext(ctx, `SELECT id, kind, msg_key, params, created_at FROM scan_issue
-		WHERE scan_run_id = (SELECT max(id) FROM scan_run WHERE root_id = ?)
-		ORDER BY id LIMIT ?`, rootID, limit)
+		WHERE scan_run_id = (SELECT max(id) FROM scan_run WHERE root_id = ?1)
+		   OR (kind = 'hash_changed' AND scan_run_id = (SELECT max(id) FROM scan_run
+		       WHERE root_id = ?1 AND mode = 'full' AND status IN ('done', 'cancelled')))
+		ORDER BY kind <> 'hash_changed', id LIMIT ?2`, rootID, limit)
 	if err != nil {
 		return nil, err
 	}

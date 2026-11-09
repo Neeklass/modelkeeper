@@ -134,6 +134,10 @@ export function SplitModel(arg1) {
   return window['go']['main']['App']['SplitModel'](arg1);
 }
 
+export function StartFullCheck(arg1) {
+  return window['go']['main']['App']['StartFullCheck'](arg1);
+}
+
 export function StartScan(arg1) {
   return window['go']['main']['App']['StartScan'](arg1);
 }

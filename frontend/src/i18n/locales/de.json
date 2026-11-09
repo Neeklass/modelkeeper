@@ -82,7 +82,8 @@
       "done": "Scan abgeschlossen: {{new}} neu, {{changed}} geändert, {{missing}} fehlen, {{hashed}} gehasht.",
       "cancelled": "Scan abgebrochen. Der bisherige Fortschritt ist gespeichert: {{new}} neu, {{hashed}} gehasht.",
       "offline": "Scan nicht möglich.",
-      "failed": "Scan fehlgeschlagen."
+      "failed": "Scan fehlgeschlagen.",
+      "fullDone": "Vollprüfung abgeschlossen: {{hashed}} Dateien und {{archives}} Archive geprüft."
     },
     "error": {
       "alreadyRunning": "Es läuft bereits ein Scan.",
@@ -92,7 +93,8 @@
       "database": "Datenbankfehler während des Scans: {{detail}}"
     },
     "issue": {
-      "readError": "{{path}} konnte nicht gelesen werden: {{detail}}"
+      "readError": "{{path}} konnte nicht gelesen werden: {{detail}}",
+      "hashChanged": "{{path}} hat sich verändert, obwohl Größe und Datum gleich sind (Hash {{old}} → {{new}}). Die Datei ist möglicherweise beschädigt."
     },
     "archive": {
       "broken": "Archiv {{path}} ist beschädigt: {{detail}}",
@@ -100,7 +102,13 @@
       "unsupported": "Archivformat oder Komprimierungsverfahren wird nicht unterstützt."
     },
     "redetect": "Modelle erkennen",
-    "modelsResult": "{{n}} Modelle ({{created}} neu)."
+    "modelsResult": "{{n}} Modelle ({{created}} neu).",
+    "fullCheck": "Vollprüfung",
+    "fullCheckHint": "Liest und hasht alle Dateien erneut, unabhängig von Größe und Datum, um beschädigte oder unbemerkt veränderte Dateien zu finden.",
+    "fullCheckConfirm": "Alle Dateien dieses Ordners erneut lesen? Das findet beschädigte oder unbemerkt veränderte Dateien und kann eine Weile dauern.",
+    "fullCheckConfirmNas": "Alle Dateien dieses NAS-Ordners erneut lesen? Über das Netzwerk kann das Stunden dauern. Abbrechen ist jederzeit möglich, es geht nichts verloren.",
+    "hashChanged_one": "{{n}} Datei hat sich verändert, obwohl Größe und Datum gleich sind: möglicherweise beschädigt, siehe Problemliste.",
+    "hashChanged_other": "{{n}} Dateien haben sich verändert, obwohl Größe und Datum gleich sind: möglicherweise beschädigt, siehe Problemliste."
   },
   "stats": {
     "files": "Dateien",

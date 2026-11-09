@@ -9,6 +9,10 @@
 //  3. archives: hash each new/changed archive and read every member fully,
 //     which hashes the members and verifies their checksums (F7, F11).
 //
+// A full check (F9) re-hashes every file and archive regardless of size and
+// modification time. A file whose content changed although size and
+// modification time did not is reported as possible corruption (F8).
+//
 // Everything committed before a cancel stays committed, so an interrupted
 // initial scan over the NAS continues where it stopped.
 package scanner
@@ -40,6 +44,13 @@ const (
 	PhaseFinished   = "finished"
 )
 
+// Scan modes (Progress.Mode, scan_run.mode).
+const (
+	ModeIncremental = "incremental"
+	ModeFull        = "full"
+	ModeDetect      = "detect" // detection only, no scan_run
+)
+
 // Run states (scan_run.status).
 const (
 	StatusRunning   = "running"
@@ -53,6 +64,7 @@ const (
 type Progress struct {
 	RootID   int64  `json:"rootId"`
 	RunID    int64  `json:"runId"`
+	Mode     string `json:"mode"`
 	Phase    string `json:"phase"`
 	Status   string `json:"status"`
 	Current  string `json:"current"` // path currently being processed
@@ -80,6 +92,10 @@ type Progress struct {
 
 	ThumbsTotal int `json:"thumbsTotal"`
 	ThumbsDone  int `json:"thumbsDone"`
+
+	// HashChanged counts files whose content changed at unchanged size and
+	// modification time (F8).
+	HashChanged int `json:"hashChanged"`
 
 	Issues int      `json:"issues"`
 	Error  *msg.Msg `json:"error,omitempty"`
@@ -142,13 +158,17 @@ func NewManager(db *sql.DB, settingsFn func() settings.Settings, emit func(Progr
 }
 
 // Start begins scanning a root in the background. Model detection runs at the end.
-func (m *Manager) Start(rootID int64) error { return m.start(rootID, false) }
+func (m *Manager) Start(rootID int64) error { return m.start(rootID, ModeIncremental) }
+
+// StartFull begins a full check of a root in the background: every file and
+// archive is read and hashed again (F9).
+func (m *Manager) StartFull(rootID int64) error { return m.start(rootID, ModeFull) }
 
 // Redetect re-runs only model detection for a root in the background
 // (e.g. after the creator-level setting changed).
-func (m *Manager) Redetect(rootID int64) error { return m.start(rootID, true) }
+func (m *Manager) Redetect(rootID int64) error { return m.start(rootID, ModeDetect) }
 
-func (m *Manager) start(rootID int64, detectOnly bool) error {
+func (m *Manager) start(rootID int64, mode string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.done != nil {
@@ -164,15 +184,15 @@ func (m *Manager) start(rootID int64, detectOnly bool) error {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	phase := PhaseChecking
-	if detectOnly {
+	if mode == ModeDetect {
 		phase = PhaseDetecting
 	}
-	t := &tracker{p: Progress{RootID: rootID, Phase: phase, Status: StatusRunning, Running: true, Started: nowMs()}}
+	t := &tracker{p: Progress{RootID: rootID, Mode: mode, Phase: phase, Status: StatusRunning, Running: true, Started: nowMs()}}
 	m.cancel, m.done, m.last = cancel, make(chan struct{}), t
 
 	s := &scan{
 		db: m.db, root: root, st: m.settings(), opts: m.opts.withDefaults(root.Kind), t: t,
-		detectOnly: detectOnly,
+		detectOnly: mode == ModeDetect, full: mode == ModeFull,
 	}
 	done := m.done
 	go func() {
@@ -293,6 +313,7 @@ type scan struct {
 
 	pendingArchives []hashJob // loaded in phase 2, processed in phase 3
 	detectOnly      bool
+	full            bool // F9: re-hash everything
 }
 
 func (s *scan) run(ctx context.Context) {
@@ -323,8 +344,12 @@ func (s *scan) run(ctx context.Context) {
 // execute runs the phases. detail is the technical error text for failures;
 // it is stored with the run and shown to the user.
 func (s *scan) execute(ctx context.Context) (status, errKey, detail string) {
-	res, err := s.db.Exec(`INSERT INTO scan_run (root_id, mode, status, started_at) VALUES (?, 'incremental', ?, ?)`,
-		s.root.ID, StatusRunning, s.t.snapshot().Started)
+	mode := ModeIncremental
+	if s.full {
+		mode = ModeFull
+	}
+	res, err := s.db.Exec(`INSERT INTO scan_run (root_id, mode, status, started_at) VALUES (?, ?, ?, ?)`,
+		s.root.ID, mode, StatusRunning, s.t.snapshot().Started)
 	if err != nil {
 		log.Printf("scan: create run: %v", err)
 		return StatusFailed, "scan.error.database", err.Error()

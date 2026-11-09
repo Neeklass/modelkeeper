@@ -463,6 +463,7 @@ export namespace scanner {
 	export class Progress {
 	    rootId: number;
 	    runId: number;
+	    mode: string;
 	    phase: string;
 	    status: string;
 	    current: string;
@@ -485,6 +486,7 @@ export namespace scanner {
 	    modelsCreated: number;
 	    thumbsTotal: number;
 	    thumbsDone: number;
+	    hashChanged: number;
 	    issues: number;
 	    error?: msg.Msg;
 	
@@ -496,6 +498,7 @@ export namespace scanner {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.rootId = source["rootId"];
 	        this.runId = source["runId"];
+	        this.mode = source["mode"];
 	        this.phase = source["phase"];
 	        this.status = source["status"];
 	        this.current = source["current"];
@@ -518,6 +521,7 @@ export namespace scanner {
 	        this.modelsCreated = source["modelsCreated"];
 	        this.thumbsTotal = source["thumbsTotal"];
 	        this.thumbsDone = source["thumbsDone"];
+	        this.hashChanged = source["hashChanged"];
 	        this.issues = source["issues"];
 	        this.error = this.convertValues(source["error"], msg.Msg);
 	    }

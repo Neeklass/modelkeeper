@@ -2,7 +2,7 @@ import {useCallback, useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
     AddRoot, CancelScan, GetRootStats, GetScanProgress, ListLastScanIssues, ListRoots, PickFolder, RedetectRoot, RemoveRoot,
-    SetRootCreatorLevel, StartScan,
+    SetRootCreatorLevel, StartFullCheck, StartScan,
 } from '../../wailsjs/go/main/App'
 import {catalog, scanner} from '../../wailsjs/go/models'
 import {EventsOn} from '../../wailsjs/runtime/runtime'
@@ -65,6 +65,11 @@ export function RootsPanel() {
                 <RootRow key={r.id} root={r} scanning={scanning}
                          progress={progress?.rootId === r.id ? progress : null}
                          onScan={() => run(() => StartScan(r.id))}
+                         onFullCheck={() => run(async () => {
+                             if (window.confirm(t(r.kind === 'nas' ? 'scan.fullCheckConfirmNas' : 'scan.fullCheckConfirm'))) {
+                                 await StartFullCheck(r.id)
+                             }
+                         })}
                          onRedetect={() => run(() => RedetectRoot(r.id))}
                          onCreatorLevel={on => run(async () => {
                              await SetRootCreatorLevel(r.id, on)
@@ -83,6 +88,7 @@ function RootRow(props: {
     scanning: boolean
     progress: scanner.Progress | null
     onScan: () => void
+    onFullCheck: () => void
     onRedetect: () => void
     onCreatorLevel: (on: boolean) => void
     onCancel: () => void
@@ -120,6 +126,8 @@ function RootRow(props: {
                         ? <button onClick={props.onCancel}>{t('scan.cancel')}</button>
                         : <>
                             <button onClick={props.onScan} disabled={props.scanning}>{t('scan.start')}</button>
+                            <button onClick={props.onFullCheck} disabled={props.scanning || !root.lastScanAt}
+                                    title={t('scan.fullCheckHint')}>{t('scan.fullCheck')}</button>
                             <button onClick={props.onRedetect} disabled={props.scanning}>{t('scan.redetect')}</button>
                         </>}
                     <button onClick={props.onRemove} disabled={running}>{t('roots.remove')}</button>
@@ -179,11 +187,13 @@ function ScanProgressView({p}: { p: scanner.Progress }) {
     const {t} = useTranslation()
     if (!p.running) {
         return (
-            <p className={`small ${p.status === 'done' ? 'muted' : 'error'}`}>
-                {t(`scan.result.${p.status}`, {
+            <p className={`small ${p.status === 'done' && !p.hashChanged ? 'muted' : 'error'}`}>
+                {t(p.mode === 'full' && p.status === 'done' ? 'scan.result.fullDone' : `scan.result.${p.status}`, {
                     new: formatNumber(p.filesNew), changed: formatNumber(p.filesChanged),
                     missing: formatNumber(p.filesMissing), hashed: formatNumber(p.hashDone),
+                    archives: formatNumber(p.archivesDone),
                 })}
+                {p.hashChanged > 0 && <> {t('scan.hashChanged', {count: p.hashChanged, n: formatNumber(p.hashChanged)})}</>}
                 {p.status === 'done' && p.modelsFound > 0 && <> {t('scan.modelsResult', {
                     n: formatNumber(p.modelsFound), created: formatNumber(p.modelsCreated),
                 })}</>}
@@ -195,7 +205,7 @@ function ScanProgressView({p}: { p: scanner.Progress }) {
     return (
         <div className="progress">
             <div className="row spread small">
-                <strong>{t(`scan.phase.${p.phase}`)}</strong>
+                <strong>{p.mode === 'full' && <>{t('scan.fullCheck')}: </>}{t(`scan.phase.${p.phase}`)}</strong>
                 {p.phase === 'walking' && <span>{t('scan.found', {count: p.filesSeen, n: formatNumber(p.filesSeen)})}</span>}
                 {p.phase === 'hashing' && <span>{formatNumber(p.hashDone)} / {formatNumber(p.hashTotal)}
                     {' · '}{formatBytes(p.bytesDone)} / {formatBytes(p.bytesTotal)}</span>}

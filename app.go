@@ -301,6 +301,16 @@ func (a *App) StartScan(id int64) error {
 	return wrapDB(a.scans.Start(id))
 }
 
+// StartFullCheck re-reads and re-hashes every file of a root in the
+// background, regardless of size and modification time (F9). Files whose
+// content changed silently are reported as scan issues (F8).
+func (a *App) StartFullCheck(id int64) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	return wrapDB(a.scans.StartFull(id))
+}
+
 // CancelScan stops the running scan; work done so far is kept.
 func (a *App) CancelScan() {
 	if a.scans != nil {

@@ -82,7 +82,8 @@
       "done": "Scan finished: {{new}} new, {{changed}} changed, {{missing}} missing, {{hashed}} hashed.",
       "cancelled": "Scan cancelled. Progress so far is saved: {{new}} new, {{hashed}} hashed.",
       "offline": "Scan not possible.",
-      "failed": "Scan failed."
+      "failed": "Scan failed.",
+      "fullDone": "Full check finished: {{hashed}} files and {{archives}} archives checked."
     },
     "error": {
       "alreadyRunning": "A scan is already running.",
@@ -92,7 +93,8 @@
       "database": "Database error during the scan: {{detail}}"
     },
     "issue": {
-      "readError": "Could not read {{path}}: {{detail}}"
+      "readError": "Could not read {{path}}: {{detail}}",
+      "hashChanged": "{{path}} changed although its size and date did not (hash {{old}} → {{new}}). The file may be damaged."
     },
     "archive": {
       "broken": "Archive {{path}} is damaged: {{detail}}",
@@ -100,7 +102,13 @@
       "unsupported": "Archive format or compression method not supported."
     },
     "redetect": "Detect models",
-    "modelsResult": "{{n}} models ({{created}} new)."
+    "modelsResult": "{{n}} models ({{created}} new).",
+    "fullCheck": "Full check",
+    "fullCheckHint": "Reads and hashes every file again, regardless of size and date, to find damaged or silently changed files.",
+    "fullCheckConfirm": "Read every file of this folder again? This finds damaged or silently changed files and can take a while.",
+    "fullCheckConfirmNas": "Read every file of this NAS folder again? Over the network this can take hours. You can cancel at any time; nothing is lost.",
+    "hashChanged_one": "{{n}} file changed although its size and date did not: possibly damaged, see the problems list.",
+    "hashChanged_other": "{{n}} files changed although their size and date did not: possibly damaged, see the problems list."
   },
   "stats": {
     "files": "Files",

@@ -1,8 +1,10 @@
 package scanner
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"os"
 	"path/filepath"
@@ -15,6 +17,8 @@ type hashJob struct {
 	path  string // rel
 	size  int64
 	mtime int64
+	old   []byte // known SHA-256, nil if not hashed yet
+	state string // archive_status of archives ("" if none)
 }
 
 type hashResult struct {
@@ -27,8 +31,11 @@ type hashResult struct {
 // pendingWork loads the files and archives that phase 2 and 3 must process
 // and initializes the progress totals.
 func (s *scan) pendingWork(ctx context.Context) (files, archives []hashJob, err error) {
-	load := func(q string) ([]hashJob, error) {
-		rows, err := s.db.QueryContext(ctx, q, s.root.ID)
+	load := func(where string) ([]hashJob, error) {
+		rows, err := s.db.QueryContext(ctx, `SELECT l.id, l.path, l.size, l.mtime, f.sha256, coalesce(l.archive_status, '')
+			FROM location l LEFT JOIN file f ON f.id = l.file_id
+			WHERE l.root_id = ? AND l.archive_id IS NULL AND l.present = 1 AND `+where+`
+			ORDER BY l.path`, s.root.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -36,23 +43,24 @@ func (s *scan) pendingWork(ctx context.Context) (files, archives []hashJob, err 
 		var out []hashJob
 		for rows.Next() {
 			var j hashJob
-			if err := rows.Scan(&j.id, &j.path, &j.size, &j.mtime); err != nil {
+			if err := rows.Scan(&j.id, &j.path, &j.size, &j.mtime, &j.old, &j.state); err != nil {
 				return nil, err
 			}
 			out = append(out, j)
 		}
 		return out, rows.Err()
 	}
-	files, err = load(`SELECT id, path, size, mtime FROM location
-		WHERE root_id = ? AND archive_id IS NULL AND present = 1 AND file_id IS NULL AND category <> 'archive'
-		ORDER BY path`)
+	// A full check (F9) takes every file; otherwise only unhashed ones (F3).
+	fileCond, archiveCond := `l.category <> 'archive' AND l.file_id IS NULL`,
+		`l.category = 'archive' AND (l.file_id IS NULL OR l.archive_status = 'pending')`
+	if s.full {
+		fileCond, archiveCond = `l.category <> 'archive'`, `l.category = 'archive'`
+	}
+	files, err = load(fileCond)
 	if err != nil {
 		return nil, nil, err
 	}
-	archives, err = load(`SELECT id, path, size, mtime FROM location
-		WHERE root_id = ? AND archive_id IS NULL AND present = 1 AND category = 'archive'
-		  AND (file_id IS NULL OR archive_status = 'pending')
-		ORDER BY path`)
+	archives, err = load(archiveCond)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -146,6 +154,7 @@ func (s *scan) hashFiles(ctx context.Context) error {
 				s.issue(r.job.id, "read_error", "scan.issue.readError", "path", r.job.path, "detail", r.err.Error())
 			case r.stale:
 			default:
+				s.checkUnchanged(r.job, r.sum)
 				pending = append(pending, r)
 				if len(pending) >= 200 {
 					if err := flush(); err != nil && storeErr == nil {
@@ -168,6 +177,20 @@ func (s *scan) hashOne(ctx context.Context, j hashJob, buf []byte) hashResult {
 		return hashResult{job: j, err: err}
 	}
 	return hashResult{job: j, sum: sum, stale: !unchanged(abs, j)}
+}
+
+// checkUnchanged reports a file whose content differs from the known hash
+// although size and modification time are the same (F8): the file was
+// modified without updating its timestamp, or the data is damaged.
+// Returns false in that case.
+func (s *scan) checkUnchanged(j hashJob, sum [32]byte) bool {
+	if j.old == nil || bytes.Equal(j.old, sum[:]) {
+		return true
+	}
+	s.issue(j.id, "hash_changed", "scan.issue.hashChanged", "path", j.path,
+		"old", hex.EncodeToString(j.old)[:12], "new", hex.EncodeToString(sum[:])[:12])
+	s.t.update(func(p *Progress) { p.HashChanged++ })
+	return false
 }
 
 // unchanged reports whether the file still has the size/mtime from the catalog.

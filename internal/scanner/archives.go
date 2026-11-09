@@ -51,6 +51,14 @@ func (s *scan) processArchive(ctx context.Context, j hashJob, buf []byte) error 
 	if err != nil {
 		return s.archiveReadError(ctx, j, err)
 	}
+	if !unchanged(abs, j) {
+		return nil
+	}
+	// Same content as last time (full check, F9): the members were read and
+	// verified then and are identical now, so the checksums need no second pass.
+	if s.checkUnchanged(j, sum) && j.old != nil && archiveFinal[j.state] {
+		return nil
+	}
 
 	res := readArchive(ctx, abs, ext, data, nil)
 	data = nil
@@ -77,6 +85,9 @@ func (s *scan) processArchive(ctx context.Context, j hashJob, buf []byte) error 
 	}
 	return nil
 }
+
+// archiveFinal: archive states that are the result of reading the archive.
+var archiveFinal = map[string]bool{archiveOK: true, archiveBroken: true, archiveEncrypted: true}
 
 // archiveReadError handles I/O errors on the archive file itself (not format errors).
 func (s *scan) archiveReadError(ctx context.Context, j hashJob, err error) error {
