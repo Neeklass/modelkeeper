@@ -70,6 +70,7 @@ func Apply(ctx context.Context, db *sql.DB, rootID int64, rules Rules) (Result, 
 
 	touched := map[int64]bool{}
 	matched := map[int64]bool{} // models that got a candidate in this run
+	candOf := map[int64]*Candidate{}
 	for i := range cands {
 		cd := &cands[i]
 		modelID, how := m.match(cd)
@@ -85,6 +86,9 @@ func Apply(ctx context.Context, db *sql.DB, rootID int64, rules Rules) (Result, 
 			res.Linked++
 		}
 		matched[modelID] = true
+		if candOf[modelID] == nil {
+			candOf[modelID] = cd
+		}
 		// A folder merged into another model by the user does not rename it.
 		if how != matchMerged {
 			if err := w.updateModel(modelID, cd); err != nil {
@@ -110,6 +114,12 @@ func Apply(ctx context.Context, db *sql.DB, rootID int64, rules Rules) (Result, 
 	for id := range m.orphanModels {
 		touched[id] = true
 	}
+	// Orphans moved to another root or replaced by a copy (F6).
+	n, err := resolveOrphans(ctx, tx, w, m, rootID, matched, candOf)
+	if err != nil {
+		return res, err
+	}
+	res.Moved += n
 	// Stale anchors of models that live on elsewhere (e.g. after a correction).
 	for id, paths := range m.orphanPaths {
 		if !matched[id] {
