@@ -118,6 +118,10 @@ export function SetThumbnail(arg1, arg2) {
   return window['go']['main']['App']['SetThumbnail'](arg1, arg2);
 }
 
+export function SetThumbnailFromView(arg1, arg2) {
+  return window['go']['main']['App']['SetThumbnailFromView'](arg1, arg2);
+}
+
 export function ShowInExplorer(arg1) {
   return window['go']['main']['App']['ShowInExplorer'](arg1);
 }

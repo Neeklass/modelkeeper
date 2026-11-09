@@ -236,3 +236,17 @@ textarea.notes { width: 100%; box-sizing: border-box; resize: vertical; }
 .detail-thumb { width: 100%; max-height: 260px; object-fit: contain; border-radius: 6px; background: #3a3c44; }
 div.detail-thumb { height: 160px; }
 .thumb-options { display: flex; flex-direction: column; gap: 6px; padding: 6px 0; }
+
+/* 3D preview (H4) */
+.preview3d { display: flex; flex-direction: column; gap: 4px; }
+.preview3d-canvas { position: relative; height: 300px; border-radius: 6px; overflow: hidden; background: #3a3c44; }
+.preview3d-canvas canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.preview3d-canvas canvas:active { cursor: grabbing; }
+.preview3d-overlay {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    padding: 16px; text-align: center; font-size: 12px; pointer-events: none;
+}
+.preview3d-overlay.muted { color: #c9cdd6; }
+.preview3d select { min-width: 0; flex: 1; max-width: 60%; }
+.preview3d .hint { margin: 0; }
+.link.active { color: var(--accent); font-weight: 600; }

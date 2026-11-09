@@ -1,24 +1,33 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"errors"
+	"image"
+	_ "image/jpeg" // decoders for SetThumbnailFromView
+	_ "image/png"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"modelkeeper/internal/appdir"
+	"modelkeeper/internal/archive"
 	"modelkeeper/internal/catalog"
 	"modelkeeper/internal/corrections"
 	"modelkeeper/internal/db"
 	"modelkeeper/internal/detect"
 	"modelkeeper/internal/msg"
 	"modelkeeper/internal/osopen"
+	"modelkeeper/internal/preview"
 	"modelkeeper/internal/scanner"
 	"modelkeeper/internal/settings"
 	"modelkeeper/internal/thumbs"
@@ -443,21 +452,73 @@ func (a *App) GetFilterOptions() (catalog.FilterOptions, error) {
 // thumbName: thumbnail files are named "<uuid>.jpg".
 var thumbName = regexp.MustCompile(`^[0-9a-f-]{36}\.jpg$`)
 
-// thumbHandler serves thumbnails under /thumbs/<file> to the frontend (Wails
-// asset server fallback). It is a separate type so that ServeHTTP is not
-// exposed as a JavaScript binding of App.
-type thumbHandler struct{ a *App }
+// assetHandler serves files to the frontend (Wails asset server fallback):
+//   - /thumbs/<file>: thumbnails from the data folder
+//   - /files/<location id>: model files for the 3D preview (H4)
+//
+// It is a separate type so that ServeHTTP is not exposed as a JavaScript
+// binding of App.
+type assetHandler struct{ a *App }
 
-func (h thumbHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h assetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if name, ok := strings.CutPrefix(r.URL.Path, "/thumbs/"); ok {
+		h.serveThumb(w, r, name)
+		return
+	}
+	if id, ok := strings.CutPrefix(r.URL.Path, "/files/"); ok {
+		h.serveFile(w, r, id)
+		return
+	}
+	http.NotFound(w, r)
+}
+
+func (h assetHandler) serveThumb(w http.ResponseWriter, r *http.Request, name string) {
 	a := h.a
-	name, ok := strings.CutPrefix(r.URL.Path, "/thumbs/")
-	if !ok || !thumbName.MatchString(name) || a.layout.Thumbnails == "" {
+	if !thumbName.MatchString(name) || a.layout.Thumbnails == "" {
 		http.NotFound(w, r)
 		return
 	}
 	// The URL carries a version parameter, so the file can be cached for good.
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 	http.ServeFile(w, r, filepath.Join(a.layout.Thumbnails, name))
+}
+
+// serveFile streams a model file (or an archive member, read in memory only)
+// for the 3D preview. Only previewable file types of catalogued locations are
+// served. Errors are reported as status codes the frontend translates.
+func (h assetHandler) serveFile(w http.ResponseWriter, r *http.Request, idText string) {
+	id, err := strconv.ParseInt(idText, 10, 64)
+	if err != nil || id <= 0 || h.a.db == nil {
+		http.NotFound(w, r)
+		return
+	}
+	src, err := preview.Lookup(r.Context(), h.a.db, id)
+	var f io.ReadSeekCloser
+	var mod time.Time
+	if err == nil {
+		f, mod, err = src.Open()
+	}
+	if err != nil {
+		code := http.StatusInternalServerError
+		switch {
+		case errors.Is(err, preview.ErrNotFound), errors.Is(err, preview.ErrUnsupported):
+			code = http.StatusNotFound
+		case errors.Is(err, preview.ErrTooLarge):
+			code = http.StatusRequestEntityTooLarge
+		case errors.Is(err, preview.ErrOffline):
+			code = http.StatusServiceUnavailable
+		case errors.Is(err, archive.ErrEncrypted):
+			code = http.StatusForbidden
+		default:
+			log.Printf("preview %d: %v", id, err)
+		}
+		http.Error(w, http.StatusText(code), code)
+		return
+	}
+	defer f.Close()
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Cache-Control", "no-store")
+	http.ServeContent(w, r, src.Name, mod, f)
 }
 
 func (a *App) thumbStore() *thumbs.Store {
@@ -503,6 +564,30 @@ func (a *App) PickThumbnailFile(modelID int64) (bool, error) {
 		return false, msg.Wrap(err, "thumbs.failed")
 	}
 	return true, nil
+}
+
+// SetThumbnailFromView stores the current view of the 3D preview as manual
+// thumbnail (I4). image is a data URL (PNG or JPEG) from the preview canvas.
+func (a *App) SetThumbnailFromView(modelID int64, dataURL string) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	_, b64, ok := strings.Cut(dataURL, ";base64,")
+	if !ok || !strings.HasPrefix(dataURL, "data:image/") {
+		return msg.Wrap(errors.New("not an image data URL"), "thumbs.failed")
+	}
+	data, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return msg.Wrap(err, "thumbs.failed")
+	}
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return msg.Wrap(err, "thumbs.failed")
+	}
+	if err := a.thumbStore().SetFromImage(a.ctx, modelID, img); err != nil {
+		return msg.Wrap(err, "thumbs.failed")
+	}
+	return nil
 }
 
 // ResetThumbnail drops a manual thumbnail and generates an automatic one again.

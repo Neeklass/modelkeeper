@@ -235,5 +235,20 @@
       "embedded": "Preview from the 3MF file",
       "rendered": "Rendered from the STL"
     }
+  },
+  "preview": {
+    "show": "3D preview",
+    "hide": "Show thumbnail",
+    "file": "File for the 3D preview",
+    "loading": "Loading 3D file ({{size}})…",
+    "resetView": "Reset view",
+    "useAsThumbnail": "Use view as thumbnail",
+    "hint": "Drag to rotate, right-drag to move, scroll to zoom.",
+    "notFound": "The file was not found. Rescan the folder.",
+    "tooLarge": "The file is too large for the preview.",
+    "offline": "The folder is offline.",
+    "encrypted": "The archive is password-protected.",
+    "failed": "The file could not be loaded: {{detail}}",
+    "parseFailed": "The file could not be read as a 3D model: {{detail}}"
   }
 }

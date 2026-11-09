@@ -2,14 +2,15 @@ import {useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
     AddTags, DetachAnchor, DismissSuggestion, GetModel, ListThumbnailCandidates, MarkFolderModel, MarkFolderNotModel,
-    PickThumbnailFile, RemoveTag, ResetCorrections, ResetThumbnail, SetThumbnail, ShowInExplorer, SplitModel,
-    UpdateModel,
+    PickThumbnailFile, RemoveTag, ResetCorrections, ResetThumbnail, SetThumbnail, SetThumbnailFromView, ShowInExplorer,
+    SplitModel, UpdateModel,
 } from '../../wailsjs/go/main/App'
 import {catalog, thumbs} from '../../wailsjs/go/models'
 import {Thumb} from './Thumb'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
 import {formatBytes} from '../format'
 import {TagInput} from './TagInput'
+import {canPreview, defaultPreviewFile, Preview3D} from './Preview3D'
 
 const PRINT_STATUSES = ['not_printed', 'printed', 'failed']
 const SUPPORTS = ['presupported', 'unsupported', 'both', 'none']
@@ -26,7 +27,10 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose}: {
     const [d, setD] = useState<catalog.ModelDetail | null>(null)
     const [error, setError] = useState<Msg | null>(null)
     const [busy, setBusy] = useState(false)
+    // Location shown in the 3D preview, null = show the thumbnail (H4).
+    const [preview, setPreview] = useState<number | null>(null)
 
+    useEffect(() => setPreview(null), [id])
     useEffect(() => {
         setError(null)
         GetModel(id).then(setD).catch(e => {
@@ -70,7 +74,7 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose}: {
             </div>
             {error && <p className="error">{translateMsg(error)}</p>}
 
-            <ThumbnailSection d={d} busy={busy} act={act}/>
+            <ThumbnailSection d={d} busy={busy} act={act} preview={preview} setPreview={setPreview}/>
 
             <dl className="props">
                 <dt>{t('models.creator')}</dt><dd>{d.creator || '—'}</dd>
@@ -148,9 +152,17 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose}: {
                                         {f.archivePath && <span className="muted">{basename(f.archivePath)} › </span>}
                                         {basename(f.path)}
                                     </span>
-                                    <button className="link small" onClick={() => ShowInExplorer(f.locationId).catch(e => setError(toMsg(e)))}>
-                                        {t('models.showInExplorer')}
-                                    </button>
+                                    <span className="row nowrap">
+                                        {canPreview(f) && (
+                                            <button className={`link small${preview === f.locationId ? ' active' : ''}`}
+                                                    title={t('preview.show')} onClick={() => setPreview(f.locationId)}>
+                                                3D
+                                            </button>
+                                        )}
+                                        <button className="link small" onClick={() => ShowInExplorer(f.locationId).catch(e => setError(toMsg(e)))}>
+                                            {t('models.showInExplorer')}
+                                        </button>
+                                    </span>
                                 </div>
                                 <div className="row small muted">
                                     <span>{f.ext.toUpperCase()}</span>
@@ -212,25 +224,40 @@ function Notes({notes, disabled, onSave}: { notes: string; disabled: boolean; on
     )
 }
 
-/** Thumbnail with the options to change it (I4). */
-function ThumbnailSection({d, busy, act}: {
+/** Thumbnail or 3D preview (H4), with the options to change the thumbnail (I4). */
+function ThumbnailSection({d, busy, act, preview, setPreview}: {
     d: catalog.ModelDetail
     busy: boolean
     act: (fn: () => Promise<void>, confirmText?: string) => void
+    preview: number | null
+    setPreview: (locationId: number | null) => void
 }) {
     const {t} = useTranslation()
     const [open, setOpen] = useState(false)
     const [cands, setCands] = useState<thumbs.Candidate[] | null>(null)
+    const firstPreview = defaultPreviewFile(d.files)
     useEffect(() => {
         if (open) ListThumbnailCandidates(d.id).then(setCands).catch(() => setCands([]))
     }, [open, d.id])
 
     return (
         <div className="thumb-section">
-            <Thumb src={d.thumb} className="detail-thumb"/>
+            {preview !== null ? (
+                <Preview3D files={d.files} locationId={preview} onSelect={setPreview} busy={busy}
+                           onUseAsThumbnail={url => act(() => SetThumbnailFromView(d.id, url))}/>
+            ) : <Thumb src={d.thumb} className="detail-thumb"/>}
             <div className="row small muted spread">
                 <span>{d.thumbSource ? t(`thumbs.source.${d.thumbSource}`) : t('thumbs.none')}</span>
-                <button className="link small" onClick={() => setOpen(o => !o)}>{t('thumbs.change')}</button>
+                <span className="row nowrap">
+                    {preview !== null ? (
+                        <button className="link small" onClick={() => setPreview(null)}>{t('preview.hide')}</button>
+                    ) : firstPreview && (
+                        <button className="link small" onClick={() => setPreview(firstPreview.locationId)}>
+                            {t('preview.show')}
+                        </button>
+                    )}
+                    <button className="link small" onClick={() => setOpen(o => !o)}>{t('thumbs.change')}</button>
+                </span>
             </div>
             {open && (
                 <div className="thumb-options">

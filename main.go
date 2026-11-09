@@ -23,7 +23,7 @@ func main() {
 		MinHeight: 500,
 		AssetServer: &assetserver.Options{
 			Assets:  assets,
-			Handler: thumbHandler{app}, // serves /thumbs/ from the data folder
+			Handler: assetHandler{app}, // serves /thumbs/ and /files/
 		},
 		BackgroundColour: &options.RGBA{R: 24, G: 24, B: 27, A: 1},
 		OnStartup:        app.startup,

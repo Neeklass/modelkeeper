@@ -18,7 +18,7 @@ func TestThumbHandler(t *testing.T) {
 	const name = "0190a5b2-7c4e-7d3a-9f00-123456789abc.jpg"
 	os.WriteFile(filepath.Join(layout.Thumbnails, name), []byte("jpegdata"), 0o644)
 	os.WriteFile(filepath.Join(layout.Root, "catalog.db"), []byte("secret"), 0o644)
-	h := thumbHandler{&App{layout: layout}}
+	h := assetHandler{&App{layout: layout}}
 
 	for _, c := range []struct {
 		path string
@@ -29,6 +29,8 @@ func TestThumbHandler(t *testing.T) {
 		{"/thumbs/../catalog.db", http.StatusNotFound},
 		{"/thumbs/..%5Ccatalog.db", http.StatusNotFound},
 		{"/other", http.StatusNotFound},
+		{"/files/abc", http.StatusNotFound},
+		{"/files/1", http.StatusNotFound}, // no catalog open
 	} {
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, c.path, nil))
