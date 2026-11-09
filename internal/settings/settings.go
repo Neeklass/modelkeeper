@@ -29,6 +29,9 @@ type Settings struct {
 	PartNames []string `json:"partNames"`
 	// SizeTokens are prefixes/suffixes that mark size variants (F4f, F10).
 	SizeTokens []string `json:"sizeTokens"`
+	// NASRescanHours is the interval of scheduled incremental rescans of NAS
+	// roots in hours; 0 disables them (E4).
+	NASRescanHours int `json:"nasRescanHours"`
 }
 
 // Defaults returns the built-in settings.
@@ -42,8 +45,9 @@ func Defaults() Settings {
 			Archive:       []string{"zip", "rar", "7z"},
 			Supplementary: []string{"jpg", "jpeg", "png", "webp", "pdf", "txt", "md"},
 		},
-		PartNames:  []string{"supported", "unsupported", "presupported", "pre-supported", "stl", "stls", "parts", "base", "bases", "32mm", "75mm"},
-		SizeTokens: []string{"S", "M", "L", "XL", "XXL", "32mm", "75mm"},
+		PartNames:      []string{"supported", "unsupported", "presupported", "pre-supported", "stl", "stls", "parts", "base", "bases", "32mm", "75mm"},
+		SizeTokens:     []string{"S", "M", "L", "XL", "XXL", "32mm", "75mm"},
+		NASRescanHours: 24,
 	}
 }
 

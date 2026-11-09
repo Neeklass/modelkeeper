@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -113,6 +114,9 @@ func (a *App) init() error {
 		Relevant: func(name string) bool {
 			return a.settings.Get().ExtCategory(filepath.Ext(name)) != ""
 		},
+		NASInterval: func() time.Duration {
+			return time.Duration(a.settings.Get().NASRescanHours) * time.Hour
+		},
 	})
 	if err != nil {
 		log.Printf("live watching unavailable: %v", err) // scans still work manually
@@ -155,16 +159,19 @@ func (a *App) shutdown(ctx context.Context) {
 
 // AppStatus is what the frontend needs to render its shell.
 type AppStatus struct {
-	DataDir      string   `json:"dataDir"`
-	Language     string   `json:"language"`
-	StartupError *msg.Msg `json:"startupError,omitempty"`
+	DataDir  string `json:"dataDir"`
+	Language string `json:"language"`
+	// NASRescanHours: interval of scheduled NAS rescans, 0 = off (E4).
+	NASRescanHours int      `json:"nasRescanHours"`
+	StartupError   *msg.Msg `json:"startupError,omitempty"`
 }
 
 // GetStatus returns the data folder, the configured language and any startup error.
 func (a *App) GetStatus() AppStatus {
 	s := AppStatus{DataDir: a.layout.Root, StartupError: a.startupErr}
 	if a.settings != nil {
-		s.Language = a.settings.Get().Language
+		st := a.settings.Get()
+		s.Language, s.NASRescanHours = st.Language, st.NASRescanHours
 	}
 	return s
 }
@@ -175,6 +182,23 @@ func (a *App) SetLanguage(lang string) error {
 		return msg.Wrap(nil, "error.notReady")
 	}
 	if err := a.settings.Update(func(s *settings.Settings) { s.Language = lang }); err != nil {
+		return msg.Wrap(err, "error.settingsSave")
+	}
+	return nil
+}
+
+// NASRescanChoices are the intervals offered for scheduled NAS rescans (hours, 0 = off).
+var NASRescanChoices = []int{0, 1, 6, 12, 24, 168}
+
+// SetNASRescanHours sets the interval of scheduled NAS rescans (E4).
+func (a *App) SetNASRescanHours(hours int) error {
+	if a.settings == nil {
+		return msg.Wrap(nil, "error.notReady")
+	}
+	if !slices.Contains(NASRescanChoices, hours) {
+		return msg.Wrap(nil, "error.invalidValue")
+	}
+	if err := a.settings.Update(func(s *settings.Settings) { s.NASRescanHours = hours }); err != nil {
 		return msg.Wrap(err, "error.settingsSave")
 	}
 	return nil

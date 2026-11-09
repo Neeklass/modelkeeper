@@ -403,6 +403,7 @@ export namespace main {
 	export class AppStatus {
 	    dataDir: string;
 	    language: string;
+	    nasRescanHours: number;
 	    startupError?: msg.Msg;
 	
 	    static createFrom(source: any = {}) {
@@ -413,6 +414,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.dataDir = source["dataDir"];
 	        this.language = source["language"];
+	        this.nasRescanHours = source["nasRescanHours"];
 	        this.startupError = this.convertValues(source["startupError"], msg.Msg);
 	    }
 	

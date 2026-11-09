@@ -61,6 +61,8 @@ export function SetLanguage(arg1:string):Promise<void>;
 
 export function SetRootCreatorLevel(arg1:number,arg2:boolean):Promise<void>;
 
+export function SetNASRescanHours(arg1:number):Promise<void>;
+
 export function SetThumbnail(arg1:number,arg2:number):Promise<void>;
 
 export function SetThumbnailFromView(arg1:number,arg2:string):Promise<void>;

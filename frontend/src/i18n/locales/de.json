@@ -11,7 +11,17 @@
     "language": "Sprache",
     "languageSystem": "Systemstandard ({{name}})",
     "dataFolder": "Datenordner",
-    "openDataFolder": "Datenordner öffnen"
+    "openDataFolder": "Datenordner öffnen",
+    "nasRescan": "NAS-Ordner automatisch neu scannen",
+    "nasRescanEvery": {
+      "0": "Aus",
+      "1": "Stündlich",
+      "6": "Alle 6 Stunden",
+      "12": "Alle 12 Stunden",
+      "24": "Täglich",
+      "168": "Wöchentlich"
+    },
+    "nasRescanHint": "NAS-Ordner werden nicht live überwacht. Sie werden inkrementell (nur neue und geänderte Dateien) neu gescannt, wenn ihr letzter Scan älter ist; ein manueller Scan setzt die Zeit zurück. Lokale Ordner werden überwacht und brauchen keinen Zeitplan."
   },
   "error": {
     "unknown": "Unerwarteter Fehler: {{detail}}",

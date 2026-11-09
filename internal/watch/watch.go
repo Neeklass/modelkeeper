@@ -11,6 +11,8 @@
 // can take long and stays a deliberate action of the user. When watching
 // starts (app start, or after the first scan) a catch-up scan picks up
 // changes made while the app was not watching.
+//
+// NAS roots get scheduled incremental rescans instead (schedule.go).
 package watch
 
 import (
@@ -49,6 +51,15 @@ type Options struct {
 	// Relevant reports whether a changed file can matter to the catalog
 	// (a recognized extension). Nil means every file is relevant.
 	Relevant func(name string) bool
+
+	// NASInterval returns the interval of scheduled NAS rescans; zero or
+	// nil disables them. Read on every check, so setting changes apply at once.
+	NASInterval func() time.Duration
+	// ScheduleCheck is how often scheduled rescans are checked.
+	ScheduleCheck time.Duration
+	// OfflineRetry is the pause after a scheduled rescan that did not
+	// complete (e.g. the NAS was unreachable) before it is tried again.
+	OfflineRetry time.Duration
 }
 
 func (o Options) withDefaults() Options {
@@ -57,6 +68,12 @@ func (o Options) withDefaults() Options {
 	}
 	if o.Retry <= 0 {
 		o.Retry = time.Minute
+	}
+	if o.ScheduleCheck <= 0 {
+		o.ScheduleCheck = time.Minute
+	}
+	if o.OfflineRetry <= 0 {
+		o.OfflineRetry = 30 * time.Minute
 	}
 	return o
 }
@@ -77,6 +94,8 @@ type Watcher struct {
 	mu      sync.Mutex
 	roots   map[int64]*root
 	pending map[int64]time.Time // root -> scan when this time has passed
+	// attempted: when a scheduled NAS rescan was last queued (schedule.go).
+	attempted map[int64]time.Time
 
 	syncMu sync.Mutex // serializes Sync
 	synced bool       // the first Sync has run
@@ -92,7 +111,7 @@ func New(db *sql.DB, scans Scanner, opts Options) (*Watcher, error) {
 	}
 	w := &Watcher{
 		db: db, scans: scans, opts: opts.withDefaults(), fs: fw,
-		roots: map[int64]*root{}, pending: map[int64]time.Time{},
+		roots: map[int64]*root{}, pending: map[int64]time.Time{}, attempted: map[int64]time.Time{},
 		quit: make(chan struct{}), done: make(chan struct{}),
 	}
 	go w.loop()
@@ -261,6 +280,8 @@ func (w *Watcher) loop() {
 	defer tick.Stop()
 	retry := time.NewTicker(w.opts.Retry)
 	defer retry.Stop()
+	schedule := time.NewTicker(w.opts.ScheduleCheck)
+	defer schedule.Stop()
 	for {
 		select {
 		case <-w.quit:
@@ -283,6 +304,8 @@ func (w *Watcher) loop() {
 			if w.hasDead() {
 				go w.Sync(context.Background())
 			}
+		case <-schedule.C:
+			w.checkSchedule(context.Background())
 		}
 	}
 }

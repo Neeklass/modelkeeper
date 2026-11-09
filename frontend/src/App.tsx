@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
-import {GetStatus, OpenDataFolder, SetLanguage} from '../wailsjs/go/main/App'
+import {GetStatus, OpenDataFolder, SetLanguage, SetNASRescanHours} from '../wailsjs/go/main/App'
 import {main} from '../wailsjs/go/models'
 import i18n, {languages, resolveLanguage, systemLanguage} from './i18n'
 import {Msg, toMsg, translateMsg} from './i18n/msg'
@@ -8,6 +8,9 @@ import {RootsPanel} from './components/RootsPanel'
 import {ModelsView} from './components/ModelsView'
 
 type Tab = 'models' | 'folders' | 'settings'
+
+/** Intervals for scheduled NAS rescans in hours (App.NASRescanChoices), 0 = off. */
+const NAS_RESCAN_HOURS = [0, 1, 6, 12, 24, 168]
 
 function App() {
     const {t} = useTranslation()
@@ -68,6 +71,15 @@ function SettingsPanel({status, onChange}: { status: main.AppStatus; onChange: (
         }
     }
 
+    async function changeNASRescan(hours: number) {
+        try {
+            await SetNASRescanHours(hours)
+            onChange(main.AppStatus.createFrom({...status, nasRescanHours: hours}))
+        } catch (e) {
+            setError(toMsg(e))
+        }
+    }
+
     return (
         <section className="card">
             <h2>{t('settings.title')}</h2>
@@ -78,6 +90,13 @@ function SettingsPanel({status, onChange}: { status: main.AppStatus; onChange: (
                     {languages.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
                 </select>
             </label>
+            <label>
+                {t('settings.nasRescan')}
+                <select value={status.nasRescanHours} onChange={e => changeNASRescan(Number(e.target.value))}>
+                    {NAS_RESCAN_HOURS.map(h => <option key={h} value={h}>{t(`settings.nasRescanEvery.${h}`)}</option>)}
+                </select>
+            </label>
+            <p className="small muted">{t('settings.nasRescanHint')}</p>
             <div className="row">
                 <span>{t('settings.dataFolder')}: <code>{status.dataDir}</code></span>
                 <button onClick={() => OpenDataFolder().catch(e => setError(toMsg(e)))}>

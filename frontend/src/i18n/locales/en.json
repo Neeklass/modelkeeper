@@ -11,7 +11,17 @@
     "language": "Language",
     "languageSystem": "System default ({{name}})",
     "dataFolder": "Data folder",
-    "openDataFolder": "Open data folder"
+    "openDataFolder": "Open data folder",
+    "nasRescan": "Rescan NAS folders automatically",
+    "nasRescanEvery": {
+      "0": "Off",
+      "1": "Every hour",
+      "6": "Every 6 hours",
+      "12": "Every 12 hours",
+      "24": "Daily",
+      "168": "Weekly"
+    },
+    "nasRescanHint": "NAS folders are not watched live. They are rescanned incrementally (only new and changed files) when their last scan is older than this; a manual scan resets the timer. Local folders are watched and need no schedule."
   },
   "error": {
     "unknown": "Unexpected error: {{detail}}",

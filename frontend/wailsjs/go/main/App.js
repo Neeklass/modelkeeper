@@ -114,6 +114,10 @@ export function SetRootCreatorLevel(arg1, arg2) {
   return window['go']['main']['App']['SetRootCreatorLevel'](arg1, arg2);
 }
 
+export function SetNASRescanHours(arg1) {
+  return window['go']['main']['App']['SetNASRescanHours'](arg1);
+}
+
 export function SetThumbnail(arg1, arg2) {
   return window['go']['main']['App']['SetThumbnail'](arg1, arg2);
 }
