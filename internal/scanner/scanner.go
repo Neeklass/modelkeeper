@@ -112,6 +112,13 @@ type Options struct {
 	EmitInterval time.Duration
 	// ThumbDir is the thumbnail folder; empty disables thumbnail generation.
 	ThumbDir string
+	// ResumeMin: files and zips from this size on save checkpoints while
+	// being read, so an interrupted scan continues inside them.
+	ResumeMin int64
+	// CheckpointEvery is the interval of those checkpoints.
+	CheckpointEvery time.Duration
+
+	onCheckpoint func() // tests: called after each saved checkpoint
 }
 
 func (o Options) withDefaults(rootKind string) Options {
@@ -127,6 +134,12 @@ func (o Options) withDefaults(rootKind string) Options {
 	}
 	if o.EmitInterval <= 0 {
 		o.EmitInterval = 250 * time.Millisecond
+	}
+	if o.ResumeMin <= 0 {
+		o.ResumeMin = 64 << 20
+	}
+	if o.CheckpointEvery <= 0 {
+		o.CheckpointEvery = time.Second
 	}
 	return o
 }
@@ -421,6 +434,10 @@ func (s *scan) finish(status, errKey, detail string) {
 	}
 	if status == StatusDone || status == StatusCancelled {
 		s.db.Exec(`UPDATE root SET last_scan_at = ? WHERE id = ?`, now, s.root.ID)
+	}
+	if status == StatusDone {
+		// Everything pending was processed: leftover checkpoints are stale.
+		s.db.Exec(`DELETE FROM hash_progress WHERE location_id IN (SELECT id FROM location WHERE root_id = ?)`, s.root.ID)
 	}
 }
 

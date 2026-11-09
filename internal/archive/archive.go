@@ -99,6 +99,35 @@ func Open(file, ext string, data []byte) (Iter, error) {
 	return nil, fmt.Errorf("%w: .%s", ErrUnsupported, ext)
 }
 
+// OpenReaderAt opens a zip or 7z archive through r (e.g. a reader that
+// hashes the file while it is read). Other formats need Open.
+func OpenReaderAt(ext string, r io.ReaderAt, size int64) (Iter, error) {
+	switch ext {
+	case "zip":
+		zr, err := zip.NewReader(r, size)
+		if err != nil {
+			return nil, err
+		}
+		return &zipIter{files: zr.File}, nil
+	case "7z":
+		sr, err := sevenzip.NewReader(r, size)
+		if err != nil {
+			return nil, wrap7z(err)
+		}
+		return &sevenIter{files: sr.File}, nil
+	}
+	return nil, fmt.Errorf("%w: .%s via ReaderAt", ErrUnsupported, ext)
+}
+
+// Skipper is implemented by iterators that can skip entries without reading
+// them (zip: entries are independent). Used to resume an interrupted read.
+type Skipper interface {
+	// Pos is the number of entries returned so far.
+	Pos() int
+	// SkipTo continues with entry i (i >= Pos()).
+	SkipTo(i int) error
+}
+
 func wrap7z(err error) error {
 	var re *sevenzip.ReadError
 	if errors.As(err, &re) && re.Encrypted {
@@ -149,6 +178,20 @@ func (z *zipIter) Next() (Header, io.Reader, error) {
 	}
 	z.cur = rc
 	return hdr, rc, nil
+}
+
+func (z *zipIter) Pos() int { return z.i }
+
+func (z *zipIter) SkipTo(i int) error {
+	if i < z.i || i > len(z.files) {
+		return fmt.Errorf("cannot skip to entry %d of %d", i, len(z.files))
+	}
+	if z.cur != nil {
+		z.cur.Close()
+		z.cur = nil
+	}
+	z.i = i
+	return nil
 }
 
 func (z *zipIter) Close() error {

@@ -25,7 +25,11 @@ func TestMain(m *testing.M) {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(2)
 		}
-		mgr, err := NewManager(conn, settings.Defaults, nil, Options{HashWorkers: 1, EmitInterval: time.Hour})
+		opts := Options{HashWorkers: 1, EmitInterval: time.Hour}
+		if os.Getenv("MODELKEEPER_CRASH_ONEPASS") != "" {
+			opts.ArchiveMemLimit, opts.ResumeMin, opts.CheckpointEvery = 1, 1, time.Nanosecond
+		}
+		mgr, err := NewManager(conn, settings.Defaults, nil, opts)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(2)
@@ -119,4 +123,72 @@ func TestHardKillKeepsProgress(t *testing.T) {
 	if failed != 1 {
 		t.Errorf("interrupted run not marked")
 	}
+}
+
+// A hard kill in the middle of a large zip: the next scan continues inside
+// the archive from the last checkpoint and ends with the same result as an
+// uninterrupted scan.
+func TestHardKillInsideZip(t *testing.T) {
+	dir := t.TempDir()
+	root := filepath.Join(dir, "models")
+	os.MkdirAll(root, 0o755)
+	zipData := bigZip(t, 400, 250_000) // ~100 MB
+	os.WriteFile(filepath.Join(root, "Pack.zip"), zipData, 0o644)
+	dbPath := filepath.Join(dir, "catalog.db")
+	conn, err := db.Open(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := catalog.AddRoot(context.Background(), conn, root); err != nil {
+		t.Fatal(err)
+	}
+	offset := func(c *sql.DB) int64 {
+		var n int64
+		c.QueryRow(`SELECT coalesce(max(offset), 0) FROM hash_progress`).Scan(&n)
+		return n
+	}
+	cmd := exec.Command(os.Args[0], "-test.run=^$")
+	cmd.Env = append(os.Environ(), "MODELKEEPER_CRASH_CHILD="+dbPath, "MODELKEEPER_CRASH_ONEPASS=1")
+	cmd.Stderr = os.Stderr
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(60 * time.Second)
+	for offset(conn) < int64(len(zipData))/4 && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	cmd.Process.Kill()
+	cmd.Wait()
+	conn.Close()
+
+	conn, err = db.Open(dbPath)
+	if err != nil {
+		t.Fatalf("catalog does not open after the crash: %v", err)
+	}
+	defer conn.Close()
+	at := offset(conn)
+	if at <= 0 || at >= int64(len(zipData)) {
+		t.Fatalf("killed with checkpoint at %d of %d; test needs a partial state", at, len(zipData))
+	}
+	mgr, err := NewManager(conn, settings.Defaults, nil, Options{EmitInterval: time.Hour, ArchiveMemLimit: 1, ResumeMin: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mgr.Start(1)
+	mgr.Wait()
+	p := mgr.Progress()
+	if p.Status != StatusDone {
+		t.Fatalf("resume scan: %s", p.Status)
+	}
+	if p.BytesDone >= int64(len(zipData)) {
+		t.Errorf("resume read %d bytes; the whole archive is %d", p.BytesDone, len(zipData))
+	}
+	ref := newEnv(t)
+	ref.write("Pack.zip", zipData)
+	ref.scan()
+	got := (&env{t: t, db: conn}).archiveState()["Pack.zip"]
+	if want := ref.archiveState()["Pack.zip"]; got != want {
+		t.Errorf("result after crash and resume differs from an uninterrupted scan")
+	}
+	t.Logf("killed at checkpoint %d MB of %d MB; resume read %d MB", at>>20, len(zipData)>>20, p.BytesDone>>20)
 }

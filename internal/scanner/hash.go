@@ -71,6 +71,11 @@ func (s *scan) pendingWork(ctx context.Context) (files, archives []hashJob, err 
 	for _, j := range archives {
 		bytes += j.size
 	}
+	// Already read before an interruption (checkpoints) does not count again.
+	var resumed int64
+	s.db.QueryRowContext(ctx, `SELECT coalesce(sum(p.offset), 0) FROM hash_progress p JOIN location l ON l.id = p.location_id
+		WHERE l.root_id = ? AND p.size = l.size AND p.mtime = l.mtime`, s.root.ID).Scan(&resumed)
+	bytes = max(0, bytes-resumed)
 	s.t.update(func(p *Progress) {
 		p.HashTotal, p.BytesTotal, p.ArchivesTotal = len(files), bytes, len(archives)
 	})
@@ -156,10 +161,9 @@ func (s *scan) hashFiles(ctx context.Context) error {
 			default:
 				s.checkUnchanged(r.job, r.sum)
 				pending = append(pending, r)
-				if len(pending) >= 200 {
-					if err := flush(); err != nil && storeErr == nil {
-						storeErr = err
-					}
+				// Saved right away: an interruption costs at most the files in progress.
+				if err := flush(); err != nil && storeErr == nil {
+					storeErr = err
 				}
 			}
 		case <-tick.C:
@@ -172,7 +176,7 @@ func (s *scan) hashFiles(ctx context.Context) error {
 
 func (s *scan) hashOne(ctx context.Context, j hashJob, buf []byte) hashResult {
 	abs := filepath.Join(s.root.Path, filepath.FromSlash(j.path))
-	sum, _, err := hashFile(ctx, abs, buf, s.t.addBytes)
+	sum, err := s.hashResumable(ctx, abs, j, buf)
 	if err != nil {
 		return hashResult{job: j, err: err}
 	}
@@ -217,6 +221,9 @@ func (s *scan) storeHashesOnce(ctx context.Context, rs []hashResult) error {
 		// Guard on size/mtime: if the walk of a later scan changed the row, keep it unhashed.
 		if _, err := tx.ExecContext(ctx, `UPDATE location SET file_id = ? WHERE id = ? AND size = ? AND mtime = ?`,
 			fid, r.job.id, r.job.size, r.job.mtime); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, `DELETE FROM hash_progress WHERE location_id = ?`, r.job.id); err != nil {
 			return err
 		}
 	}

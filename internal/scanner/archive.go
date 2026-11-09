@@ -9,7 +9,6 @@ import (
 	"hash/crc32"
 	"io"
 	"modelkeeper/internal/archive"
-	"os"
 
 	"github.com/nwaples/rardecode/v2"
 )
@@ -47,12 +46,39 @@ func readArchive(ctx context.Context, file, ext string, data []byte, countBytes 
 		return classify(err, nil)
 	}
 	defer it.Close()
+	return readEntries(ctx, it, nil, nil, countBytes)
+}
 
-	var members []archiveMember
+// entryHook is called after each completed entry with the index of the next
+// entry and the members so far (for checkpoints); force is set when the read
+// is being cancelled.
+type entryHook func(next int, members []archiveMember, force bool)
+
+// readEntries reads the remaining entries of it, continuing after members
+// (entries already read before an interruption). pos reports the entry index
+// (nil if the iterator cannot skip, then no checkpoints are made).
+func readEntries(ctx context.Context, it archive.Iter, members []archiveMember, pos archive.Skipper, countBytes func(int64), hooks ...entryHook) archiveResult {
+	var hook entryHook
+	if len(hooks) > 0 && pos != nil {
+		hook = hooks[0]
+	}
+	next := 0
+	if pos != nil {
+		next = pos.Pos()
+	}
+	cancelled := func(err error) archiveResult {
+		if hook != nil {
+			hook(next, members, true)
+		}
+		return archiveResult{Status: "", Detail: err.Error(), Members: members}
+	}
 	buf := make([]byte, 256<<10)
 	for {
 		if err := ctx.Err(); err != nil {
-			return archiveResult{Status: "", Detail: err.Error(), Members: members}
+			return cancelled(err)
+		}
+		if pos != nil {
+			next = pos.Pos()
 		}
 		hdr, r, err := it.Next()
 		if errors.Is(err, io.EOF) {
@@ -75,6 +101,9 @@ func readArchive(ctx context.Context, file, ext string, data []byte, countBytes 
 		}
 		n, err := io.CopyBuffer(w, &countingReader{r: r, ctx: ctx, add: countBytes}, buf)
 		if err != nil {
+			if errors.Is(err, context.Canceled) {
+				return cancelled(err)
+			}
 			return classify(fmt.Errorf("%s: %w", hdr.Name, err), members)
 		}
 		if hdr.CheckCRC && c.Sum32() != hdr.CRC32 {
@@ -87,6 +116,9 @@ func readArchive(ctx context.Context, file, ext string, data []byte, countBytes 
 		copy(m.SHA256[:], h.Sum(nil))
 		if m.Path != "" {
 			members = append(members, m)
+		}
+		if hook != nil {
+			hook(pos.Pos(), members, false)
 		}
 	}
 	return archiveResult{Status: archiveOK, Members: members}
@@ -133,21 +165,4 @@ func (c *countingReader) Read(p []byte) (int, error) {
 		c.add(int64(n))
 	}
 	return n, err
-}
-
-// hashFile streams a file through SHA-256.
-func hashFile(ctx context.Context, file string, buf []byte, countBytes func(int64)) ([32]byte, int64, error) {
-	var sum [32]byte
-	f, err := os.Open(file)
-	if err != nil {
-		return sum, 0, err
-	}
-	defer f.Close()
-	h := sha256.New()
-	n, err := io.CopyBuffer(h, &countingReader{r: f, ctx: ctx, add: countBytes}, buf)
-	if err != nil {
-		return sum, n, err
-	}
-	copy(sum[:], h.Sum(nil))
-	return sum, n, nil
 }

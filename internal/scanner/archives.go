@@ -10,6 +10,9 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
+
+	"modelkeeper/internal/archive"
 )
 
 // archives is phase 3: hash each pending archive and read all of its members (F7, F11).
@@ -36,32 +39,54 @@ func (s *scan) processArchive(ctx context.Context, j hashJob, buf []byte) error 
 	}
 	ext := strings.ToLower(strings.TrimPrefix(path.Ext(j.path), "."))
 
-	// Small archives: read once, hash and open from memory. Large: two passes.
-	var data []byte
-	var sum [32]byte
-	var err error
-	if j.size <= s.opts.ArchiveMemLimit {
-		data, err = readAll(ctx, abs, j.size, buf, s.t.addBytes)
-		if err == nil {
-			sum = sha256.Sum256(data)
-		}
-	} else {
-		sum, _, err = hashFile(ctx, abs, buf, s.t.addBytes)
-	}
-	if err != nil {
-		return s.archiveReadError(ctx, j, err)
-	}
-	if !unchanged(abs, j) {
-		return nil
-	}
-	// Same content as last time (full check, F9): the members were read and
-	// verified then and are identical now, so the checksums need no second pass.
-	if s.checkUnchanged(j, sum) && j.old != nil && archiveFinal[j.state] {
-		return nil
-	}
+	// Full check of an archive that was read before: hash it first; only if
+	// its content changed are the members read again (F9).
+	quickFull := s.full && j.old != nil && archiveFinal[j.state]
+	// Large zips are read in one pass with checkpoints; small archives of any
+	// format are read into memory once.
+	inMemory := j.size <= s.opts.ArchiveMemLimit && !(ext == "zip" && j.size >= s.opts.ResumeMin)
 
-	res := readArchive(ctx, abs, ext, data, nil)
-	data = nil
+	var sum [32]byte
+	var res archiveResult
+	var err error
+	switch {
+	case inMemory:
+		var data []byte
+		if data, err = readAll(ctx, abs, j.size, buf, s.t.addBytes); err != nil {
+			return s.archiveReadError(ctx, j, err)
+		}
+		sum = sha256.Sum256(data)
+		if !unchanged(abs, j) {
+			return nil
+		}
+		if s.checkUnchanged(j, sum) && quickFull {
+			return nil
+		}
+		res = readArchive(ctx, abs, ext, data, nil)
+	case quickFull || (ext != "zip" && ext != "7z"):
+		// rar (multi-volume archives are opened by the library) and quick
+		// full checks: hash (resumable), then read the members if needed.
+		if sum, err = s.hashResumable(ctx, abs, j, buf); err != nil {
+			return s.archiveReadError(ctx, j, err)
+		}
+		if !unchanged(abs, j) {
+			return nil
+		}
+		if s.checkUnchanged(j, sum) && quickFull {
+			s.dropCheckpoint(j.id)
+			return nil
+		}
+		res = readArchive(ctx, abs, ext, nil, nil)
+	default:
+		sum, res, err = s.readArchiveOnePass(ctx, abs, ext, j)
+		if err != nil {
+			return s.archiveReadError(ctx, j, err)
+		}
+		if !unchanged(abs, j) {
+			return nil
+		}
+		s.checkUnchanged(j, sum)
+	}
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -84,6 +109,61 @@ func (s *scan) processArchive(ctx context.Context, j hashJob, buf []byte) error 
 		s.t.update(func(p *Progress) { p.ArchivesEncrypted++ })
 	}
 	return nil
+}
+
+// readArchiveOnePass reads a zip or 7z once: the archive library reads the
+// file through a prefixHasher, which hashes it on the way. Zips from
+// ResumeMin on save checkpoints after entries and continue from one.
+// A returned error is an I/O error on the file itself.
+func (s *scan) readArchiveOnePass(ctx context.Context, abs, ext string, j hashJob) ([32]byte, archiveResult, error) {
+	var sum [32]byte
+	f, err := os.Open(abs)
+	if err != nil {
+		return sum, archiveResult{}, err
+	}
+	defer f.Close()
+	ph := newPrefixHasher(f, j.size, s.t.addBytes)
+	resumable := ext == "zip" && j.size >= s.opts.ResumeMin
+	var cp *checkpoint
+	if resumable {
+		if cp = s.loadCheckpoint(ctx, j); cp != nil && ph.resume(cp.State, cp.Offset) != nil {
+			cp, ph = nil, newPrefixHasher(f, j.size, s.t.addBytes)
+		}
+	}
+
+	var res archiveResult
+	it, err := archive.OpenReaderAt(ext, ph, j.size)
+	if err != nil {
+		res = classify(err, nil)
+	} else {
+		sk, _ := it.(archive.Skipper)
+		var members []archiveMember
+		if cp != nil && sk != nil && sk.SkipTo(cp.Next) == nil {
+			members = cp.Members
+		}
+		var hook entryHook
+		if resumable && sk != nil {
+			tick := ticker{every: s.opts.CheckpointEvery, last: time.Now()}
+			hook = func(next int, members []archiveMember, force bool) {
+				if !force && !tick.due() {
+					return
+				}
+				if state, pos, err := ph.checkpoint(); err == nil && pos > 0 {
+					s.saveCheckpoint(j, checkpoint{Offset: pos, State: state, Next: next, Members: members})
+				}
+			}
+		}
+		res = readEntries(ctx, it, members, sk, nil, hook)
+		it.Close()
+	}
+	if err := ph.readErr(); err != nil {
+		return sum, res, err // I/O, not a damaged archive
+	}
+	if err := ctx.Err(); err != nil {
+		return sum, res, err
+	}
+	sum, err = ph.finish(ctx)
+	return sum, res, err
 }
 
 // archiveFinal: archive states that are the result of reading the archive.
@@ -127,6 +207,9 @@ func (s *scan) storeArchiveOnce(ctx context.Context, j hashJob, sum [32]byte, re
 	}
 	if n, _ := r.RowsAffected(); n == 0 {
 		return nil // row changed meanwhile
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM hash_progress WHERE location_id = ?`, j.id); err != nil {
+		return err
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM location WHERE archive_id = ?`, j.id); err != nil {
 		return err
