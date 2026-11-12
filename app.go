@@ -57,10 +57,9 @@ type App struct {
 	scans    *scanner.Manager
 	watch    *watch.Watcher // live watching of local roots (E4); nil if unavailable
 
-	redetectMu sync.Mutex // serializes redetectAll
-	backupMu   sync.Mutex // serializes snapshots and rotation
-	bg         sync.WaitGroup
-	logFile    *os.File
+	backupMu sync.Mutex // serializes snapshots and rotation
+	bg       sync.WaitGroup
+	logFile  *os.File
 
 	// startupErr is set when the data folder or catalog could not be opened;
 	// the frontend shows it instead of the main UI.
@@ -477,31 +476,18 @@ func (a *App) SaveDetectionRules(partNames, sizeTokens []string) error {
 	return nil
 }
 
-// redetectAll re-runs model detection for every root, one after another,
-// waiting for scans that run meanwhile (e.g. started by the watcher).
+// redetectAll queues model detection for every root; the queue runs them one
+// after another, after scans that run meanwhile (e.g. started by the
+// watcher). A run already going with older settings is queued again.
 func (a *App) redetectAll() {
-	a.redetectMu.Lock() // a second call waits and then runs with the newest settings
-	defer a.redetectMu.Unlock()
 	roots, err := catalog.ListRoots(context.Background(), a.db)
 	if err != nil {
 		log.Printf("redetect all: %v", err)
 		return
 	}
 	for _, r := range roots {
-		for attempt := 0; ; attempt++ {
-			a.scans.Wait()
-			err := a.scans.Redetect(r.ID)
-			if err == nil {
-				break
-			}
-			if attempt >= 20 {
-				log.Printf("redetect root %d: %v", r.ID, err)
-				break
-			}
-			time.Sleep(500 * time.Millisecond) // another scan started in between
-		}
+		a.scans.EnqueueRedetect(r.ID)
 	}
-	a.scans.Wait()
 }
 
 // snapshot writes a snapshot of conn into data/backups and rotates the
@@ -642,23 +628,9 @@ func (a *App) AddRoot(path string) (catalog.Root, error) {
 	}
 	if r.Reactivated {
 		log.Printf("root %d reactivated: %s", r.ID, r.Path)
-		go a.scanWhenFree(r.ID)
+		a.scans.EnqueueScan(r.ID)
 	}
 	return r, nil
-}
-
-// scanWhenFree starts an incremental scan of a root, after a running scan.
-func (a *App) scanWhenFree(id int64) {
-	for attempt := 0; attempt < 20; attempt++ {
-		a.scans.Wait()
-		if err := a.scans.Start(id); err == nil {
-			return
-		} else if msg.From(err).Key != "scan.error.alreadyRunning" {
-			log.Printf("scan root %d: %v", id, err)
-			return
-		}
-		time.Sleep(500 * time.Millisecond) // another scan started in between
-	}
 }
 
 // DeactivateRoot removes a root folder from scanning, watching and the root
@@ -925,12 +897,7 @@ func (a *App) detectExisting() {
 	}
 	rows.Close()
 	for _, id := range ids {
-		a.scans.Wait()
-		if err := a.scans.Redetect(id); err != nil {
-			log.Printf("detect existing root %d: %v", id, err)
-			continue
-		}
-		a.scans.Wait()
+		a.scans.EnqueueRedetect(id)
 	}
 }
 

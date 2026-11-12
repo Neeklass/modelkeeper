@@ -162,6 +162,14 @@ type Manager struct {
 	cancel context.CancelFunc
 	done   chan struct{}
 	last   *tracker
+	queue  []job // started one after another when no scan runs (Enqueue)
+	closed bool
+}
+
+// job is a queued scan.
+type job struct {
+	root int64
+	mode string
 }
 
 // NewManager creates a manager. Runs left "running" by a crash are marked failed.
@@ -216,6 +224,7 @@ func (m *Manager) start(rootID int64, mode string) error {
 	}
 	done := m.done
 	go func() {
+		defer m.next() // after done is closed
 		defer close(done)
 		defer cancel()
 		stopEmit := t.emitEvery(s.opts.EmitInterval, m.emit)
@@ -230,15 +239,7 @@ func (m *Manager) start(rootID int64, mode string) error {
 func (m *Manager) Busy() bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if m.done == nil {
-		return false
-	}
-	select {
-	case <-m.done:
-		return false
-	default:
-		return true
-	}
+	return m.running()
 }
 
 // Cancel stops the running scan, if any. Work done so far is kept.
@@ -260,8 +261,11 @@ func (m *Manager) Wait() {
 	}
 }
 
-// Close cancels a running scan and waits for it to finish.
+// Close drops queued scans, cancels a running scan and waits for it to finish.
 func (m *Manager) Close() {
+	m.mu.Lock()
+	m.closed, m.queue = true, nil
+	m.mu.Unlock()
 	m.Cancel()
 	m.Wait()
 }
@@ -507,8 +511,89 @@ func (m *Manager) Exclusive(fn func(ctx context.Context) error) error {
 	m.done = done
 	m.cancel = func() {}
 	m.mu.Unlock()
+	defer m.next()
 	defer close(done)
 	return fn(context.Background())
+}
+
+// EnqueueScan queues an incremental scan of a root; it starts as soon as no
+// other scan runs (right away if none does).
+func (m *Manager) EnqueueScan(rootID int64) { m.enqueue(rootID, ModeIncremental) }
+
+// EnqueueRedetect queues a model detection run of a root (see Redetect).
+func (m *Manager) EnqueueRedetect(rootID int64) { m.enqueue(rootID, ModeDetect) }
+
+// enqueue adds a job, unless the same job is already waiting. A job that is
+// running is queued again: it may run with outdated settings.
+func (m *Manager) enqueue(rootID int64, mode string) {
+	m.mu.Lock()
+	if m.closed {
+		m.mu.Unlock()
+		return
+	}
+	for _, j := range m.queue {
+		if j.root == rootID && j.mode == mode {
+			m.mu.Unlock()
+			return
+		}
+	}
+	m.queue = append(m.queue, job{rootID, mode})
+	m.mu.Unlock()
+	m.next()
+}
+
+// next starts the next queued job if no scan runs. Jobs that cannot start
+// (e.g. the root was deactivated meanwhile) are dropped.
+func (m *Manager) next() {
+	for {
+		m.mu.Lock()
+		if m.closed || len(m.queue) == 0 || m.running() {
+			m.mu.Unlock()
+			return
+		}
+		j := m.queue[0]
+		m.queue = m.queue[1:]
+		m.mu.Unlock()
+		err := m.start(j.root, j.mode)
+		if err == nil {
+			return
+		}
+		if msg.From(err).Key == "scan.error.alreadyRunning" {
+			// Another scan started in between; it calls next when done.
+			m.mu.Lock()
+			m.queue = append([]job{j}, m.queue...)
+			m.mu.Unlock()
+			return
+		}
+		log.Printf("queued %s of root %d: %v", j.mode, j.root, err)
+	}
+}
+
+// running reports whether a scan runs. Caller holds m.mu.
+func (m *Manager) running() bool {
+	if m.done == nil {
+		return false
+	}
+	select {
+	case <-m.done:
+		return false
+	default:
+		return true
+	}
+}
+
+// WaitIdle blocks until no scan runs and the queue is empty.
+func (m *Manager) WaitIdle() {
+	for {
+		m.Wait()
+		m.mu.Lock()
+		idle := !m.running() && (len(m.queue) == 0 || m.closed)
+		m.mu.Unlock()
+		if idle {
+			return
+		}
+		time.Sleep(10 * time.Millisecond) // next is starting the following job
+	}
 }
 
 // DetectRules returns the detection rules from the current settings.
