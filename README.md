@@ -64,7 +64,13 @@ models). If it is damaged, the app stops and
 shows the path of the newest snapshot. If `catalog.db` is missing but
 snapshots exist, it asks before starting with an empty catalog.
 
-To restore a snapshot:
+To restore a snapshot, open "Show and restore backups" in the settings (or
+on the error screen after a failed start), choose one and restart
+modelkeeper. At the next start, before anything is opened, the snapshot is
+checked and put in place; the state it replaces is kept as a
+`pre-restore` snapshot, so a restore can be undone the same way.
+
+By hand:
 
 1. Close modelkeeper.
 2. Copy `catalog.db`, `settings.json` and `thumbnails\` from the snapshot

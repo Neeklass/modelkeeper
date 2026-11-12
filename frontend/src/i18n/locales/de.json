@@ -392,7 +392,7 @@
     "last": "Letztes Backup: {{when}} ({{reason}}).",
     "none": "Noch kein Backup.",
     "hint": "Backups liegen in data\\backups: täglich beim Start (nur wenn sich etwas geändert hat) und vor riskanten Änderungen. Sie liegen auf demselben Laufwerk: Sichere den modelkeeper-Ordner zusätzlich extern.",
-    "restoreHint": "Wiederherstellen: modelkeeper schließen, catalog.db, settings.json und den Ordner thumbnails aus dem Backup-Ordner in den Datenordner kopieren (vorhandene Dateien ersetzen), catalog.db-wal und catalog.db-shm löschen, falls vorhanden, und modelkeeper neu starten.",
+    "restoreHint": "Wähle unten ein Backup zum Wiederherstellen und starte modelkeeper neu. Von Hand: modelkeeper schließen, catalog.db, settings.json und die Dateien aus thumbnails aus dem Backup-Ordner in den Datenordner kopieren (vorhandene ersetzen), catalog.db-wal und catalog.db-shm löschen, falls vorhanden, und modelkeeper neu starten.",
     "startEmpty": "Mit leerem Katalog starten",
     "confirmStartEmpty": "Mit einem leeren Katalog starten? Tags, Notizen und Korrekturen sind dann nicht da, bis du ein Backup zurückspielst. Die Backups bleiben erhalten.",
     "reason": {
@@ -401,9 +401,23 @@
       "preMigration": "vor Katalog-Update",
       "preRemoveRoot": "vor dem Löschen eines Ordners",
       "preFileTypes": "vor dem Ändern von Dateitypen",
-      "other": "sonstiges"
+      "other": "sonstiges",
+      "preRestore": "Stand vor einer Wiederherstellung"
     },
     "total_one": "{{n}} Backup, zusammen {{size}}.",
-    "total_other": "{{n}} Backups, zusammen {{size}}."
+    "total_other": "{{n}} Backups, zusammen {{size}}.",
+    "listTitle": "Backups anzeigen und wiederherstellen",
+    "counts": "{{models}} Modelle, {{tags}} Tags",
+    "unverified": "ungeprüft",
+    "unverifiedHint": "Dieses Backup wurde beim Erstellen nicht geprüft (älter als die Prüfung oder Stand eines beschädigten Katalogs). Vor dem Wiederherstellen wird es geprüft.",
+    "restore": "Wiederherstellen…",
+    "confirmRestore": "Das Backup vom {{when}} beim nächsten Start wiederherstellen?\n\nKatalog, Einstellungen und manuelle Vorschaubilder werden durch den Stand des Backups ersetzt. Alles, was du seitdem geändert hast, ist dann nicht mehr im Katalog. Der aktuelle Stand wird vorher selbst als Backup abgelegt, sodass du das rückgängig machen kannst.",
+    "pending": "Das Backup vom {{when}} wird beim nächsten Start wiederhergestellt. Schließe modelkeeper und starte es neu.",
+    "quitNow": "modelkeeper jetzt beenden",
+    "cancelRestore": "Wiederherstellung abbrechen",
+    "restored": "Das Backup {{from}} wurde wiederhergestellt. Der vorherige Stand liegt als Backup in {{previous}}.",
+    "restoreFailed": "Die Wiederherstellung ist fehlgeschlagen; der Katalog ist unverändert. Details: {{detail}}",
+    "restoreRefused": "Das Backup {{name}} kann nicht wiederhergestellt werden: {{detail}}",
+    "dismiss": "Ausblenden"
   }
 }

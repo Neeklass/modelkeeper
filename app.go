@@ -65,6 +65,8 @@ type App struct {
 	// startupErr is set when the data folder or catalog could not be opened;
 	// the frontend shows it instead of the main UI.
 	startupErr *msg.Msg
+	// notice is shown once after start (e.g. a snapshot was restored).
+	notice *msg.Msg
 }
 
 func NewApp() *App { return &App{} }
@@ -93,6 +95,7 @@ func (a *App) init() error {
 		a.logFile = f
 		log.Printf("modelkeeper started, data folder %s", layout.Root)
 	}
+	a.applyRestore() // before settings and catalog are opened
 	st, err := settings.Load(layout.Settings)
 	if err != nil {
 		return msg.Wrap(err, "error.settingsLoad", "path", layout.Settings)
@@ -237,23 +240,101 @@ type AppStatus struct {
 	// Backups and BackupBytes: number and total size of the snapshots.
 	Backups     int   `json:"backups"`
 	BackupBytes int64 `json:"backupBytes"`
+	// PendingRestore: snapshot to restore at the next start, "" if none.
+	PendingRestore string   `json:"pendingRestore"`
+	Notice         *msg.Msg `json:"notice,omitempty"`
 }
 
 // BackupInfo describes a snapshot.
 type BackupInfo struct {
-	Path   string `json:"path"`
-	Reason string `json:"reason"`
-	Time   int64  `json:"time"` // unix ms
+	Name     string `json:"name"`
+	Path     string `json:"path"`
+	Reason   string `json:"reason"`
+	Time     int64  `json:"time"` // unix ms
+	Models   int    `json:"models"`
+	Tags     int    `json:"tags"`
+	Verified bool   `json:"verified"`
+	Bytes    int64  `json:"bytes,omitempty"` // set by ListBackups
 }
 
 func backupInfo(s backup.Snapshot) *BackupInfo {
-	return &BackupInfo{Path: s.Path, Reason: s.Manifest.Reason, Time: s.Time.UnixMilli()}
+	m := s.Manifest
+	return &BackupInfo{Name: s.Name, Path: s.Path, Reason: m.Reason, Time: s.Time.UnixMilli(),
+		Models: m.Models, Tags: m.Tags, Verified: m.Verified}
 }
+
+func (a *App) restoreTarget() backup.Target {
+	l := a.layout
+	return backup.Target{Catalog: l.Catalog, Settings: l.Settings, Thumbnails: l.Thumbnails, Backups: l.Backups}
+}
+
+// applyRestore restores a snapshot the user chose for this start (J2).
+// On failure the data folder is unchanged and the app starts normally.
+func (a *App) applyRestore() {
+	r, err := backup.ApplyPendingRestore(context.Background(), a.restoreTarget(), appVersion(), time.Now())
+	switch {
+	case err != nil:
+		log.Printf("restore: %v", err)
+		m := msg.New("backup.restoreFailed", "detail", err.Error())
+		a.notice = &m
+	case r != nil:
+		log.Printf("restored %s; previous state kept in %s", r.From.Path, r.Previous.Path)
+		m := msg.New("backup.restored", "from", r.From.Name, "previous", r.Previous.Path)
+		a.notice = &m
+	}
+}
+
+// ListBackups returns the snapshots, newest first (also on the startup
+// error screen, without a catalog).
+func (a *App) ListBackups() ([]BackupInfo, error) {
+	if a.layout.Backups == "" {
+		return nil, msg.Wrap(nil, "error.notReady")
+	}
+	list, err := backup.List(a.layout.Backups)
+	if err != nil {
+		return nil, msg.Wrap(err, "error.openFolder", "path", a.layout.Backups)
+	}
+	out := []BackupInfo{}
+	for _, s := range list {
+		b := backupInfo(s)
+		b.Bytes = backup.SnapshotSize(s)
+		out = append(out, *b)
+	}
+	return out, nil
+}
+
+// RequestRestore restores a snapshot at the next start of the app, after
+// checking that it is intact. The current state is kept as a snapshot.
+func (a *App) RequestRestore(name string) error {
+	if a.layout.Backups == "" {
+		return msg.Wrap(nil, "error.notReady")
+	}
+	if err := backup.RequestRestore(context.Background(), a.restoreTarget(), name, time.Now()); err != nil {
+		return msg.Wrap(err, "backup.restoreRefused", "name", name)
+	}
+	log.Printf("restore of %s requested for the next start", name)
+	return nil
+}
+
+// CancelRestore drops a requested restore.
+func (a *App) CancelRestore() error {
+	if err := backup.CancelRestore(a.restoreTarget()); err != nil {
+		return msg.Wrap(err, "error.unknown")
+	}
+	return nil
+}
+
+// DismissNotice clears the start notice.
+func (a *App) DismissNotice() { a.notice = nil }
+
+// Quit closes the app (e.g. to apply a requested restore).
+func (a *App) Quit() { runtime.Quit(a.ctx) }
 
 // GetStatus returns the data folder, the configured language and any startup error.
 func (a *App) GetStatus() AppStatus {
-	s := AppStatus{DataDir: a.layout.Root, StartupError: a.startupErr}
+	s := AppStatus{DataDir: a.layout.Root, StartupError: a.startupErr, Notice: a.notice}
 	if a.layout.Backups != "" {
+		s.PendingRestore, _ = backup.PendingRestore(a.restoreTarget())
 		if list, err := backup.List(a.layout.Backups); err == nil && len(list) > 0 {
 			s.LastBackup = backupInfo(list[0])
 			s.Backups = len(list)

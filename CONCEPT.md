@@ -154,9 +154,11 @@ Override  (manual corrections of model detection, survive rescans)
 - **J2** Automatic local snapshots in `data\backups\` (see M): daily at start (only if something changed
   since the newest snapshot), always before a catalog migration, before risky catalog changes (permanently
   deleting a root folder, removing file types or moving them to another category) and on demand ("Create
-  backup now"). Every snapshot is checked with `quick_check` after writing. A damaged catalog (integrity check at start) stops the app before anything is
-  written, with the path to the newest snapshot; restoring is manual. An external backup (another drive,
-  Dropbox …) stays manual.
+  backup now"). Every snapshot is checked with `quick_check` after writing. A damaged catalog (integrity
+  check at start) stops the app before anything is written, with the path to the newest snapshot. A snapshot
+  can be restored from the app (settings or the startup error screen): it is applied at the next start,
+  before anything is opened, and the replaced state is kept as a `pre-restore` snapshot. An external backup
+  (another drive, Dropbox …) stays manual.
 
 ## L – Additional Fields
 
@@ -187,10 +189,11 @@ modelkeeper\
 ```
 
 - Snapshots are written to a temporary folder and renamed when complete. Retention: the 14 newest daily
-  snapshots and all event snapshots (`pre-migration-NNNN`, `pre-remove-root`, `pre-filetypes`, `manual`) of
+  snapshots and all event snapshots (`pre-migration-NNNN`, `pre-remove-root`, `pre-filetypes`, `pre-restore`, `manual`) of
   the last 90 days; the 3 newest are never deleted. Rotation only deletes folders it created (name scheme
   and manifest).
-- Restore (manual): close the app, copy `catalog.db`, `settings.json` and `thumbnails\` from a snapshot into
+- Restore: from the app (applied at the next start; the replaced state becomes a `pre-restore` snapshot), or
+  by hand: close the app, copy `catalog.db`, `settings.json` and `thumbnails\` from a snapshot into
   `data\`, delete `catalog.db-wal`/`-shm` if present, start the app.
 - The data folder is never catalogued, even if it lies inside a root; a root that contains it or lies inside
   it is rejected.

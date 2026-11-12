@@ -220,3 +220,39 @@ func TestPurgeRootStopsWhenBackupFails(t *testing.T) {
 		t.Errorf("no pre-remove-root snapshot: %+v", s)
 	}
 }
+
+// A restore chosen in the app is applied at the next start, before the
+// catalog is opened, and reported once.
+func TestRestoreAtStart(t *testing.T) {
+	layout := startupEnv(t) // 50 models, 20 snapshots of that state
+	conn, _ := db.Open(layout.Catalog)
+	conn.Exec(`DELETE FROM model`) // the mistake to undo
+	db.Close(conn)
+	newest, _ := backup.Latest(layout.Backups)
+
+	a := &App{layout: layout}
+	if err := a.RequestRestore(newest.Name); err != nil {
+		t.Fatal(err)
+	}
+	if s := a.GetStatus(); s.PendingRestore != newest.Name {
+		t.Fatalf("pending = %q", s.PendingRestore)
+	}
+
+	b := &App{layout: layout} // next start
+	b.applyRestore()
+	if b.notice == nil || b.notice.Key != "backup.restored" {
+		t.Fatalf("notice = %+v", b.notice)
+	}
+	if err := b.openCatalog(false); err != nil {
+		t.Fatal(err)
+	}
+	defer closeApp(b)
+	var n int
+	b.db.QueryRow(`SELECT count(*) FROM model`).Scan(&n)
+	if n != 50 {
+		t.Errorf("%d models after restore, want 50", n)
+	}
+	if s := b.GetStatus(); s.PendingRestore != "" {
+		t.Error("restore still pending")
+	}
+}

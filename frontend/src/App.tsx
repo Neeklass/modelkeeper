@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
-import {CreateBackup, GetStatus, OpenDataFolder, SetLanguage, SetNASRescanHours, StartWithEmptyCatalog} from '../wailsjs/go/main/App'
+import {CreateBackup, DismissNotice, GetStatus, OpenDataFolder, SetLanguage, SetNASRescanHours, StartWithEmptyCatalog} from '../wailsjs/go/main/App'
 import {main} from '../wailsjs/go/models'
 import {formatBytes, formatDateTime, formatNumber} from './format'
 import i18n, {languages, resolveLanguage, systemLanguage} from './i18n'
@@ -8,19 +8,9 @@ import {Msg, toMsg, translateMsg} from './i18n/msg'
 import {RootsPanel} from './components/RootsPanel'
 import {ModelsView} from './components/ModelsView'
 import {DetectionSettingsPanel} from './components/DetectionSettings'
+import {BackupsPanel, backupReasonKey} from './components/BackupsPanel'
 
 type Tab = 'models' | 'folders' | 'settings'
-
-/** Translation key of a snapshot reason ("pre-migration-0007" → backup.reason.preMigration). */
-function backupReasonKey(reason: string): string {
-    if (reason.startsWith('pre-migration-')) return 'backup.reason.preMigration'
-    return {
-        'daily': 'backup.reason.daily',
-        'manual': 'backup.reason.manual',
-        'pre-remove-root': 'backup.reason.preRemoveRoot',
-        'pre-filetypes': 'backup.reason.preFileTypes',
-    }[reason] ?? 'backup.reason.other'
-}
 
 /** Intervals for scheduled NAS rescans in hours (App.NASRescanChoices), 0 = off. */
 const NAS_RESCAN_HOURS = [0, 1, 6, 12, 24, 168]
@@ -57,6 +47,15 @@ function App() {
                     ))}
                 </nav>
             </header>
+            {status.notice && (
+                <div className="row notice-inactive">
+                    <span className="small">{translateMsg(status.notice as Msg)}</span>
+                    <button className="link small" onClick={() => {
+                        DismissNotice()
+                        setStatus(main.AppStatus.createFrom({...status, notice: undefined}))
+                    }}>{t('backup.dismiss')}</button>
+                </div>
+            )}
             {tab === 'models' && <ModelsView/>}
             {tab === 'folders' && <main><RootsPanel/></main>}
             {tab === 'settings' && <main>
@@ -95,6 +94,8 @@ function StartupError({status, onStarted}: { status: main.AppStatus; onStarted: 
                 </button>}
                 {startup.key === 'error.catalogMissing' && <button onClick={startEmpty}>{t('backup.startEmpty')}</button>}
             </div>
+            {status.dataDir && <BackupsPanel pending={status.pendingRestore}
+                                             onChanged={() => GetStatus().then(onStarted).catch(e => setError(toMsg(e)))}/>}
             {error && <p className="error">{translateMsg(error)}</p>}
         </div>
     )
@@ -113,7 +114,7 @@ function SettingsPanel({status, onChange}: { status: main.AppStatus; onChange: (
         try {
             const b = await CreateBackup()
             setBackupDone(b.path)
-            onChange(main.AppStatus.createFrom({...status, lastBackup: b}))
+            onChange(await GetStatus())
         } catch (e) {
             setError(toMsg(e))
         } finally {
@@ -177,6 +178,8 @@ function SettingsPanel({status, onChange}: { status: main.AppStatus; onChange: (
                 {' '}{t('backup.hint')}
             </p>
             {backupDone && <p className="small">{t('backup.created', {path: backupDone})}</p>}
+            <BackupsPanel pending={status.pendingRestore}
+                          onChanged={() => GetStatus().then(onChange).catch(e => setError(toMsg(e)))}/>
             {error && <p className="error">{translateMsg(error)}</p>}
         </section>
     )

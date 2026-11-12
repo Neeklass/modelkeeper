@@ -270,14 +270,7 @@ func Size(dir string) (int64, error) {
 	}
 	var total int64
 	for _, s := range list {
-		filepath.WalkDir(s.Path, func(p string, d fs.DirEntry, err error) error {
-			if err == nil && !d.IsDir() {
-				if fi, err := d.Info(); err == nil {
-					total += fi.Size()
-				}
-			}
-			return nil
-		})
+		total += SnapshotSize(s)
 	}
 	return total, nil
 }

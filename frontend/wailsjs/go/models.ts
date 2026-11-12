@@ -490,9 +490,14 @@ export namespace hashshare {
 export namespace main {
 	
 	export class BackupInfo {
+	    name: string;
 	    path: string;
 	    reason: string;
 	    time: number;
+	    models: number;
+	    tags: number;
+	    verified: boolean;
+	    bytes?: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new BackupInfo(source);
@@ -500,9 +505,14 @@ export namespace main {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
 	        this.path = source["path"];
 	        this.reason = source["reason"];
 	        this.time = source["time"];
+	        this.models = source["models"];
+	        this.tags = source["tags"];
+	        this.verified = source["verified"];
+	        this.bytes = source["bytes"];
 	    }
 	}
 	export class AppStatus {
@@ -513,6 +523,8 @@ export namespace main {
 	    lastBackup?: BackupInfo;
 	    backups: number;
 	    backupBytes: number;
+	    pendingRestore: string;
+	    notice?: msg.Msg;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppStatus(source);
@@ -527,6 +539,8 @@ export namespace main {
 	        this.lastBackup = this.convertValues(source["lastBackup"], BackupInfo);
 	        this.backups = source["backups"];
 	        this.backupBytes = source["backupBytes"];
+	        this.pendingRestore = source["pendingRestore"];
+	        this.notice = this.convertValues(source["notice"], msg.Msg);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

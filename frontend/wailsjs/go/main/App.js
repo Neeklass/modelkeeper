@@ -10,6 +10,10 @@ export function AddTags(arg1, arg2) {
   return window['go']['main']['App']['AddTags'](arg1, arg2);
 }
 
+export function CancelRestore() {
+  return window['go']['main']['App']['CancelRestore']();
+}
+
 export function CancelScan() {
   return window['go']['main']['App']['CancelScan']();
 }
@@ -24,6 +28,10 @@ export function DeactivateRoot(arg1) {
 
 export function DetachAnchor(arg1, arg2, arg3) {
   return window['go']['main']['App']['DetachAnchor'](arg1, arg2, arg3);
+}
+
+export function DismissNotice() {
+  return window['go']['main']['App']['DismissNotice']();
 }
 
 export function DismissSuggestion(arg1, arg2) {
@@ -60,6 +68,10 @@ export function GetStatus() {
 
 export function ImportHashes(arg1) {
   return window['go']['main']['App']['ImportHashes'](arg1);
+}
+
+export function ListBackups() {
+  return window['go']['main']['App']['ListBackups']();
 }
 
 export function ListLastScanIssues(arg1) {
@@ -110,12 +122,20 @@ export function PurgeRoot(arg1, arg2) {
   return window['go']['main']['App']['PurgeRoot'](arg1, arg2);
 }
 
+export function Quit() {
+  return window['go']['main']['App']['Quit']();
+}
+
 export function RedetectRoot(arg1) {
   return window['go']['main']['App']['RedetectRoot'](arg1);
 }
 
 export function RemoveTag(arg1, arg2) {
   return window['go']['main']['App']['RemoveTag'](arg1, arg2);
+}
+
+export function RequestRestore(arg1) {
+  return window['go']['main']['App']['RequestRestore'](arg1);
 }
 
 export function ResetCorrections(arg1) {

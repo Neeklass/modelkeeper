@@ -392,7 +392,7 @@
     "last": "Last backup: {{when}} ({{reason}}).",
     "none": "No backup yet.",
     "hint": "Backups are kept in data\\backups: daily at start (only if something changed) and before risky changes. They are on the same drive: also back up the modelkeeper folder externally.",
-    "restoreHint": "To restore: close modelkeeper, copy catalog.db, settings.json and the thumbnails folder from the backup folder into the data folder (replacing the existing files), delete catalog.db-wal and catalog.db-shm if present, and start modelkeeper again.",
+    "restoreHint": "Choose a backup below to restore and start modelkeeper again. By hand: close modelkeeper, copy catalog.db, settings.json and the files in thumbnails from the backup folder into the data folder (replacing existing ones), delete catalog.db-wal and catalog.db-shm if present, and start modelkeeper again.",
     "startEmpty": "Start with an empty catalog",
     "confirmStartEmpty": "Start with an empty catalog? Tags, notes and corrections are missing until you restore a backup. The backups are kept.",
     "reason": {
@@ -401,9 +401,23 @@
       "preMigration": "before a catalog update",
       "preRemoveRoot": "before deleting a folder",
       "preFileTypes": "before changing file types",
-      "other": "other"
+      "other": "other",
+      "preRestore": "state before a restore"
     },
     "total_one": "{{n}} backup, {{size}} in total.",
-    "total_other": "{{n}} backups, {{size}} in total."
+    "total_other": "{{n}} backups, {{size}} in total.",
+    "listTitle": "Show and restore backups",
+    "counts": "{{models}} models, {{tags}} tags",
+    "unverified": "unverified",
+    "unverifiedHint": "This backup was not checked when it was made (older than the check, or the state of a damaged catalog). It is checked before restoring.",
+    "restore": "Restore…",
+    "confirmRestore": "Restore the backup of {{when}} at the next start?\n\nCatalog, settings and manual thumbnails are replaced by the backup's state. Everything you changed since then is no longer in the catalog. The current state is saved as a backup first, so you can undo this.",
+    "pending": "The backup of {{when}} is restored at the next start. Close modelkeeper and start it again.",
+    "quitNow": "Quit modelkeeper now",
+    "cancelRestore": "Cancel restore",
+    "restored": "The backup {{from}} was restored. The previous state is kept as a backup in {{previous}}.",
+    "restoreFailed": "Restoring failed; the catalog is unchanged. Details: {{detail}}",
+    "restoreRefused": "The backup {{name}} cannot be restored: {{detail}}",
+    "dismiss": "Dismiss"
   }
 }
