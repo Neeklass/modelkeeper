@@ -385,7 +385,20 @@ func Pending(ctx context.Context, db *sql.DB, rootID int64) ([]int64, error) {
 // after restoring a snapshot, which only holds the manual ones, J2), so that
 // they are generated again (I3). Manual thumbnails are kept: they cannot be
 // generated; their number is returned as lostManual.
+//
+// The folder is listed once (one directory read instead of a file lookup
+// per model, which matters at 100,000 models).
 func ForgetMissing(ctx context.Context, db *sql.DB, dir string) (reset, lostManual int, err error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return 0, 0, err // unreadable: better not reset anything
+	}
+	have := make(map[string]bool, len(entries))
+	for _, e := range entries {
+		if !e.IsDir() {
+			have[strings.ToLower(e.Name())] = true
+		}
+	}
 	rows, err := db.QueryContext(ctx, `SELECT id, thumb_file, thumb_source = 'manual' FROM model
 		WHERE thumb_source IS NOT NULL AND coalesce(thumb_file, '') <> ''`)
 	if err != nil {
@@ -400,7 +413,7 @@ func ForgetMissing(ctx context.Context, db *sql.DB, dir string) (reset, lostManu
 			rows.Close()
 			return 0, 0, err
 		}
-		if _, err := os.Stat(filepath.Join(dir, filepath.Base(file))); !errors.Is(err, os.ErrNotExist) {
+		if have[strings.ToLower(filepath.Base(file))] {
 			continue
 		}
 		if manual {
