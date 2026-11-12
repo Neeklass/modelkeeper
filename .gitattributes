@@ -1,0 +1,13 @@
+# Line endings: LF in the repository and the working tree, on every OS.
+* text=auto eol=lf
+
+# NSIS scripts are Windows files.
+*.nsi text eol=crlf
+*.nsh text eol=crlf
+
+*.png binary
+*.ico binary
+*.jpg binary
+*.zip binary
+*.7z binary
+*.rar binary
