@@ -13,6 +13,7 @@ import (
 
 	"modelkeeper/internal/detect"
 	"modelkeeper/internal/msg"
+	"modelkeeper/internal/pathutil"
 )
 
 // Root is a scanned root folder.
@@ -68,8 +69,9 @@ func GetRoot(ctx context.Context, db *sql.DB, id int64) (Root, error) {
 }
 
 // AddRoot registers a folder as root. The kind (local/nas) is detected from
-// the path. Roots must not overlap (one inside another).
-func AddRoot(ctx context.Context, db *sql.DB, path string) (Root, error) {
+// the path. Roots must not overlap (one inside another), and must neither be
+// nor contain the app's data folder dataDir ("" = no check).
+func AddRoot(ctx context.Context, db *sql.DB, path, dataDir string) (Root, error) {
 	abs, err := filepath.Abs(strings.TrimSpace(path))
 	if err != nil {
 		return Root{}, msg.Wrap(err, "error.rootInvalid", "path", path)
@@ -79,12 +81,16 @@ func AddRoot(ctx context.Context, db *sql.DB, path string) (Root, error) {
 		return Root{}, msg.Wrap(err, "error.rootNotFolder", "path", abs)
 	}
 
+	if dataDir != "" && pathutil.Overlap(abs, dataDir) {
+		return Root{}, msg.Wrap(nil, "error.rootContainsData", "path", abs, "data", dataDir)
+	}
+
 	existing, err := ListRoots(ctx, db)
 	if err != nil {
 		return Root{}, err
 	}
 	for _, r := range existing {
-		if pathsOverlap(r.Path, abs) {
+		if pathutil.Overlap(r.Path, abs) {
 			return Root{}, msg.Wrap(nil, "error.rootOverlap", "path", abs, "other", r.Path)
 		}
 	}
@@ -120,20 +126,6 @@ func RemoveRoot(ctx context.Context, db *sql.DB, id int64) error {
 		return err
 	}
 	return tx.Commit()
-}
-
-// pathsOverlap reports whether a equals b or one contains the other.
-// Comparison is case-insensitive on Windows.
-func pathsOverlap(a, b string) bool {
-	norm := func(p string) string {
-		p = filepath.Clean(p)
-		if os.PathSeparator == '\\' {
-			p = strings.ToLower(p)
-		}
-		return strings.TrimRight(p, `\/`) + string(os.PathSeparator)
-	}
-	na, nb := norm(a), norm(b)
-	return strings.HasPrefix(na, nb) || strings.HasPrefix(nb, na)
 }
 
 // SetCreatorLevel turns the "first level = creator" rule (F4a) on or off.

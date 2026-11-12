@@ -23,13 +23,13 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
 
 	"modelkeeper/internal/catalog"
+	"modelkeeper/internal/pathutil"
 )
 
 // Scanner starts background scans (scanner.Manager).
@@ -263,16 +263,7 @@ func (w *Watcher) excluded(p string) bool {
 }
 
 // within reports whether p is dir or lies below it.
-func within(p, dir string) bool {
-	if sameFold(p, dir) {
-		return true
-	}
-	prefix := dir
-	if !strings.HasSuffix(prefix, string(filepath.Separator)) {
-		prefix += string(filepath.Separator)
-	}
-	return len(p) > len(prefix) && sameFold(p[:len(prefix)], prefix)
-}
+func within(p, dir string) bool { return pathutil.Within(p, dir) }
 
 func (w *Watcher) loop() {
 	defer close(w.done)

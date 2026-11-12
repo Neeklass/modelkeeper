@@ -35,7 +35,7 @@ func newEnv(t *testing.T) *env {
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	r, err := catalog.AddRoot(context.Background(), conn, root)
+	r, err := catalog.AddRoot(context.Background(), conn, root, "")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -116,6 +116,9 @@ type Options struct {
 	EmitInterval time.Duration
 	// ThumbDir is the thumbnail folder; empty disables thumbnail generation.
 	ThumbDir string
+	// Exclude is a folder that is never catalogued, even below a root (the
+	// app's data folder: catalog, thumbnails, backups).
+	Exclude string
 	// ResumeMin: files and zips from this size on save checkpoints while
 	// being read, so an interrupted scan continues inside them.
 	ResumeMin int64

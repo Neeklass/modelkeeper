@@ -31,7 +31,7 @@ func TestE2EWithScanner(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer mgr.Close()
-	root, err := catalog.AddRoot(context.Background(), conn, rootDir)
+	root, err := catalog.AddRoot(context.Background(), conn, rootDir, "")
 	if err != nil {
 		t.Fatal(err)
 	}

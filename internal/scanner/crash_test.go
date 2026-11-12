@@ -57,7 +57,7 @@ func TestHardKillKeepsProgress(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := catalog.AddRoot(context.Background(), conn, root); err != nil {
+	if _, err := catalog.AddRoot(context.Background(), conn, root, ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -139,7 +139,7 @@ func TestHardKillInsideZip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := catalog.AddRoot(context.Background(), conn, root); err != nil {
+	if _, err := catalog.AddRoot(context.Background(), conn, root, ""); err != nil {
 		t.Fatal(err)
 	}
 	offset := func(c *sql.DB) int64 {

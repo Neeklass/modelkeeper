@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"modelkeeper/internal/pathutil"
 )
 
 // offlineError signals that the root vanished while scanning (NAS dropped).
@@ -77,6 +79,9 @@ func (s *scan) walk(ctx context.Context) error {
 		if d.IsDir() {
 			if rel != "" && skipDirs[strings.ToLower(d.Name())] {
 				return filepath.SkipDir
+			}
+			if s.opts.Exclude != "" && pathutil.Within(p, s.opts.Exclude) {
+				return filepath.SkipDir // the data folder (J1, M)
 			}
 			return nil
 		}

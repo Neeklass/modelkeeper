@@ -76,7 +76,8 @@
     "rootOverlap": "{{path}} überschneidet sich mit dem vorhandenen Stammordner {{other}}.",
     "database": "Datenbankfehler: {{detail}}",
     "modelNotFound": "Dieses Modell existiert nicht mehr.",
-    "invalidValue": "Ungültiger Wert."
+    "invalidValue": "Ungültiger Wert.",
+    "rootContainsData": "{{path}} kann kein Stammordner sein: Er enthält den Datenordner von modelkeeper ({{data}}) oder liegt darin. Wähle einen Ordner, der nur Modelle enthält."
   },
   "roots": {
     "title": "Stammordner",

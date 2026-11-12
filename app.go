@@ -106,7 +106,7 @@ func (a *App) init() error {
 			// A root's first scan makes it eligible for watching.
 			go a.syncWatch()
 		}
-	}, scanner.Options{ThumbDir: layout.Thumbnails})
+	}, scanner.Options{ThumbDir: layout.Thumbnails, Exclude: layout.Root})
 	if err != nil {
 		return msg.Wrap(err, "error.catalogOpen", "path", layout.Catalog)
 	}
@@ -381,7 +381,7 @@ func (a *App) AddRoot(path string) (catalog.Root, error) {
 	if err := a.ready(); err != nil {
 		return catalog.Root{}, err
 	}
-	r, err := catalog.AddRoot(a.ctx, a.db, path)
+	r, err := catalog.AddRoot(a.ctx, a.db, path, a.layout.Root)
 	return r, wrapDB(err)
 }
 

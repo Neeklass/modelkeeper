@@ -79,7 +79,7 @@ func newUser(t *testing.T, rootPath string) *user {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r, err := catalog.AddRoot(context.Background(), conn, rootPath)
+	r, err := catalog.AddRoot(context.Background(), conn, rootPath, "")
 	if err != nil {
 		t.Fatal(err)
 	}

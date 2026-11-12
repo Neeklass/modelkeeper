@@ -76,7 +76,8 @@
     "rootOverlap": "{{path}} overlaps with the existing root folder {{other}}.",
     "database": "Database error: {{detail}}",
     "modelNotFound": "This model no longer exists.",
-    "invalidValue": "Invalid value."
+    "invalidValue": "Invalid value.",
+    "rootContainsData": "{{path}} cannot be a root folder: it contains modelkeeper's data folder ({{data}}) or lies inside it. Choose a folder that only holds models."
   },
   "roots": {
     "title": "Root folders",
