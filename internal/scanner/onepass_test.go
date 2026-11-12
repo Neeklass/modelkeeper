@@ -158,16 +158,23 @@ func bigZip(t *testing.T, entries, size int) []byte {
 	return makeZip(t, list...)
 }
 
-// resumeEnv cancels the scan at the n-th checkpoint.
-func resumeEnv(t *testing.T, cancelAt int) (*env, *int) {
+// resumeEnvWhen cancels the scan at the first checkpoint for which cancel
+// returns true (given the number of checkpoints and the saved offset).
+func resumeEnvWhen(t *testing.T, cancel func(saved int, offset int64) bool) (*env, *int) {
 	e := newEnv(t)
 	saved := 0
 	mgr, err := NewManager(e.db, settings.Defaults, nil, Options{
 		EmitInterval: time.Hour, ResumeMin: 1, CheckpointEvery: time.Nanosecond, HashWorkers: 1,
 		onCheckpoint: func() {
 			saved++
-			if saved == cancelAt {
+			if saved < 0 {
+				return
+			}
+			var offset int64
+			e.db.QueryRow(`SELECT offset FROM hash_progress`).Scan(&offset)
+			if cancel(saved, offset) {
 				e.mgr.Cancel()
+				saved = -1000 // once
 			}
 		},
 	})
@@ -180,7 +187,9 @@ func resumeEnv(t *testing.T, cancelAt int) (*env, *int) {
 
 func TestZipResumesAfterCancel(t *testing.T) {
 	zipData := bigZip(t, 30, 200_000)
-	e, saved := resumeEnv(t, 12)
+	// Cancel by position, not by the number of checkpoints: with a coarse
+	// clock (Windows), CheckpointEvery = 1ns does not checkpoint every entry.
+	e, saved := resumeEnvWhen(t, func(_ int, offset int64) bool { return offset >= int64(len(zipData))/3 })
 	e.write("Pack.zip", zipData)
 	p := e.scan()
 	expect(t, "first scan cancelled", p.Status, StatusCancelled)
@@ -209,7 +218,7 @@ func TestZipResumesAfterCancel(t *testing.T) {
 
 func TestLargeFileResumesAfterCancel(t *testing.T) {
 	data := randomBytes(7, 12<<20)
-	e, saved := resumeEnv(t, 5)
+	e, saved := resumeEnvWhen(t, func(_ int, offset int64) bool { return offset >= int64(len(data))/3 })
 	e.write("Orc/orc.stl", data)
 	p := e.scan()
 	expect(t, "first scan cancelled", p.Status, StatusCancelled)
@@ -230,7 +239,7 @@ func TestLargeFileResumesAfterCancel(t *testing.T) {
 // A file changed after the interruption is read from the start.
 func TestChangedFileIgnoresCheckpoint(t *testing.T) {
 	data := randomBytes(8, 12<<20)
-	e, saved := resumeEnv(t, 5)
+	e, saved := resumeEnvWhen(t, func(_ int, offset int64) bool { return offset >= int64(len(data))/3 })
 	e.write("Orc/orc.stl", data)
 	e.scan()
 	if e.int(`SELECT count(*) FROM hash_progress`) != 1 {
