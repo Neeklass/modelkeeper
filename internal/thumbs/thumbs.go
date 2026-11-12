@@ -380,3 +380,55 @@ func Pending(ctx context.Context, db *sql.DB, rootID int64) ([]int64, error) {
 	}
 	return ids, rows.Err()
 }
+
+// ForgetMissing resets generated thumbnails whose file is gone from dir (e.g.
+// after restoring a snapshot, which only holds the manual ones, J2), so that
+// they are generated again (I3). Manual thumbnails are kept: they cannot be
+// generated; their number is returned as lostManual.
+func ForgetMissing(ctx context.Context, db *sql.DB, dir string) (reset, lostManual int, err error) {
+	rows, err := db.QueryContext(ctx, `SELECT id, thumb_file, thumb_source = 'manual' FROM model
+		WHERE thumb_source IS NOT NULL AND coalesce(thumb_file, '') <> ''`)
+	if err != nil {
+		return 0, 0, err
+	}
+	var gone []int64
+	for rows.Next() {
+		var id int64
+		var file string
+		var manual bool
+		if err := rows.Scan(&id, &file, &manual); err != nil {
+			rows.Close()
+			return 0, 0, err
+		}
+		if _, err := os.Stat(filepath.Join(dir, filepath.Base(file))); !errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if manual {
+			lostManual++
+		} else {
+			gone = append(gone, id)
+		}
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return 0, lostManual, err
+	}
+	if len(gone) == 0 {
+		return 0, lostManual, nil
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, lostManual, err
+	}
+	defer tx.Rollback()
+	for _, id := range gone {
+		if _, err := tx.ExecContext(ctx, `UPDATE model SET thumb_source = NULL, thumb_file = NULL, thumb_tried_at = NULL
+			WHERE id = ? AND thumb_source <> 'manual'`, id); err != nil {
+			return 0, lostManual, err
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return 0, lostManual, err
+	}
+	return len(gone), lostManual, nil
+}

@@ -163,7 +163,18 @@ func (a *App) startServices() error {
 		return msg.Wrap(err, "error.catalogOpen", "path", layout.Catalog)
 	}
 	a.scans = scans
-	go a.detectExisting()
+	go func() {
+		// Generated thumbnails lost with the data folder (e.g. after restoring
+		// a snapshot) are generated again by detectExisting.
+		reset, lost, err := thumbs.ForgetMissing(context.Background(), conn, layout.Thumbnails)
+		switch {
+		case err != nil:
+			log.Printf("thumbnails: %v", err)
+		case reset > 0 || lost > 0:
+			log.Printf("thumbnails: %d missing generated ones will be generated again, %d manual ones are missing", reset, lost)
+		}
+		a.detectExisting()
+	}()
 
 	w, err := watch.New(conn, scans, watch.Options{
 		Exclude: layout.Root,
@@ -411,7 +422,7 @@ func (a *App) redetectAll() {
 func (a *App) snapshot(conn *sql.DB, reason string) (backup.Snapshot, error) {
 	a.backupMu.Lock()
 	defer a.backupMu.Unlock()
-	src := backup.Source{DB: conn, Settings: a.layout.Settings, Thumbnails: a.layout.Thumbnails, AppVersion: version}
+	src := backup.Source{DB: conn, Settings: a.layout.Settings, Thumbnails: a.layout.Thumbnails, AppVersion: appVersion()}
 	s, err := backup.Create(context.Background(), a.layout.Backups, src, reason, time.Now())
 	if err != nil {
 		log.Printf("backup %s: %v", reason, err)
