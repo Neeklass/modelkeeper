@@ -30,9 +30,13 @@ function loadViewMode(): ViewMode {
 }
 
 /** Model list with live search (H1), virtual scrolling (C3), selection and detail panel (H4). */
-export function ModelsView() {
+export function ModelsView({initialQuery, scopeLabel}: {
+    initialQuery?: Partial<Query>
+    /** Describes initialQuery.orphanedBy (e.g. the folder about to be deleted). */
+    scopeLabel?: string
+} = {}) {
     const {t} = useTranslation()
-    const [query, setQuery] = useState<Query>(emptyQuery)
+    const [query, setQuery] = useState<Query>({...emptyQuery, ...initialQuery})
     const [showFilters, setShowFilters] = useState(false)
     const [view, setView] = useState<ViewMode>(loadViewMode)
     const changeView = (v: ViewMode) => {
@@ -196,6 +200,12 @@ export function ModelsView() {
                         ))}
                     </span>
                 </div>
+                {query.orphanedBy !== 0 && (
+                    <div className="row notice-inactive small">
+                        <span>{t('models.orphanedScope', {path: scopeLabel ?? ''})}</span>
+                        <button className="link small" onClick={() => setQuery({...query, orphanedBy: 0})}>{t('models.orphanedScopeClear')}</button>
+                    </div>
+                )}
                 {showFilters && <FilterPanel query={query} onChange={setQuery} allTags={allTags} version={version}/>}
                 {multi.size > 1 && (
                     <SelectionBar selection={multi} allTags={allTags} onChanged={refresh}

@@ -181,13 +181,17 @@ func DeactivateRoot(ctx context.Context, db *sql.DB, id int64) error {
 // anywhere else: after PurgeRoot they no longer have any location.
 func PurgeImpact(ctx context.Context, db *sql.DB, rootID int64) (int, error) {
 	var n int
-	err := db.QueryRowContext(ctx, `SELECT count(*) FROM model m
-		WHERE (EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id AND l.root_id = ?1)
-		    OR EXISTS (SELECT 1 FROM model_anchor a WHERE a.model_id = m.id AND a.root_id = ?1))
-		  AND NOT EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id AND l.root_id <> ?1)
-		  AND `+detect.UserDataCond, rootID).Scan(&n)
+	err := db.QueryRowContext(ctx, `SELECT count(*) FROM model m WHERE `+orphanedByCond, rootID, rootID, rootID).Scan(&n)
 	return n, err
 }
+
+// orphanedByCond is true for a model "m" with user data that has files or
+// an anchor on the root and no file anywhere else (PurgeImpact). Takes the
+// root id three times.
+const orphanedByCond = `((EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id AND l.root_id = ?)
+	    OR EXISTS (SELECT 1 FROM model_anchor a WHERE a.model_id = m.id AND a.root_id = ?))
+	  AND NOT EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id AND l.root_id <> ?)
+	  AND ` + detect.UserDataCond + `)`
 
 // PurgeRoot permanently deletes a deactivated root and everything found
 // below it from the catalog (E9). confirm must equal PurgeImpact (the number

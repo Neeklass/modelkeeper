@@ -7,6 +7,7 @@ import i18n, {languages, resolveLanguage, systemLanguage} from './i18n'
 import {Msg, toMsg, translateMsg} from './i18n/msg'
 import {RootsPanel} from './components/RootsPanel'
 import {ModelsView} from './components/ModelsView'
+import {Query} from './components/FilterPanel'
 import {DetectionSettingsPanel} from './components/DetectionSettings'
 import {BackupsPanel, backupReasonKey} from './components/BackupsPanel'
 
@@ -20,6 +21,12 @@ function App() {
     const [status, setStatus] = useState<main.AppStatus | null>(null)
     const [error, setError] = useState<Msg | null>(null)
     const [tab, setTab] = useState<Tab>('models')
+    // Opening the model list from elsewhere with a query (remounts the list).
+    const [nav, setNav] = useState<{ key: number; query: Partial<Query>; label?: string }>({key: 0, query: {}})
+    const showModels = (query: Partial<Query>, label?: string) => {
+        setNav(n => ({key: n.key + 1, query, label}))
+        setTab('models')
+    }
 
     useEffect(() => {
         GetStatus().then(s => {
@@ -56,8 +63,8 @@ function App() {
                     }}>{t('backup.dismiss')}</button>
                 </div>
             )}
-            {tab === 'models' && <ModelsView/>}
-            {tab === 'folders' && <main><RootsPanel/></main>}
+            {tab === 'models' && <ModelsView key={nav.key} initialQuery={nav.query} scopeLabel={nav.label}/>}
+            {tab === 'folders' && <main><RootsPanel onShowModels={showModels}/></main>}
             {tab === 'settings' && <main>
                 <SettingsPanel status={status} onChange={setStatus}/>
                 <DetectionSettingsPanel/>

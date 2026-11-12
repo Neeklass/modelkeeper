@@ -312,6 +312,7 @@ export namespace catalog {
 	    extractedAndArchive: boolean;
 	    missing: boolean;
 	    inactive: boolean;
+	    orphanedBy: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelQuery(source);
@@ -335,6 +336,7 @@ export namespace catalog {
 	        this.extractedAndArchive = source["extractedAndArchive"];
 	        this.missing = source["missing"];
 	        this.inactive = source["inactive"];
+	        this.orphanedBy = source["orphanedBy"];
 	    }
 	}
 	

@@ -8,9 +8,10 @@ import {catalog, scanner} from '../../wailsjs/go/models'
 import {EventsOn} from '../../wailsjs/runtime/runtime'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
 import {formatBytes, formatDateTime, formatNumber} from '../format'
+import {Query} from './FilterPanel'
 
 /** Root folder management and scanning (F1–F3, F7). */
-export function RootsPanel() {
+export function RootsPanel({onShowModels}: { onShowModels?: (q: Partial<Query>, label?: string) => void } = {}) {
     const {t} = useTranslation()
     const [roots, setRoots] = useState<catalog.Root[]>([])
     const [removed, setRemoved] = useState<catalog.RemovedRoot[]>([])
@@ -109,6 +110,7 @@ export function RootsPanel() {
             ))}
             {error && <p className="error">{translateMsg(error)}</p>}
             {removed.length > 0 && <RemovedRoots roots={removed}
+                                                 onShowModels={onShowModels}
                                                  onReactivate={r => run(() => addPath(r.path))}
                                                  onPurged={reload}/>}
         </section>
@@ -116,8 +118,9 @@ export function RootsPanel() {
 }
 
 /** Deactivated root folders (E9): reactivate, or delete permanently from the catalog. */
-function RemovedRoots({roots, onReactivate, onPurged}: {
+function RemovedRoots({roots, onReactivate, onPurged, onShowModels}: {
     roots: catalog.RemovedRoot[]
+    onShowModels?: (q: Partial<Query>, label?: string) => void
     onReactivate: (r: catalog.RemovedRoot) => void
     onPurged: () => void
 }) {
@@ -153,6 +156,7 @@ function RemovedRoots({roots, onReactivate, onPurged}: {
                             </div>
                         </div>
                         {purging === r.id && <PurgeDialog root={r} onCancel={() => setPurging(null)}
+                                                          onShowModels={onShowModels && (() => onShowModels({orphanedBy: r.id}, r.path))}
                                                           onDone={() => { setPurging(null); onPurged() }}/>}
                     </div>
                 ))}
@@ -165,7 +169,12 @@ function RemovedRoots({roots, onReactivate, onPurged}: {
  * Confirmation for permanently deleting a deactivated root. With models that
  * would lose their last location, the user has to type their number.
  */
-function PurgeDialog({root, onCancel, onDone}: { root: catalog.RemovedRoot; onCancel: () => void; onDone: () => void }) {
+function PurgeDialog({root, onCancel, onDone, onShowModels}: {
+    root: catalog.RemovedRoot
+    onCancel: () => void
+    onDone: () => void
+    onShowModels?: () => void
+}) {
     const {t} = useTranslation()
     const [typed, setTyped] = useState('')
     const [busy, setBusy] = useState(false)
@@ -192,6 +201,7 @@ function PurgeDialog({root, onCancel, onDone}: { root: catalog.RemovedRoot; onCa
             {n > 0
                 ? <>
                     <p className="warn-text">{t('roots.purgeOrphaned', {count: n, n: formatNumber(n)})}</p>
+                    {onShowModels && <button className="link small" onClick={onShowModels}>{t('roots.purgeShowModels')}</button>}
                     <label>
                         {t('roots.purgeType', {n})}
                         <input type="text" inputMode="numeric" value={typed} autoFocus

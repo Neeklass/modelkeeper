@@ -127,7 +127,8 @@
     "purgeNoOrphans": "Kein Modell mit deinen Daten verliert dadurch seinen letzten Ort.",
     "purgeCancel": "Abbrechen",
     "purgeConfirm": "Endgültig löschen",
-    "purging": "Backup und Löschen…"
+    "purging": "Backup und Löschen…",
+    "purgeShowModels": "Diese Modelle ansehen"
   },
   "scan": {
     "start": "Scannen",
@@ -223,7 +224,9 @@
     "inactive": "nur in deaktiviertem Ordner",
     "inactiveHint": "Die Dateien liegen nur in deaktivierten Ordnern und werden nicht mehr geprüft.",
     "inactiveNotice": "Die Dateien dieses Modells liegen nur in deaktivierten Ordnern. Sie werden nicht mehr gescannt; füge den Ordner wieder hinzu, um sie zu prüfen.",
-    "rootRemoved": "deaktiviert"
+    "rootRemoved": "deaktiviert",
+    "orphanedScope": "Nur Modelle, die beim endgültigen Löschen von {{path}} ihren letzten Ort verlieren.",
+    "orphanedScopeClear": "Alle Modelle zeigen"
   },
   "supports": {
     "presupported": "Vorgestützt",

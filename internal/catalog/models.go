@@ -56,6 +56,9 @@ type ModelQuery struct {
 	ExtractedAndArchive bool `json:"extractedAndArchive"` // files exist extracted and inside an archive
 	Missing             bool `json:"missing"`             // files gone since the last scan
 	Inactive            bool `json:"inactive"`            // files only on deactivated roots (E9)
+	// OrphanedBy: models that deleting this (deactivated) root permanently
+	// would leave without a location (PurgeImpact).
+	OrphanedBy int64 `json:"orphanedBy"`
 }
 
 // Deactivated roots (E9) in these queries: the catalog still knows what lies
@@ -147,6 +150,9 @@ func (q ModelQuery) where() (from, order string, args []any) {
 	}
 	if q.Inactive {
 		add(inactiveCond)
+	}
+	if q.OrphanedBy != 0 {
+		add(orphanedByCond, q.OrphanedBy, q.OrphanedBy, q.OrphanedBy)
 	}
 	if len(conds) > 0 {
 		from += ` WHERE ` + strings.Join(conds, ` AND `)

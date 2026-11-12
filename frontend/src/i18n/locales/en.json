@@ -127,7 +127,8 @@
     "purgeNoOrphans": "No model with your data loses its last location.",
     "purgeCancel": "Cancel",
     "purgeConfirm": "Delete permanently",
-    "purging": "Backing up and deleting…"
+    "purging": "Backing up and deleting…",
+    "purgeShowModels": "Look at these models"
   },
   "scan": {
     "start": "Scan",
@@ -223,7 +224,9 @@
     "inactive": "only in a deactivated folder",
     "inactiveHint": "The files are only in deactivated folders and are no longer checked.",
     "inactiveNotice": "This model's files are only in deactivated folders. They are no longer scanned; add the folder again to check them.",
-    "rootRemoved": "deactivated"
+    "rootRemoved": "deactivated",
+    "orphanedScope": "Only models that lose their last location when {{path}} is deleted permanently.",
+    "orphanedScopeClear": "Show all models"
   },
   "supports": {
     "presupported": "Presupported",

@@ -21,12 +21,13 @@ export interface Query {
     extractedAndArchive: boolean
     missing: boolean
     inactive: boolean
+    orphanedBy: number
 }
 
 export const emptyQuery: Query = {
     text: '', untagged: false, favorites: false, tagId: 0, creatorId: 0, rootId: 0, ext: '', supports: '', printStatus: '',
     duplicates: false, singleLocation: false, offline: false, brokenArchives: false,
-    extractedAndArchive: false, missing: false, inactive: false,
+    extractedAndArchive: false, missing: false, inactive: false, orphanedBy: 0,
 }
 
 const FLAGS = ['untagged', 'duplicates', 'singleLocation', 'offline', 'brokenArchives', 'extractedAndArchive',

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
@@ -180,5 +181,22 @@ func TestAddRootRejectsDataFolder(t *testing.T) {
 	other := mkdir(t, filepath.Join(base, "models"))
 	if _, err := AddRoot(ctx, conn, other, data); err != nil {
 		t.Errorf("AddRoot(%s): %v", other, err)
+	}
+}
+
+// The models PurgeImpact counts can be listed (to look at them first).
+func TestOrphanedByFilter(t *testing.T) {
+	conn := purgeCatalog(t)
+	page, err := SearchModels(context.Background(), conn, ModelQuery{OrphanedBy: 1}, 0, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := names(page)
+	sort.Strings(got)
+	if strings.Join(got, ",") != "anchored,corrected,tagged" {
+		t.Errorf("orphanedBy: %v", got)
+	}
+	if n, _ := PurgeImpact(context.Background(), conn, 1); n != page.Total {
+		t.Errorf("filter total %d, PurgeImpact %d", page.Total, n)
 	}
 }
