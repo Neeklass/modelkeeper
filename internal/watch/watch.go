@@ -60,6 +60,8 @@ type Options struct {
 	// OfflineRetry is the pause after a scheduled rescan that did not
 	// complete (e.g. the NAS was unreachable) before it is tried again.
 	OfflineRetry time.Duration
+
+	clock clock // tests: virtual time; nil = real time
 }
 
 func (o Options) withDefaults() Options {
@@ -74,6 +76,9 @@ func (o Options) withDefaults() Options {
 	}
 	if o.OfflineRetry <= 0 {
 		o.OfflineRetry = 30 * time.Minute
+	}
+	if o.clock == nil {
+		o.clock = realClock{}
 	}
 	return o
 }
@@ -97,6 +102,8 @@ type Watcher struct {
 	// attempted: when a scheduled NAS rescan was last queued (schedule.go).
 	attempted map[int64]time.Time
 
+	flushReq chan chan struct{} // tests: wait until the loop handled what it received
+
 	syncMu sync.Mutex // serializes Sync
 	synced bool       // the first Sync has run
 	quit   chan struct{}
@@ -112,7 +119,7 @@ func New(db *sql.DB, scans Scanner, opts Options) (*Watcher, error) {
 	w := &Watcher{
 		db: db, scans: scans, opts: opts.withDefaults(), fs: fw,
 		roots: map[int64]*root{}, pending: map[int64]time.Time{}, attempted: map[int64]time.Time{},
-		quit: make(chan struct{}), done: make(chan struct{}),
+		quit: make(chan struct{}), done: make(chan struct{}), flushReq: make(chan chan struct{}),
 	}
 	go w.loop()
 	return w, nil
@@ -202,7 +209,7 @@ func (w *Watcher) Sync(ctx context.Context) error {
 		if w.roots[id] == r {
 			r.live = true
 			if catchUp {
-				w.pending[id] = time.Now()
+				w.pending[id] = w.opts.clock.Now()
 			}
 		}
 		w.mu.Unlock()
@@ -267,12 +274,12 @@ func within(p, dir string) bool { return pathutil.Within(p, dir) }
 
 func (w *Watcher) loop() {
 	defer close(w.done)
-	tick := time.NewTicker(w.opts.Quiet / 4)
-	defer tick.Stop()
-	retry := time.NewTicker(w.opts.Retry)
-	defer retry.Stop()
-	schedule := time.NewTicker(w.opts.ScheduleCheck)
-	defer schedule.Stop()
+	tick, stopTick := w.opts.clock.NewTicker(w.opts.Quiet / 4)
+	defer stopTick()
+	retry, stopRetry := w.opts.clock.NewTicker(w.opts.Retry)
+	defer stopRetry()
+	schedule, stopSchedule := w.opts.clock.NewTicker(w.opts.ScheduleCheck)
+	defer stopSchedule()
 	for {
 		select {
 		case <-w.quit:
@@ -289,13 +296,15 @@ func (w *Watcher) loop() {
 			// An overflow loses events: rescan every watched root.
 			log.Printf("watch: %v", err)
 			w.markAll()
-		case <-tick.C:
+		case <-tick:
 			w.startDue()
-		case <-retry.C:
+		case done := <-w.flushReq:
+			close(done)
+		case <-retry:
 			if w.hasDead() {
 				go w.Sync(context.Background())
 			}
-		case <-schedule.C:
+		case <-schedule:
 			w.checkSchedule(context.Background())
 		}
 	}
@@ -330,7 +339,7 @@ func (w *Watcher) handle(ev fsnotify.Event) {
 		return // an unrecognized file, not a folder
 	}
 	w.mu.Lock()
-	w.pending[id] = time.Now().Add(w.opts.Quiet)
+	w.pending[id] = w.opts.clock.Now().Add(w.opts.Quiet)
 	w.mu.Unlock()
 }
 
@@ -348,7 +357,7 @@ func (w *Watcher) rootOf(p string) (int64, bool) {
 func (w *Watcher) markAll() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	due := time.Now().Add(w.opts.Quiet)
+	due := w.opts.clock.Now().Add(w.opts.Quiet)
 	for id, r := range w.roots {
 		if r.live {
 			w.pending[id] = due
@@ -373,7 +382,7 @@ func (w *Watcher) startDue() {
 	if w.scans.Busy() {
 		return
 	}
-	now := time.Now()
+	now := w.opts.clock.Now()
 	w.mu.Lock()
 	var next int64
 	var nextAt time.Time

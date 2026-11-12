@@ -42,7 +42,7 @@ func (w *Watcher) checkSchedule(ctx context.Context) {
 	}
 	rows.Close()
 
-	now := time.Now()
+	now := w.opts.clock.Now()
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	seen := map[int64]bool{}

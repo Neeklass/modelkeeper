@@ -43,9 +43,11 @@ func TestDeactivatedNASNotScheduled(t *testing.T) {
 	}
 	defer conn.Close()
 	scan := &fakeScanner{}
+	clk := newFakeClock(t)
 	w, err := New(conn, scan, Options{
 		Quiet: 50 * time.Millisecond, ScheduleCheck: 40 * time.Millisecond,
 		NASInterval: func() time.Duration { return time.Hour },
+		clock:       clk,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -55,7 +57,8 @@ func TestDeactivatedNASNotScheduled(t *testing.T) {
 		filepath.Join(dir, "nas")); err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(300 * time.Millisecond)
+	clk.Advance(300 * time.Millisecond)
+	w.flush()
 	if got := scan.take(); len(got) != 0 {
 		t.Fatalf("deactivated NAS root scheduled: %v", got)
 	}

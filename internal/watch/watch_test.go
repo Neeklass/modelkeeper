@@ -2,6 +2,7 @@ package watch
 
 import (
 	"context"
+	"fmt"
 	"database/sql"
 	"os"
 	"path/filepath"
@@ -48,14 +49,23 @@ func (f *fakeScanner) take() []int64 {
 	return s
 }
 
+// quiet is the quiet period, in virtual time.
 const quiet = 150 * time.Millisecond
 
 type env struct {
-	t    *testing.T
-	dir  string
-	db   *sql.DB
-	scan *fakeScanner
-	w    *Watcher
+	t     *testing.T
+	dir   string
+	db    *sql.DB
+	scan  *fakeScanner
+	w     *Watcher
+	clock *fakeClock
+
+	// A watched root used as a fence for file system events: they pass one
+	// channel in order, so once the sentinel's change is seen, every earlier
+	// event was handled too. Its scans are not reported.
+	sentinel     int64
+	sentinelPath string
+	fences       int
 }
 
 func setup(t *testing.T) *env {
@@ -66,17 +76,19 @@ func setup(t *testing.T) *env {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { conn.Close() })
-	e := &env{t: t, dir: dir, db: conn, scan: &fakeScanner{}}
+	e := &env{t: t, dir: dir, db: conn, scan: &fakeScanner{}, clock: newFakeClock(t)}
 	w, err := New(conn, e.scan, Options{
 		Quiet: quiet, Retry: 200 * time.Millisecond,
 		Exclude:  filepath.Join(dir, "local", "data"),
 		Relevant: func(name string) bool { return strings.HasSuffix(name, ".stl") || strings.HasSuffix(name, ".zip") },
+		clock:    e.clock,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(w.Close)
 	e.w = w
+	e.sentinel, e.sentinelPath = e.addRoot("zz-sentinel", "local", true)
 	return e
 }
 
@@ -103,11 +115,35 @@ func (e *env) sync() {
 	}
 }
 
-// expectStarts waits for the scans to settle and checks which roots were started (in any order).
+// fence waits until all file system events so far have been handled.
+func (e *env) fence() {
+	e.t.Helper()
+	e.fences++
+	write(e.t, filepath.Join(e.sentinelPath, fmt.Sprintf("fence%d.stl", e.fences)))
+	waitFor(e.t, "the fence event", func() bool {
+		e.w.mu.Lock()
+		defer e.w.mu.Unlock()
+		if _, ok := e.w.pending[e.sentinel]; ok {
+			delete(e.w.pending, e.sentinel)
+			return true
+		}
+		return false
+	})
+}
+
+// expectStarts lets the changes so far settle (past the quiet period, in
+// virtual time) and checks which roots were started (in any order).
 func (e *env) expectStarts(what string, want ...int64) {
 	e.t.Helper()
-	time.Sleep(quiet * 3)
-	got := e.scan.take()
+	e.fence()
+	e.clock.Advance(quiet + quiet/2) // the quiet period plus a tick to notice it
+	e.w.flush()
+	var got []int64
+	for _, id := range e.scan.take() {
+		if id != e.sentinel {
+			got = append(got, id)
+		}
+	}
 	slices.Sort(got)
 	slices.Sort(want)
 	if !slices.Equal(got, want) {
@@ -139,7 +175,8 @@ func TestWatchLocalRoots(t *testing.T) {
 	// A burst of changes in an existing subfolder: one scan after the quiet period.
 	for i := 0; i < 5; i++ {
 		write(t, filepath.Join(lp, "Creator", "Orc", "part"+string(rune('a'+i))+".stl"))
-		time.Sleep(quiet / 3)
+		e.fence()
+		e.clock.Advance(quiet / 3) // each change restarts the quiet period
 	}
 	e.expectStarts("burst", local)
 
@@ -196,8 +233,14 @@ func TestWaitsWhileScannerBusy(t *testing.T) {
 	e.expectStarts("busy")
 
 	e.scan.setBusy(false)
-	time.Sleep(quiet)
-	got := e.scan.take()
+	e.clock.Advance(quiet) // one root per tick
+	e.w.flush()
+	var got []int64
+	for _, id := range e.scan.take() {
+		if id != e.sentinel {
+			got = append(got, id)
+		}
+	}
 	if len(got) != 2 {
 		t.Fatalf("after busy: started %v, want both roots", got)
 	}
@@ -214,13 +257,8 @@ func TestRetryUnreachableRoot(t *testing.T) {
 	e.expectStarts("unreachable")
 
 	os.MkdirAll(p, 0o755) // drive plugged in again
-	deadline := time.Now().Add(3 * time.Second)
-	for !e.w.Live(id) && time.Now().Before(deadline) {
-		time.Sleep(50 * time.Millisecond)
-	}
-	if !e.w.Live(id) {
-		t.Fatal("root not live after it came back")
-	}
+	e.clock.Advance(e.w.opts.Retry) // the retry runs Sync in the background
+	waitFor(t, "the root to be live after it came back", func() bool { return e.w.Live(id) })
 	e.expectStarts("catch-up after reconnect", id)
 }
 
