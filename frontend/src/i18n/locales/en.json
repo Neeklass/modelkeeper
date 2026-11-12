@@ -400,7 +400,7 @@
       "manual": "manual",
       "preMigration": "before a catalog update",
       "preRemoveRoot": "before deleting a folder",
-      "preFileTypes": "before removing file types",
+      "preFileTypes": "before changing file types",
       "other": "other"
     }
   }

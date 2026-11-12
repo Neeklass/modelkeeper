@@ -339,8 +339,9 @@ func (a *App) SaveFileTypes(ft settings.FileTypes) (catalog.FileTypesChange, err
 	}
 	prev := a.settings.Get()
 	added := len(ft.Added(prev.FileTypes)) > 0
-	if len(prev.FileTypes.Added(ft)) > 0 {
-		// Removed types drop catalog entries, and with them detection results.
+	if len(ft.Changed(prev.FileTypes)) > 0 {
+		// Removed types drop catalog entries; moving a type to another
+		// category can drop detected models. Either way, snapshot first.
 		if _, err := a.snapshot(a.db, backup.ReasonFileTypes); err != nil {
 			return ch, msg.Wrap(err, "error.backupFailed", "path", a.layout.Backups)
 		}

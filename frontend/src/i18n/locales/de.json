@@ -400,7 +400,7 @@
       "manual": "manuell",
       "preMigration": "vor Katalog-Update",
       "preRemoveRoot": "vor dem Löschen eines Ordners",
-      "preFileTypes": "vor dem Entfernen von Dateitypen",
+      "preFileTypes": "vor dem Ändern von Dateitypen",
       "other": "sonstiges"
     }
   }

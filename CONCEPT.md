@@ -152,7 +152,7 @@ Override  (manual corrections of model detection, survive rescans)
 
 - **J1** The app is **read-only** towards model files: it never moves, modifies or deletes files, including duplicates.
 - **J2** Automatic local snapshots in `data\backups\` (see M): daily at start, always before a catalog
-  migration, before risky catalog changes (permanently deleting a root folder, removing file types) and on
+  migration, before risky catalog changes (permanently deleting a root folder, removing file types or moving them to another category) and on
   demand ("Create backup now"). A damaged catalog (integrity check at start) stops the app before anything is
   written, with the path to the newest snapshot; restoring is manual. An external backup (another drive,
   Dropbox …) stays manual.

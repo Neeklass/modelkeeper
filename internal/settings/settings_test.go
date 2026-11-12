@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"strings"
 	"os"
 	"path/filepath"
 	"testing"
@@ -54,5 +55,16 @@ func TestNormalizeList(t *testing.T) {
 	got, err := NormalizeList([]string{" Supported ", "supported", "", "Parts"})
 	if err != nil || len(got) != 2 || got[0] != "Supported" || got[1] != "Parts" {
 		t.Errorf("got %v, %v", got, err)
+	}
+}
+
+func TestFileTypesChanged(t *testing.T) {
+	prev := FileTypes{Model: []string{"stl", "obj"}, Slicer: []string{"lys"}, Supplementary: []string{"txt"}}
+	next := FileTypes{Model: []string{"stl", "ply"}, Supplementary: []string{"lys", "txt"}}
+	if got := strings.Join(next.Changed(prev), ","); got != "lys,obj" {
+		t.Errorf("Changed = %s, want lys (moved), obj (removed); ply is only added", got)
+	}
+	if got := prev.Changed(prev); len(got) != 0 {
+		t.Errorf("no change: %v", got)
 	}
 }

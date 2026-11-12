@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 )
@@ -218,6 +219,32 @@ func NormalizeList(list []string) ([]string, error) {
 		return nil, &ValidationError{Key: "settings.error.tooMany"}
 	}
 	return out, nil
+}
+
+// categories maps each extension to its category.
+func (ft FileTypes) categories() map[string]string {
+	out := map[string]string{}
+	for cat, l := range map[string][]string{"model": ft.Model, "slicer": ft.Slicer, "archive": ft.Archive, "supplementary": ft.Supplementary} {
+		for _, e := range l {
+			out[e] = cat
+		}
+	}
+	return out
+}
+
+// Changed returns the extensions of prev that ft removes or puts into
+// another category: changes that can drop catalog entries or detected
+// models (and so call for a snapshot first, J2).
+func (ft FileTypes) Changed(prev FileTypes) []string {
+	next := ft.categories()
+	var out []string
+	for e, cat := range prev.categories() {
+		if next[e] != cat {
+			out = append(out, e)
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // Added returns the extensions in next that are not in prev.

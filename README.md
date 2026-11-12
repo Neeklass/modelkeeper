@@ -50,7 +50,8 @@ on first start.
 
 The app takes snapshots of the catalog, the settings and the manually set
 thumbnails into `data\backups\`: once a day at start, before every catalog
-update, before permanently deleting a root folder or removing file types,
+update, before permanently deleting a root folder, before removing file
+types or moving them to another category,
 and when you click "Create backup now" in the settings. It keeps the 14
 newest daily snapshots and all others from the last 90 days (at least the 3
 newest). These snapshots are on the same drive, so also copy the whole
