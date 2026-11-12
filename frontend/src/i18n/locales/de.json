@@ -4,8 +4,8 @@
   },
   "app": {
     "title": "modelkeeper",
-    "loading": "Wird geladen…",
-    "starting": "Katalog wird geöffnet und geprüft…"
+    "starting": "Katalog wird geöffnet und geprüft…",
+    "loading": "Wird geladen…"
   },
   "settings": {
     "title": "Einstellungen",
@@ -42,7 +42,8 @@
       "resultRemoved_other": "{{n}} Einträge entfernter Typen wurden aus dem Katalog entfernt.",
       "resultArchives_one": "{{n}} Archiv wird beim nächsten Scan erneut gelesen.",
       "resultArchives_other": "{{n}} Archive werden beim nächsten Scan erneut gelesen.",
-      "resultScan": "Ordner scannen, um Dateien der neuen Typen zu finden."
+      "resultScan": "Ordner scannen, um Dateien der neuen Typen zu finden.",
+      "confirmTitle": "Dateitypen ändern?"
     },
     "rules": {
       "title": "Modellerkennung",
@@ -129,7 +130,8 @@
     "purgeCancel": "Abbrechen",
     "purgeConfirm": "Endgültig löschen",
     "purging": "Backup und Löschen…",
-    "purgeShowModels": "Diese Modelle ansehen"
+    "purgeShowModels": "Diese Modelle ansehen",
+    "deactivateHint": "Nicht mehr scannen und überwachen. Tags und Notizen bleiben erhalten."
   },
   "scan": {
     "start": "Scannen",
@@ -395,8 +397,8 @@
     "created": "Backup erstellt: {{path}}",
     "last": "Letztes Backup: {{when}} ({{reason}}).",
     "none": "Noch kein Backup.",
-    "hint": "Backups liegen in data\\backups: täglich beim Start (nur wenn sich etwas geändert hat) und vor riskanten Änderungen. Sie liegen auf demselben Laufwerk: Sichere den modelkeeper-Ordner zusätzlich extern.",
-    "restoreHint": "Wähle unten ein Backup zum Wiederherstellen und starte modelkeeper neu. Von Hand: modelkeeper schließen, catalog.db, settings.json und die Dateien aus thumbnails aus dem Backup-Ordner in den Datenordner kopieren (vorhandene ersetzen), catalog.db-wal und catalog.db-shm löschen, falls vorhanden, und modelkeeper neu starten.",
+    "hint": "Backups entstehen täglich beim Start (nur wenn sich etwas geändert hat) und vor riskanten Änderungen. Sie liegen auf demselben Laufwerk – sichere den modelkeeper-Ordner zusätzlich extern.",
+    "restoreHint": "modelkeeper schließen, catalog.db, settings.json und die Dateien aus thumbnails aus dem Backup-Ordner in den Datenordner kopieren (vorhandene ersetzen), catalog.db-wal und catalog.db-shm löschen, falls vorhanden, und modelkeeper neu starten.",
     "startEmpty": "Mit leerem Katalog starten",
     "confirmStartEmpty": "Mit einem leeren Katalog starten? Tags, Notizen und Korrekturen sind dann nicht da, bis du ein Backup zurückspielst. Die Backups bleiben erhalten.",
     "reason": {
@@ -422,6 +424,14 @@
     "restored": "Das Backup {{from}} wurde wiederhergestellt. Der vorherige Stand liegt als Backup in {{previous}}.",
     "restoreFailed": "Die Wiederherstellung ist fehlgeschlagen; der Katalog ist unverändert. Details: {{detail}}",
     "restoreRefused": "Das Backup {{name}} kann nicht wiederhergestellt werden: {{detail}}",
-    "dismiss": "Ausblenden"
+    "dismiss": "Ausblenden",
+    "restoreConfirm": "Beim nächsten Start wiederherstellen",
+    "title": "Daten & Backups",
+    "restoreTitle": "Backup wiederherstellen",
+    "restoreByHand": "Von Hand wiederherstellen"
+  },
+  "confirm": {
+    "cancel": "Abbrechen",
+    "ok": "Fortfahren"
   }
 }

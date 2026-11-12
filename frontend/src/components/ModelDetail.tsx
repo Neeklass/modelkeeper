@@ -12,6 +12,8 @@ import {formatBytes} from '../format'
 import {TagInput} from './TagInput'
 import {FavoriteStar} from './FavoriteStar'
 import {canPreview, defaultPreviewFile, Preview3D} from './Preview3D'
+import {useConfirm} from './ConfirmDialog'
+import {PathText} from './PathText'
 
 const PRINT_STATUSES = ['not_printed', 'printed', 'failed']
 const SUPPORTS = ['presupported', 'unsupported', 'both', 'none']
@@ -41,8 +43,9 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose}: {
         })
     }, [id, version]) // eslint-disable-line react-hooks/exhaustive-deps
 
+    const confirm = useConfirm()
     const act = async (fn: () => Promise<void>, confirmText?: string) => {
-        if (confirmText && !window.confirm(confirmText)) return
+        if (confirmText && !await confirm({message: confirmText})) return
         setBusy(true)
         setError(null)
         try {
@@ -134,12 +137,17 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose}: {
 
             <h3>{t('models.locations')}</h3>
             {d.inactive && <p className="small notice-inactive">{t('models.inactiveNotice')}</p>}
-            <ul className="plain small">
+            <ul className="plain small anchors">
                 {d.anchors.map(a => (
                     <li key={a.rootId + a.path}>
-                        <span className={`badge status-${a.online && !a.rootRemoved ? 'online' : 'offline'}`}>{t(`roots.kind.${a.rootKind}`)}</span>
-                        {a.rootRemoved && <span className="warn-text"> {t('models.rootRemoved')}</span>}
-                        {' '}<code>{a.rootPath}\{a.path.replaceAll('/', '\\')}</code>
+                        <span className={`badge ${a.rootRemoved ? 'status-warn' : `status-${a.online ? 'online' : 'offline'}`}`}
+                              title={a.rootRemoved ? t('models.inactiveHint') : undefined}>
+                            {t(`roots.kind.${a.rootKind}`)}{a.rootRemoved && <> · {t('models.rootRemoved')}</>}
+                        </span>
+                        <code className="anchor-path">
+                            <span className="muted"><PathText path={a.rootPath + '\\'}/></span>
+                            <span className="anchor-rel"><PathText path={a.path.replaceAll('/', '\\')}/></span>
+                        </code>
                     </li>
                 ))}
             </ul>
@@ -251,7 +259,7 @@ function ThumbnailSection({d, busy, act, preview, setPreview}: {
             {preview !== null ? (
                 <Preview3D files={d.files} locationId={preview} onSelect={setPreview} busy={busy}
                            onUseAsThumbnail={url => act(() => SetThumbnailFromView(d.id, url))}/>
-            ) : <Thumb src={d.thumb} className="detail-thumb"/>}
+            ) : <Thumb src={d.thumb} className="detail-thumb" label={d.name}/>}
             <div className="row small muted spread">
                 <span>{d.thumbSource ? t(`thumbs.source.${d.thumbSource}`) : t('thumbs.none')}</span>
                 <span className="row nowrap">

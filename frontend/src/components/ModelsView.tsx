@@ -10,6 +10,7 @@ import {TagInput} from './TagInput'
 import {Thumb} from './Thumb'
 import {activeFilters, emptyQuery, FilterPanel, Query} from './FilterPanel'
 import {FavoriteStar} from './FavoriteStar'
+import {useConfirm} from './ConfirmDialog'
 
 const ROW_HEIGHT = 60
 const TILE_WIDTH = 190 // minimum grid tile width; tiles stretch to fill the row
@@ -243,6 +244,7 @@ function SelectionBar({selection, allTags, onChanged, onMerged, onClear}: {
     onClear: () => void
 }) {
     const {t} = useTranslation()
+    const confirm = useConfirm()
     const ids = [...selection.keys()]
     const [target, setTarget] = useState<number>(ids[0])
     const [error, setError] = useState<Msg | null>(null)
@@ -266,8 +268,8 @@ function SelectionBar({selection, allTags, onChanged, onMerged, onClear}: {
         }
     }
 
-    const merge = () => {
-        if (!window.confirm(t('corrections.confirmMerge', {count: ids.length, name: selection.get(target)}))) return
+    const merge = async () => {
+        if (!await confirm({message: t('corrections.confirmMerge', {count: ids.length, name: selection.get(target)})})) return
         run(async () => {
             await MergeModels(target, ids.filter(id => id !== target))
             onMerged(target)
@@ -321,14 +323,14 @@ function ModelTileView({row, onChanged}: { row: catalog.ModelRow; onChanged: () 
     const {t} = useTranslation()
     return (
         <>
-            <Thumb src={row.thumb} className="tile-thumb"/>
+            <Thumb src={row.thumb} className="tile-thumb" label={row.name}/>
+            {row.inactive && <span className="tile-flag" title={t('models.inactiveHint')}>{t('models.rootRemoved')}</span>}
             <FavoriteStar id={row.id} on={row.favorite} onChanged={onChanged} className="tile-star"/>
             <div className="tile-text">
                 <strong className="ellipsis" title={row.name}>{row.name}</strong>
                 <span className="row small muted">
                     <span className="ellipsis">{row.creator || t('models.noCreator')}</span>
                     {row.variants.length > 0 && <span className="chip">{row.variants.join(' · ')}</span>}
-                    {row.inactive && <span className="warn-text nowrap" title={t('models.inactiveHint')}>{t('models.inactive')}</span>}
                 </span>
             </div>
         </>
@@ -340,7 +342,7 @@ function ModelRowView({row, onChanged}: { row: catalog.ModelRow; onChanged: () =
     return (
         <div className="row row-with-thumb">
             <FavoriteStar id={row.id} on={row.favorite} onChanged={onChanged}/>
-            <Thumb src={row.thumb} className="row-thumb"/>
+            <Thumb src={row.thumb} className="row-thumb" label={row.name}/>
             <div className="row-body">
             <div className="row spread">
                 <strong className="ellipsis">{row.name}</strong>

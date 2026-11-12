@@ -11,6 +11,7 @@ import {ModelsView} from './components/ModelsView'
 import {Query} from './components/FilterPanel'
 import {DetectionSettingsPanel} from './components/DetectionSettings'
 import {BackupsPanel, backupReasonKey} from './components/BackupsPanel'
+import {useConfirm} from './components/ConfirmDialog'
 
 type Tab = 'models' | 'folders' | 'settings'
 
@@ -90,12 +91,13 @@ function App() {
 /** Shown instead of the app when the catalog could not be opened (J2: damaged or missing catalog). */
 function StartupError({status, onStarted}: { status: main.AppStatus; onStarted: (s: main.AppStatus) => void }) {
     const {t} = useTranslation()
+    const confirm = useConfirm()
     const [error, setError] = useState<Msg | null>(null)
     const startup = status.startupError as Msg
     const restorable = startup.key === 'error.catalogCorrupt' || startup.key === 'error.catalogMissing'
 
     async function startEmpty() {
-        if (!window.confirm(t('backup.confirmStartEmpty'))) return
+        if (!await confirm({message: t('backup.confirmStartEmpty'), confirmLabel: t('backup.startEmpty'), danger: true})) return
         try {
             await StartWithEmptyCatalog()
             onStarted(await GetStatus())
@@ -105,19 +107,28 @@ function StartupError({status, onStarted}: { status: main.AppStatus; onStarted: 
     }
 
     return (
-        <div className="center">
-            <h1>{t('error.startupTitle')}</h1>
-            <p className="error">{translateMsg(startup)}</p>
-            {restorable && <p className="small">{t('backup.restoreHint')}</p>}
-            <div className="row">
-                {status.dataDir && <button onClick={() => OpenDataFolder().catch(e => setError(toMsg(e)))}>
-                    {t('settings.openDataFolder')}
-                </button>}
-                {startup.key === 'error.catalogMissing' && <button onClick={startEmpty}>{t('backup.startEmpty')}</button>}
-            </div>
-            {status.dataDir && <BackupsPanel pending={status.pendingRestore}
-                                             onChanged={() => GetStatus().then(onStarted).catch(e => setError(toMsg(e)))}/>}
-            {error && <p className="error">{translateMsg(error)}</p>}
+        <div className="startup">
+            <section className="card startup-card">
+                <h1>{t('error.startupTitle')}</h1>
+                <p className="error-box">{translateMsg(startup)}</p>
+                <div className="row">
+                    {status.dataDir && <button onClick={() => OpenDataFolder().catch(e => setError(toMsg(e)))}>
+                        {t('settings.openDataFolder')}
+                    </button>}
+                    {startup.key === 'error.catalogMissing' &&
+                        <button className="subtle" onClick={startEmpty}>{t('backup.startEmpty')}…</button>}
+                </div>
+                {restorable && status.dataDir && <>
+                    <h2>{t('backup.restoreTitle')}</h2>
+                    <BackupsPanel pending={status.pendingRestore} defaultOpen
+                                  onChanged={() => GetStatus().then(onStarted).catch(e => setError(toMsg(e)))}/>
+                    <details className="small muted">
+                        <summary>{t('backup.restoreByHand')}</summary>
+                        <p>{t('backup.restoreHint')}</p>
+                    </details>
+                </>}
+                {error && <p className="error">{translateMsg(error)}</p>}
+            </section>
         </div>
     )
 }
@@ -127,9 +138,10 @@ function SettingsPanel({status, onChange}: { status: main.AppStatus; onChange: (
     const [error, setError] = useState<Msg | null>(null)
     const [backupBusy, setBackupBusy] = useState(false)
     const [backupDone, setBackupDone] = useState<string | null>(null)
+    const [backupError, setBackupError] = useState<Msg | null>(null)
 
     async function createBackup() {
-        setError(null)
+        setBackupError(null)
         setBackupDone(null)
         setBackupBusy(true)
         try {
@@ -137,7 +149,7 @@ function SettingsPanel({status, onChange}: { status: main.AppStatus; onChange: (
             setBackupDone(b.path)
             onChange(await GetStatus())
         } catch (e) {
-            setError(toMsg(e))
+            setBackupError(toMsg(e))
         } finally {
             setBackupBusy(false)
         }
@@ -163,7 +175,7 @@ function SettingsPanel({status, onChange}: { status: main.AppStatus; onChange: (
         }
     }
 
-    return (
+    return (<>
         <section className="card">
             <h2>{t('settings.title')}</h2>
             <label>
@@ -173,37 +185,46 @@ function SettingsPanel({status, onChange}: { status: main.AppStatus; onChange: (
                     {languages.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
                 </select>
             </label>
-            <label>
-                {t('settings.nasRescan')}
-                <select value={status.nasRescanHours} onChange={e => changeNASRescan(Number(e.target.value))}>
-                    {NAS_RESCAN_HOURS.map(h => <option key={h} value={h}>{t(`settings.nasRescanEvery.${h}`)}</option>)}
-                </select>
-            </label>
-            <p className="small muted">{t('settings.nasRescanHint')}</p>
+            <div>
+                <label>
+                    {t('settings.nasRescan')}
+                    <select value={status.nasRescanHours} onChange={e => changeNASRescan(Number(e.target.value))}>
+                        {NAS_RESCAN_HOURS.map(h => <option key={h} value={h}>{t(`settings.nasRescanEvery.${h}`)}</option>)}
+                    </select>
+                </label>
+                <p className="small muted hint">{t('settings.nasRescanHint')}</p>
+            </div>
+            {error && <p className="error">{translateMsg(error)}</p>}
+        </section>
+
+        <section className="card">
+            <h2>{t('backup.title')}</h2>
             <div className="row">
-                <span>{t('settings.dataFolder')}: <code>{status.dataDir}</code></span>
-                <button onClick={() => OpenDataFolder().catch(e => setError(toMsg(e)))}>
-                    {t('settings.openDataFolder')}
-                </button>
-                <button onClick={createBackup} disabled={backupBusy}>
+                <span className="muted">{t('settings.dataFolder')}:</span> <code>{status.dataDir}</code>
+            </div>
+            <div className="row">
+                <button className="primary" onClick={createBackup} disabled={backupBusy}>
                     {backupBusy ? t('backup.creating') : t('backup.create')}
                 </button>
+                <button onClick={() => OpenDataFolder().catch(e => setBackupError(toMsg(e)))}>
+                    {t('settings.openDataFolder')}
+                </button>
             </div>
-            <p className="small muted">
+            <p className="small">
                 {status.lastBackup
                     ? <>
                         {t('backup.last', {when: formatDateTime(status.lastBackup.time), reason: t(backupReasonKey(status.lastBackup.reason))})}
-                        {' '}{t('backup.total', {count: status.backups, n: formatNumber(status.backups), size: formatBytes(status.backupBytes)})}
+                        {' '}<span className="muted">{t('backup.total', {count: status.backups, n: formatNumber(status.backups), size: formatBytes(status.backupBytes)})}</span>
                     </>
                     : t('backup.none')}
-                {' '}{t('backup.hint')}
             </p>
-            {backupDone && <p className="small">{t('backup.created', {path: backupDone})}</p>}
+            {backupDone && <p className="small ok-text">{t('backup.created', {path: backupDone})}</p>}
             <BackupsPanel pending={status.pendingRestore}
-                          onChanged={() => GetStatus().then(onChange).catch(e => setError(toMsg(e)))}/>
-            {error && <p className="error">{translateMsg(error)}</p>}
+                          onChanged={() => GetStatus().then(onChange).catch(e => setBackupError(toMsg(e)))}/>
+            <p className="small muted hint">{t('backup.hint')}</p>
+            {backupError && <p className="error">{translateMsg(backupError)}</p>}
         </section>
-    )
+    </>)
 }
 
 export default App

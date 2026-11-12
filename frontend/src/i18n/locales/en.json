@@ -4,8 +4,8 @@
   },
   "app": {
     "title": "modelkeeper",
-    "loading": "Loading…",
-    "starting": "Opening and checking the catalog…"
+    "starting": "Opening and checking the catalog…",
+    "loading": "Loading…"
   },
   "settings": {
     "title": "Settings",
@@ -42,7 +42,8 @@
       "resultRemoved_other": "{{n}} entries of removed types were dropped.",
       "resultArchives_one": "{{n}} archive will be read again on the next scan.",
       "resultArchives_other": "{{n}} archives will be read again on the next scan.",
-      "resultScan": "Scan the folders to find files of the new types."
+      "resultScan": "Scan the folders to find files of the new types.",
+      "confirmTitle": "Change file types?"
     },
     "rules": {
       "title": "Model detection",
@@ -129,7 +130,8 @@
     "purgeCancel": "Cancel",
     "purgeConfirm": "Delete permanently",
     "purging": "Backing up and deleting…",
-    "purgeShowModels": "Look at these models"
+    "purgeShowModels": "Look at these models",
+    "deactivateHint": "Stop scanning and watching. Tags and notes are kept."
   },
   "scan": {
     "start": "Scan",
@@ -395,8 +397,8 @@
     "created": "Backup created: {{path}}",
     "last": "Last backup: {{when}} ({{reason}}).",
     "none": "No backup yet.",
-    "hint": "Backups are kept in data\\backups: daily at start (only if something changed) and before risky changes. They are on the same drive: also back up the modelkeeper folder externally.",
-    "restoreHint": "Choose a backup below to restore and start modelkeeper again. By hand: close modelkeeper, copy catalog.db, settings.json and the files in thumbnails from the backup folder into the data folder (replacing existing ones), delete catalog.db-wal and catalog.db-shm if present, and start modelkeeper again.",
+    "hint": "Backups are made daily at start (only if something changed) and before risky changes. They are on the same drive – also back up the modelkeeper folder externally.",
+    "restoreHint": "Close modelkeeper, copy catalog.db, settings.json and the files in thumbnails from the backup folder into the data folder (replacing existing ones), delete catalog.db-wal and catalog.db-shm if present, and start modelkeeper again.",
     "startEmpty": "Start with an empty catalog",
     "confirmStartEmpty": "Start with an empty catalog? Tags, notes and corrections are missing until you restore a backup. The backups are kept.",
     "reason": {
@@ -422,6 +424,14 @@
     "restored": "The backup {{from}} was restored. The previous state is kept as a backup in {{previous}}.",
     "restoreFailed": "Restoring failed; the catalog is unchanged. Details: {{detail}}",
     "restoreRefused": "The backup {{name}} cannot be restored: {{detail}}",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "restoreConfirm": "Restore at next start",
+    "title": "Data & backups",
+    "restoreTitle": "Restore a backup",
+    "restoreByHand": "Restore by hand"
+  },
+  "confirm": {
+    "cancel": "Cancel",
+    "ok": "Continue"
   }
 }

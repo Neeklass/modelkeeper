@@ -4,6 +4,7 @@ import {GetDetectionSettings, SaveDetectionRules, SaveFileTypes} from '../../wai
 import {main, settings} from '../../wailsjs/go/models'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
 import {formatNumber} from '../format'
+import {useConfirm} from './ConfirmDialog'
 
 const CATEGORIES = ['model', 'slicer', 'archive', 'supplementary'] as const
 type Category = typeof CATEGORIES[number]
@@ -51,11 +52,12 @@ function FileTypesCard({current, defaults, onSaved}: { current: Lists; defaults:
     const removed = [...before].filter(e => !after.has(e))
     const added = [...after].filter(e => !before.has(e))
 
+    const confirm = useConfirm()
     const save = async () => {
         const parts: string[] = []
         if (removed.length) parts.push(t('settings.types.confirmRemoved', {list: removed.join(', ')}))
         if (added.length) parts.push(t('settings.types.confirmAdded'))
-        if (parts.length && !window.confirm(parts.join('\n\n'))) return
+        if (parts.length && !await confirm({message: [t('settings.types.confirmTitle'), ...parts].join('\n\n'), confirmLabel: t('settings.save'), danger: removed.length > 0})) return
         setBusy(true)
         setError(null)
         setResult(null)

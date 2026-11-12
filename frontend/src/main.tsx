@@ -3,9 +3,12 @@ import {createRoot} from 'react-dom/client'
 import './style.css'
 import './i18n'
 import App from './App'
+import {ConfirmProvider} from './components/ConfirmDialog'
 
 createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-        <App/>
+        <ConfirmProvider>
+            <App/>
+        </ConfirmProvider>
     </React.StrictMode>
 )

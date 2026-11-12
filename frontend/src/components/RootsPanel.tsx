@@ -9,12 +9,15 @@ import {EventsOn} from '../../wailsjs/runtime/runtime'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
 import {formatBytes, formatDateTime, formatNumber} from '../format'
 import {Query} from './FilterPanel'
+import {useConfirm} from './ConfirmDialog'
+import {PathText} from './PathText'
 
 /** Root folder management and scanning (F1–F3, F7). */
 export function RootsPanel({onShowModels}: { onShowModels?: (q: Partial<Query>, label?: string) => void } = {}) {
     const {t} = useTranslation()
     const [roots, setRoots] = useState<catalog.Root[]>([])
     const [removed, setRemoved] = useState<catalog.RemovedRoot[]>([])
+    const confirm = useConfirm()
     const [progress, setProgress] = useState<scanner.Progress | null>(null)
     const [error, setError] = useState<Msg | null>(null)
     const [notice, setNotice] = useState<{ rootId: number; text: string } | null>(null)
@@ -74,7 +77,7 @@ export function RootsPanel({onShowModels}: { onShowModels?: (q: Partial<Query>, 
     })
 
     const deactivateRoot = (r: catalog.Root) => run(async () => {
-        if (!window.confirm(t('roots.confirmDeactivate', {path: r.path}))) return
+        if (!await confirm({message: t('roots.confirmDeactivate', {path: r.path}), confirmLabel: t('roots.deactivate')})) return
         await DeactivateRoot(r.id)
         reload()
     })
@@ -93,7 +96,7 @@ export function RootsPanel({onShowModels}: { onShowModels?: (q: Partial<Query>, 
                          progress={progress?.rootId === r.id ? progress : null}
                          onScan={() => run(() => StartScan(r.id))}
                          onFullCheck={() => run(async () => {
-                             if (window.confirm(t(r.kind === 'nas' ? 'scan.fullCheckConfirmNas' : 'scan.fullCheckConfirm'))) {
+                             if (await confirm({message: t(r.kind === 'nas' ? 'scan.fullCheckConfirmNas' : 'scan.fullCheckConfirm'), confirmLabel: t('scan.fullCheck')})) {
                                  await StartFullCheck(r.id)
                              }
                          })}
@@ -139,7 +142,7 @@ function RemovedRoots({roots, onReactivate, onPurged, onShowModels}: {
                     <div key={r.id} className="root removed">
                         <div className="row spread">
                             <div>
-                                <code className="path">{r.path}</code>
+                                <code className="path"><PathText path={r.path}/></code>
                                 <div className="small muted">
                                     {r.removedAt && t('roots.removedAt', {when: formatDateTime(r.removedAt)})}
                                     {' · '}{t('roots.removedFiles', {count: r.files, n: formatNumber(r.files)})}
@@ -251,7 +254,7 @@ function RootRow(props: {
         <div className="root">
             <div className="row spread">
                 <div>
-                    <code className="path">{root.path}</code>
+                    <code className="path"><PathText path={root.path}/></code>
                     <div className="row small muted">
                         <span className="badge">{t(`roots.kind.${root.kind}`)}</span>
                         <span className={`badge status-${root.status}`}>{t(`roots.status.${root.status}`)}</span>
@@ -265,12 +268,11 @@ function RootRow(props: {
                     {running
                         ? <button onClick={props.onCancel}>{t('scan.cancel')}</button>
                         : <>
-                            <button onClick={props.onScan} disabled={props.scanning}>{t('scan.start')}</button>
+                            <button className="primary" onClick={props.onScan} disabled={props.scanning}>{t('scan.start')}</button>
                             <button onClick={props.onFullCheck} disabled={props.scanning || !root.lastScanAt}
                                     title={t('scan.fullCheckHint')}>{t('scan.fullCheck')}</button>
                             <button onClick={props.onRedetect} disabled={props.scanning}>{t('scan.redetect')}</button>
                         </>}
-                    <button onClick={props.onRemove} disabled={running}>{t('roots.deactivate')}</button>
                 </div>
             </div>
 
@@ -280,12 +282,16 @@ function RootRow(props: {
                 {t('roots.creatorLevel')}
             </label>
 
-            <div className="row small share-row">
-                <span className="muted">{t('share.label')}:</span>
-                <button className="link small" onClick={props.onExport} disabled={!root.lastScanAt || props.scanning}
-                        title={t('share.exportHint')}>{t('share.export')}</button>
-                <button className="link small" onClick={props.onImport} disabled={props.scanning}
-                        title={t('share.importHint')}>{t('share.import')}</button>
+            <div className="row small share-row spread">
+                <span className="row">
+                    <span className="muted">{t('share.label')}:</span>
+                    <button className="link small" onClick={props.onExport} disabled={!root.lastScanAt || props.scanning}
+                            title={t('share.exportHint')}>{t('share.export')}</button>
+                    <button className="link small" onClick={props.onImport} disabled={props.scanning}
+                            title={t('share.importHint')}>{t('share.import')}</button>
+                </span>
+                <button className="subtle small" onClick={props.onRemove} disabled={running}
+                        title={t('roots.deactivateHint')}>{t('roots.deactivate')}…</button>
             </div>
             {props.notice && <p className="small">{props.notice}</p>}
 

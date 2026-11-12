@@ -1,9 +1,10 @@
-import {useState} from 'react'
+import {useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {CancelRestore, ListBackups, Quit, RequestRestore} from '../../wailsjs/go/main/App'
 import {main} from '../../wailsjs/go/models'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
 import {formatBytes, formatDateTime, formatNumber} from '../format'
+import {useConfirm} from './ConfirmDialog'
 
 /** Translation key of a snapshot reason ("pre-migration-0007" → backup.reason.preMigration). */
 export function backupReasonKey(reason: string): string {
@@ -22,12 +23,13 @@ export function backupReasonKey(reason: string): string {
  * start, and the pending restore with "quit now" / "cancel".
  * Works without an open catalog (startup error screen).
  */
-export function BackupsPanel({pending, onChanged}: { pending: string; onChanged: () => void }) {
+export function BackupsPanel({pending, onChanged, defaultOpen}: { pending: string; onChanged: () => void; defaultOpen?: boolean }) {
     const {t} = useTranslation()
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(!!defaultOpen)
     const [list, setList] = useState<main.BackupInfo[] | null>(null)
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<Msg | null>(null)
+    const confirm = useConfirm()
 
     const run = async (fn: () => Promise<unknown>) => {
         setError(null)
@@ -41,6 +43,10 @@ export function BackupsPanel({pending, onChanged}: { pending: string; onChanged:
         }
     }
 
+    useEffect(() => {
+        if (defaultOpen) ListBackups().then(setList).catch(e => setError(toMsg(e)))
+    }, [defaultOpen])
+
     const toggle = () => {
         if (!open) run(async () => setList(await ListBackups()))
         setOpen(o => !o)
@@ -48,7 +54,7 @@ export function BackupsPanel({pending, onChanged}: { pending: string; onChanged:
 
     const restore = (b: main.BackupInfo) => run(async () => {
         const when = formatDateTime(b.time)
-        if (!window.confirm(t('backup.confirmRestore', {when}))) return
+        if (!await confirm({message: t('backup.confirmRestore', {when}), confirmLabel: t('backup.restoreConfirm'), danger: true})) return
         await RequestRestore(b.name)
         onChanged()
     })
@@ -70,12 +76,12 @@ export function BackupsPanel({pending, onChanged}: { pending: string; onChanged:
                     </div>
                 </div>
             )}
-            <button className="link" onClick={toggle} aria-expanded={open}>
+            {!defaultOpen && <button className="link" onClick={toggle} aria-expanded={open}>
                 {open ? '▾' : '▸'} {t('backup.listTitle')}
-            </button>
+            </button>}
             {open && list && (list.length === 0
                 ? <p className="small muted">{t('backup.none')}</p>
-                : <ul className="plain small">
+                : <ul className="plain small backup-list">
                     {list.map(b => (
                         <li key={b.name} className="row spread">
                             <span>
