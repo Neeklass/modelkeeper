@@ -82,7 +82,8 @@ Override  (manual corrections of model detection, survive rescans)
   checks (single location, duplicates, extracted + archive, missing, offline, broken archives).
   **Deleting permanently** from the catalog is a separate action for deactivated roots only: it shows how many
   models with user data would be left without any location (the number must be typed if > 0) and takes a
-  snapshot right before (J2); if the snapshot fails, nothing is deleted.
+  snapshot right before (J2); if the snapshot fails, nothing is deleted. The content (SHA-256) of the models that
+  lose their last location is kept; when a later scan finds it again anywhere, they are linked up again (F6, D6).
 
 ## F – Scanning & Model Detection
 

@@ -120,6 +120,12 @@ func Apply(ctx context.Context, db *sql.DB, rootID int64, rules Rules) (Result, 
 		return res, err
 	}
 	res.Moved += n
+	// Models that lost their last location when a root was deleted (E9).
+	n, err = relinkFingerprinted(ctx, tx, w, rootID, matched, candOf, touched)
+	if err != nil {
+		return res, err
+	}
+	res.Moved += n
 	// Stale anchors of models that live on elsewhere (e.g. after a correction).
 	for id, paths := range m.orphanPaths {
 		if !matched[id] {

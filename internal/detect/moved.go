@@ -169,3 +169,67 @@ func adopt(ctx context.Context, tx *sql.Tx, w *writer, rootID, into, from int64,
 	}
 	return nil
 }
+
+// relinkFingerprinted links models up again that lost their last location
+// when a root folder was deleted permanently (E9): their content was kept in
+// model_fingerprint. A model matched in this run that holds that content and
+// has no user data of its own is folded into the old model, which keeps its
+// ID, tags and notes (D6), with the same overlap rules as for moved files.
+// Returns the number of models linked up again.
+func relinkFingerprinted(ctx context.Context, tx *sql.Tx, w *writer, rootID int64,
+	matched map[int64]bool, candOf map[int64]*Candidate, touched map[int64]bool) (int, error) {
+	var has bool
+	if err := tx.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM model_fingerprint)`).Scan(&has); err != nil || !has {
+		return 0, err
+	}
+	// Content (as file ids, where the content is known again) of models
+	// without any location.
+	rows, err := tx.QueryContext(ctx, `SELECT fp.model_id, f.id FROM model_fingerprint fp
+		JOIN file f ON f.sha256 = fp.sha256
+		WHERE NOT EXISTS (SELECT 1 FROM location l WHERE l.model_id = fp.model_id)
+		ORDER BY fp.model_id`)
+	if err != nil {
+		return 0, err
+	}
+	content := map[int64]map[int64]bool{}
+	var order []int64
+	for rows.Next() {
+		var mid, fid int64
+		if err := rows.Scan(&mid, &fid); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		if content[mid] == nil {
+			content[mid] = map[int64]bool{}
+			order = append(order, mid)
+		}
+		content[mid][fid] = true
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+
+	linked := 0
+	adopted := map[int64]bool{}
+	for _, id := range order {
+		target, err := copyOf(ctx, tx, content[id], matched, candOf, adopted)
+		if err != nil {
+			return linked, err
+		}
+		if target == 0 {
+			continue
+		}
+		if err := adopt(ctx, tx, w, rootID, id, target, candOf[target]); err != nil {
+			return linked, err
+		}
+		if _, err := tx.ExecContext(ctx, `DELETE FROM model_fingerprint WHERE model_id = ?`, id); err != nil {
+			return linked, err
+		}
+		adopted[target] = true
+		delete(touched, target)
+		touched[id] = true
+		linked++
+	}
+	return linked, nil
+}

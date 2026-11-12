@@ -138,3 +138,56 @@ func TestAddRootOverlappingDeactivated(t *testing.T) {
 		t.Errorf("adding an active root again = %+v, %v", r, err)
 	}
 }
+
+// After a root was deleted permanently, models with user data have no
+// location left. When their files show up again (the same folder added
+// anew, or a copy elsewhere), they are linked up: same ID, tags and notes.
+func TestPurgedModelLinkedUpAgain(t *testing.T) {
+	e := newEnv(t)
+	ctx := context.Background()
+	e.write("Atlas/Orc/orc.stl", stlA)
+	e.write("Atlas/Orc/orc_base.stl", stlB)
+	e.write("Atlas/Elf/elf.stl", []byte("solid elf")) // no user data: removed for good
+	e.scan()
+	orcID := int64(e.int(`SELECT model_id FROM location WHERE path = 'Atlas/Orc/orc.stl'`))
+	orcUID := e.str(`SELECT uid FROM model WHERE id = ?`, orcID)
+	catalog.AddTags(ctx, e.db, []int64{orcID}, []string{"painted"})
+
+	if err := catalog.DeactivateRoot(ctx, e.db, e.id); err != nil {
+		t.Fatal(err)
+	}
+	if err := catalog.PurgeRoot(ctx, e.db, e.id, 1, nil); err != nil {
+		t.Fatal(err)
+	}
+	expect(t, "fingerprint rows", e.int(`SELECT count(*) FROM model_fingerprint WHERE model_id = ?`, orcID), 2)
+	expect(t, "models after purge", e.int(`SELECT count(*) FROM model`), 1)
+
+	// The same files, now in another folder.
+	other := filepath.Join(t.TempDir(), "nas")
+	for rel, data := range map[string][]byte{"Sorted/Orc/orc.stl": stlA, "Sorted/Orc/orc_base.stl": stlB} {
+		p := filepath.Join(other, filepath.FromSlash(rel))
+		os.MkdirAll(filepath.Dir(p), 0o755)
+		os.WriteFile(p, data, 0o644)
+	}
+	r, err := catalog.AddRoot(ctx, e.db, other, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.id = r.ID
+	e.scan()
+
+	d, err := catalog.GetModel(ctx, e.db, orcID)
+	if err != nil {
+		t.Fatalf("model not linked up: %v", err)
+	}
+	expect(t, "uid", d.UID, orcUID)
+	expect(t, "tags", strings.Join(d.Tags, ","), "painted")
+	expect(t, "files", len(d.Files), 2)
+	expect(t, "anchor", len(d.Anchors), 1)
+	expect(t, "one Orc", e.int(`SELECT count(*) FROM model WHERE name = 'Orc'`), 1)
+	expect(t, "fingerprint consumed", e.int(`SELECT count(*) FROM model_fingerprint`), 0)
+	page, _ := catalog.SearchModels(ctx, e.db, catalog.ModelQuery{Text: "sorted"}, 0, 10)
+	if page.Total != 1 || page.Items[0].ID != orcID {
+		t.Errorf("search index not updated: %+v", page)
+	}
+}

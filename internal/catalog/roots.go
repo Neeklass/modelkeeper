@@ -225,6 +225,14 @@ func PurgeRoot(ctx context.Context, db *sql.DB, id int64, confirm int, before fu
 		return err
 	}
 	defer tx.Rollback()
+	// Remember the content of the models that lose their last location, so a
+	// later scan that finds it again links them up (detect.relinkFingerprinted).
+	if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO model_fingerprint (model_id, sha256)
+		SELECT l.model_id, f.sha256 FROM location l JOIN file f ON f.id = l.file_id
+		WHERE l.root_id = ? AND l.category IN `+contentCats+`
+		  AND l.model_id IN (SELECT m.id FROM model m WHERE `+orphanedByCond+`)`, id, id, id, id); err != nil {
+		return err
+	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM root WHERE id = ?`, id); err != nil {
 		return err
 	}
