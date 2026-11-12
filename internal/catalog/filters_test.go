@@ -168,7 +168,7 @@ func TestFiltersWithDeactivatedRoot(t *testing.T) {
 		q    ModelQuery
 		want []string
 	}{
-		{"all", ModelQuery{}, []string{"Broken", "Dwarf", "Elf"}}, // the archive is a model of its own (F4b)
+		{"all", ModelQuery{}, []string{"Broken", "Dwarf", "Elf"}},        // the archive is a model of its own (F4b)
 		{"text", ModelQuery{Text: "dwarf"}, []string{"Broken", "Dwarf"}}, // paths are searched too
 		{"root", ModelQuery{RootID: 2}, []string{"Broken", "Dwarf", "Elf"}},
 		{"inactive", ModelQuery{Inactive: true}, []string{"Broken", "Dwarf"}},

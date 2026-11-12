@@ -29,7 +29,7 @@ type Root struct {
 	Status       string `json:"status"` // unknown | online | offline
 	LastScanAt   *int64 `json:"lastScanAt,omitempty"`
 	RemovedAt    *int64 `json:"removedAt,omitempty"` // deactivated at (unix ms); nil = active
-	Live         bool   `json:"live"`                  // changes are picked up automatically (E4); set by the app
+	Live         bool   `json:"live"`                // changes are picked up automatically (E4); set by the app
 	// Reactivated is set by AddRoot when it reactivated a deactivated root
 	// instead of adding a new one.
 	Reactivated bool `json:"reactivated,omitempty"`

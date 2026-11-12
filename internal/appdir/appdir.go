@@ -50,7 +50,7 @@ func NewLayout(root string) Layout {
 		Settings:   filepath.Join(root, "settings.json"),
 		Thumbnails: filepath.Join(root, "thumbnails"),
 		Backups:    filepath.Join(root, "backups"),
-		Log:       filepath.Join(root, "modelkeeper.log"),
+		Log:        filepath.Join(root, "modelkeeper.log"),
 	}
 }
 

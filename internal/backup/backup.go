@@ -71,7 +71,7 @@ type Source struct {
 type Manifest struct {
 	App        string `json:"app"`
 	AppVersion string `json:"appVersion"`
-	Schema     int    `json:"schema"` // PRAGMA user_version of the copy
+	Schema     int    `json:"schema"`  // PRAGMA user_version of the copy
 	Created    string `json:"created"` // RFC 3339, local time
 	Reason     string `json:"reason"`
 	Models     int    `json:"models"`
@@ -314,7 +314,6 @@ func Rotate(dir string, now time.Time) ([]string, error) {
 	}
 	return removed, nil
 }
-
 
 func exists(p string) bool {
 	_, err := os.Lstat(p)
