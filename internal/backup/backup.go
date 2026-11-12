@@ -77,6 +77,9 @@ type Manifest struct {
 	Models     int    `json:"models"`
 	Tags       int    `json:"tags"`
 	Thumbnails int    `json:"thumbnails"` // manual thumbnails copied
+	// Verified: the copy passed PRAGMA quick_check (snapshots that fail it
+	// are not kept). False in snapshots from before this check.
+	Verified bool `json:"verified"`
 }
 
 // Snapshot is a valid snapshot folder.
@@ -154,6 +157,11 @@ func write(ctx context.Context, tmp string, src Source) (Manifest, error) {
 	if err := snap.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&m.Schema); err != nil {
 		return m, fmt.Errorf("read copy: %w", err)
 	}
+	// A copy of a slightly damaged catalog can look fine; check it.
+	if err := QuickCheck(ctx, snap); err != nil {
+		return m, fmt.Errorf("copy failed the integrity check: %w", err)
+	}
+	m.Verified = true
 	// Older schemas may lack a table; a missing count stays 0.
 	snap.QueryRowContext(ctx, `SELECT count(*) FROM model`).Scan(&m.Models)
 	snap.QueryRowContext(ctx, `SELECT count(*) FROM tag`).Scan(&m.Tags)
@@ -189,6 +197,25 @@ func write(ctx context.Context, tmp string, src Source) (Manifest, error) {
 		}
 	}
 	return m, nil
+}
+
+// QuickCheck runs PRAGMA quick_check on conn and returns its first problem.
+func QuickCheck(ctx context.Context, conn *sql.DB) error {
+	rows, err := conn.QueryContext(ctx, `PRAGMA quick_check`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var line string
+		if err := rows.Scan(&line); err != nil {
+			return err
+		}
+		if line != "ok" {
+			return errors.New(line)
+		}
+	}
+	return rows.Err()
 }
 
 // List returns the valid snapshots in dir, newest first. A missing dir is empty.

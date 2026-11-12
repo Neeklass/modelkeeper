@@ -98,7 +98,7 @@ func TestSnapshotMatchesCatalog(t *testing.T) {
 		t.Errorf("settings: %q, %v", b, err)
 	}
 	m := s.Manifest
-	if m.App != backup.App || m.AppVersion != "test" || m.Reason != backup.ReasonManual || m.Models != 5 || m.Tags != 2 || m.Thumbnails != 1 {
+	if m.App != backup.App || m.AppVersion != "test" || m.Reason != backup.ReasonManual || m.Models != 5 || m.Tags != 2 || m.Thumbnails != 1 || !m.Verified {
 		t.Errorf("manifest = %+v", m)
 	}
 	if m.Schema != count(t, e.conn, `PRAGMA user_version`) {
@@ -257,5 +257,38 @@ func TestHasDaily(t *testing.T) {
 	e.create(backup.ReasonDaily, now.Add(-time.Hour))
 	if !backup.HasDaily(e.backups, now) {
 		t.Fatal("today's daily not found")
+	}
+}
+
+// A damaged catalog never yields a snapshot that counts as valid: either the
+// copy fails, or the copy fails its integrity check.
+func TestSnapshotOfDamagedCatalogFails(t *testing.T) {
+	e := newEnv(t)
+	for i := 0; i < 200; i++ {
+		e.exec(`INSERT INTO model (uid, name, notes, created_at, updated_at) VALUES (?, 'm', ?, 0, 0)`, i, string(make([]byte, 400)))
+	}
+	file := filepath.Join(e.data, "catalog.db")
+	if err := db.Close(e.conn); err != nil {
+		t.Fatal(err)
+	}
+	b, _ := os.ReadFile(file)
+	for i := 3 * 4096; i < len(b)-4096; i++ { // keep the header and the first pages readable
+		b[i] = byte(i * 13)
+	}
+	os.WriteFile(file, b, 0o644)
+	raw, err := sql.Open("sqlite", file) // without db.Open's own check
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer raw.Close()
+	e.src.DB = raw
+	if _, err := backup.Create(context.Background(), e.backups, e.src, backup.ReasonManual, time.Now()); err == nil {
+		t.Fatal("snapshot of a damaged catalog succeeded")
+	}
+	if list, _ := backup.List(e.backups); len(list) != 0 {
+		t.Errorf("snapshots: %+v", list)
+	}
+	if err := backup.QuickCheck(context.Background(), raw); err == nil {
+		t.Error("QuickCheck passed a damaged catalog")
 	}
 }
