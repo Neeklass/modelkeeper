@@ -361,3 +361,26 @@ details summary { cursor: pointer; }
 .backup-list li { padding: 6px 10px; gap: 12px; flex-wrap: nowrap; }
 .backup-list li + li { border-top: 1px solid var(--border); }
 .backup-list li:hover { background: var(--surface-2); }
+
+/* User manual */
+.help { flex: 1; min-height: 0; display: flex; }
+.help-toc {
+    width: 240px; flex-shrink: 0; overflow-y: auto; padding: 16px; box-sizing: border-box;
+    border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;
+}
+.help-toc h3 { font-size: 12px; margin: 8px 0 0; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.help-toc .link { text-align: left; font: inherit; }
+.help-search {
+    font: inherit; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px;
+}
+.help-content { flex: 1; min-width: 0; overflow-y: auto; padding: 24px 32px 64px; line-height: 1.6; }
+.help-content > * { max-width: 760px; }
+.help-content h1 { font-size: 22px; margin-bottom: 8px; }
+.help-intro { color: var(--muted); font-size: 15px; }
+.help-section { border-top: 1px solid var(--border); margin-top: 24px; padding-top: 8px; scroll-margin-top: 16px; }
+.help-section h2 { font-size: 17px; margin: 12px 0 8px; }
+.help-section p { margin: 8px 0; }
+.help-section ul, .help-section ol { margin: 8px 0; padding-left: 22px; }
+.help-section li { margin: 4px 0; }
+.help-section strong { font-weight: 600; }

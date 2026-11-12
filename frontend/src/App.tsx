@@ -12,8 +12,9 @@ import {Query} from './components/FilterPanel'
 import {DetectionSettingsPanel} from './components/DetectionSettings'
 import {BackupsPanel, backupReasonKey} from './components/BackupsPanel'
 import {useConfirm} from './components/ConfirmDialog'
+import {HelpView} from './components/HelpView'
 
-type Tab = 'models' | 'folders' | 'settings'
+type Tab = 'models' | 'folders' | 'settings' | 'help'
 
 /** Intervals for scheduled NAS rescans in hours (App.NASRescanChoices), 0 = off. */
 const NAS_RESCAN_HOURS = [0, 1, 6, 12, 24, 168]
@@ -63,7 +64,7 @@ function App() {
             <header className="row">
                 <h1>{t('app.title')}</h1>
                 <nav className="tabs" role="tablist">
-                    {(['models', 'folders', 'settings'] as Tab[]).map(k => (
+                    {(['models', 'folders', 'settings', 'help'] as Tab[]).map(k => (
                         <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'active' : ''}
                                 onClick={() => setTab(k)}>{t(`tabs.${k}`)}</button>
                     ))}
@@ -84,6 +85,7 @@ function App() {
                 <SettingsPanel status={status} onChange={setStatus}/>
                 <DetectionSettingsPanel/>
             </main>}
+            {tab === 'help' && <HelpView/>}
         </div>
     )
 }

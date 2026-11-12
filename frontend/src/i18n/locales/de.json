@@ -195,7 +195,8 @@
   "tabs": {
     "models": "Modelle",
     "folders": "Ordner",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "help": "Hilfe"
   },
   "models": {
     "searchPlaceholder": "Name, Ersteller, Pfad suchen…",
@@ -433,5 +434,138 @@
   "confirm": {
     "cancel": "Abbrechen",
     "ok": "Fortfahren"
+  },
+  "manual": {
+    "title": "Handbuch",
+    "intro": "modelkeeper katalogisiert deine 3D-Druck-Modelle auf dem PC und dem NAS, damit du sie findest, taggen und im Blick behalten kannst. Die App liest deine Modelldateien nur: Sie verschiebt, ändert oder löscht nie eine Datei – auch keine Duplikate.",
+    "search": "Im Handbuch suchen…",
+    "noResults": "Kein Abschnitt passt zur Suche.",
+    "contents": "Inhalt",
+    "sections": [
+      {
+        "id": "start",
+        "title": "Erste Schritte",
+        "body": [
+          "1. Öffne den Tab **Ordner** und klicke auf **Ordner hinzufügen…**. Wähle einen lokalen Ordner oder einen NAS-Pfad wie \\\\fritz.nas\\…",
+          "2. Klicke auf **Scannen**. modelkeeper listet alle Modelldateien auf, berechnet für jede einen Fingerabdruck (Hash) – auch für Dateien in ZIP-, RAR- und 7z-Archiven – und erkennt daraus die Modelle.",
+          "3. Wechsle zum Tab **Modelle**. Dort findest du alles, was erkannt wurde.",
+          "Der erste Scan kann über das NAS Stunden dauern. Du kannst die App währenddessen benutzen. Der Fortschritt wird laufend gespeichert: Brichst du ab oder schließt die App, macht der nächste Scan an derselben Stelle weiter. Danach werden nur noch neue und geänderte Dateien gelesen.",
+          "Die erste Ordnerebene unter einem Stammordner gilt als Ersteller (z. B. „Atlas Miniatures“). Ist dein Ordner anders aufgebaut, schalte **Erste Ordnerebene ist der Ersteller** für diesen Ordner aus."
+        ]
+      },
+      {
+        "id": "find",
+        "title": "Modelle finden",
+        "body": [
+          "Das Suchfeld durchsucht Name, Ersteller, Tags, Notizen und Pfade. Die Ergebnisse erscheinen beim Tippen; Wortanfänge genügen („orc war“ findet „Orc Warlord“).",
+          "- **Favoriten** zeigt nur deine Favoriten. Ein Modell machst du mit dem Stern zum Favoriten – in der Liste oder in der Detailansicht.",
+          "- **Filter** öffnet weitere Kriterien: Tag, Ersteller, Ordner, Dateityp, Supports und Druckstatus sowie Häkchen wie **Ohne Tags**, **Duplikate**, **Nur an einem Ort** (keine Sicherung auf NAS oder PC), **Offline**, **Beschädigte Archive**, **Entpackt und als Archiv** (Kandidaten zum Platzsparen), **Fehlende Dateien** und **Nur in deaktivierten Ordnern**.",
+          "- **Liste** und **Raster** schalten zwischen kompakter Liste und Vorschaubildern um.",
+          "Hinweise in der Liste: **an 2 Orten** heißt, das Modell liegt z. B. auf PC und NAS. **fehlen** heißt, Dateien sind seit dem letzten Scan verschwunden. **nur in deaktiviertem Ordner** heißt, die Dateien liegen in einem Ordner, der nicht mehr gescannt wird."
+        ]
+      },
+      {
+        "id": "edit",
+        "title": "Ein Modell bearbeiten",
+        "body": [
+          "Ein Klick auf ein Modell öffnet rechts die Detailansicht.",
+          "- **Name**: über den Stift neben dem Namen. Ein von dir vergebener Name bleibt bei jedem Scan erhalten.",
+          "- **Druckstatus**: nicht gedruckt, erfolgreich gedruckt oder fehlgeschlagen.",
+          "- **Supports**: wird aus Ordner- und Dateinamen erkannt (supported, presupported, unsupported). Du kannst ihn festlegen; **Automatisch** überlässt es wieder der Erkennung.",
+          "- **Tags**: eintippen und **Hinzufügen**. Gestrichelte Tags sind Vorschläge aus den Ordnernamen – mit + übernehmen oder mit ✕ verwerfen. Vorschläge werden nie von selbst übernommen.",
+          "- **Notizen**: werden gespeichert, sobald du das Feld verlässt.",
+          "- **Gefunden in** zeigt alle Orte des Modells, **Dateien** alle Dateien mit Variante und identischen Kopien. **Im Explorer zeigen** öffnet den Ordner (bei Dateien in Archiven das Archiv).",
+          "Vorschaubilder erzeugt modelkeeper selbst: aus einem Bild im Modellordner, der Vorschau einer 3MF-Datei oder gerendert aus der STL. Über **Vorschaubild ändern** wählst du ein anderes Bild aus dem Modell, ein eigenes Bild (**Bild auswählen…**) oder kehrst mit **Wieder automatisch** zurück.",
+          "**3D-Vorschau** zeigt das Modell drehbar: Ziehen dreht, rechte Maustaste verschiebt, das Mausrad zoomt. **Ansicht als Vorschaubild** speichert die aktuelle Ansicht als Vorschaubild."
+        ]
+      },
+      {
+        "id": "multi",
+        "title": "Mehrere Modelle auf einmal",
+        "body": [
+          "Mit **Strg**+Klick wählst du einzelne Modelle dazu, mit **Umschalt**+Klick einen ganzen Bereich. Oben erscheint dann eine Leiste für alle ausgewählten Modelle:",
+          "- Tags hinzufügen oder entfernen,",
+          "- zu den Favoriten hinzufügen oder daraus entfernen,",
+          "- **Zusammenführen** in eines der Modelle – wenn die Erkennung ein Modell fälschlich in mehrere aufgeteilt hat. Tags und Notizen bleiben erhalten.",
+          "**Auswahl aufheben** beendet die Mehrfachauswahl."
+        ]
+      },
+      {
+        "id": "fix",
+        "title": "Die Erkennung korrigieren",
+        "body": [
+          "modelkeeper schlägt vor, was ein Modell ist; du entscheidest. Ordner mit typischen Teilenamen (Supported, Parts, Base, STL …) und Größenvarianten (S_, M_, 32mm, 75mm …) werden dem Modell darüber zugeordnet. Ein Archiv ist zunächst ein eigenes Modell.",
+          "Unter **Korrigieren** in der Detailansicht:",
+          "- **Übergeordneter Ordner ist das Modell**: alles im Ordner darüber wird ein Modell.",
+          "- **Kein eigenes Modell**: der Ordner gehört zum Modell darüber.",
+          "- **In Unterordner aufteilen**: jeder Unterordner wird ein eigenes Modell.",
+          "- **Diesen Ort abtrennen**: ein Ort eines Modells mit mehreren Orten wird ein eigenes Modell.",
+          "- **Korrekturen zurücknehmen**: die Erkennung entscheidet wieder selbst.",
+          "Korrekturen bleiben bei jedem neuen Scan erhalten. Die Listen **Teile-Ordner** und **Größenvarianten** kannst du unter Einstellungen → **Modellerkennung** erweitern."
+        ]
+      },
+      {
+        "id": "folders",
+        "title": "Ordner und Scans",
+        "body": [
+          "- **Live**: lokale Ordner werden überwacht; Änderungen werden nach einer kurzen Pause automatisch übernommen.",
+          "- **NAS-Ordner** werden nicht live überwacht, sondern nach Zeitplan neu gescannt (einstellbar unter **Einstellungen**). Ist das NAS nicht erreichbar, bleiben alle Einträge erhalten und werden als **Offline** angezeigt.",
+          "- **Scannen** liest nur neue und geänderte Dateien.",
+          "- **Vollprüfung** liest alle Dateien erneut. Sie findet beschädigte oder unbemerkt veränderte Dateien und kann – besonders über das NAS – lange dauern.",
+          "- **Modelle erkennen** wendet die Erkennung neu an, ohne Dateien zu lesen.",
+          "Unter jedem Ordner stehen Zahlen zu Dateien, Größe, Duplikaten, Archiven und Problemen. **Probleme beim letzten Scan** listet z. B. beschädigte oder passwortgeschützte Archive.",
+          "**Hashes teilen**: Scannt jemand anderes denselben Ordner (z. B. dasselbe NAS), kann er deine Hashes **importieren**, statt alles selbst zu lesen. Tags, Notizen und Favoriten sind darin nicht enthalten."
+        ]
+      },
+      {
+        "id": "remove",
+        "title": "Ordner deaktivieren und endgültig löschen",
+        "body": [
+          "**Deaktivieren…** nimmt einen Ordner aus Scans und Überwachung. Alles, was du eingetragen hast – Tags, Notizen, Favoriten, Druckstatus, Korrekturen – bleibt erhalten. Modelle, die nur dort liegen, bleiben sichtbar und sind markiert. Fügst du denselben Ordner später wieder hinzu, wird er reaktiviert und alles ist wieder verknüpft.",
+          "Deaktivierte Ordner stehen unten auf der Seite **Ordner**. Dort gibt es auch **Endgültig aus dem Katalog löschen**:",
+          "- Der Dialog zeigt, wie viele Modelle mit deinen Daten danach keinen Ort mehr haben. Ist die Zahl größer als 0, musst du sie eintippen. **Diese Modelle ansehen** zeigt sie dir vorher.",
+          "- Unmittelbar vor dem Löschen entsteht automatisch ein Backup. Gelingt es nicht, wird nichts gelöscht.",
+          "- Tauchen die Dateien eines solchen Modells später in einem Ordner wieder auf, wird es automatisch wieder verknüpft.",
+          "In beiden Fällen bleiben die Dateien auf der Festplatte unberührt."
+        ]
+      },
+      {
+        "id": "backup",
+        "title": "Backups und Wiederherstellen",
+        "body": [
+          "modelkeeper sichert Katalog, Einstellungen und deine selbst gewählten Vorschaubilder automatisch in den Ordner data\\backups:",
+          "- einmal täglich beim Start, wenn sich seit dem letzten Backup etwas geändert hat,",
+          "- vor jedem Update des Katalogs auf eine neue Version,",
+          "- vor dem endgültigen Löschen eines Ordners und vor Änderungen an den Dateitypen,",
+          "- jederzeit über **Backup jetzt erstellen** (Einstellungen → **Daten & Backups**).",
+          "Aufbewahrt werden die 14 neuesten täglichen Backups und alle anderen der letzten 90 Tage, mindestens aber die 3 neuesten. Jedes Backup wird nach dem Schreiben geprüft.",
+          "**Wiederherstellen**: Unter **Backups anzeigen und wiederherstellen** ein Backup wählen und **Wiederherstellen…** klicken. Beim nächsten Start ersetzt modelkeeper Katalog, Einstellungen und Vorschaubilder durch den Stand des Backups. Der bisherige Stand wird vorher selbst als Backup abgelegt – so kannst du die Wiederherstellung genauso rückgängig machen.",
+          "Ist der Katalog beim Start beschädigt, hält modelkeeper an, bevor etwas geschrieben wird, und zeigt dir die Backups zum Wiederherstellen.",
+          "Die Backups liegen auf demselben Laufwerk wie die App. Kopiere den ganzen modelkeeper-Ordner deshalb ab und zu auf ein anderes Laufwerk oder in einen Cloud-Ordner – am besten bei geschlossener App. Betreibe modelkeeper auf dem PC, nicht auf dem NAS."
+        ]
+      },
+      {
+        "id": "settings",
+        "title": "Einstellungen",
+        "body": [
+          "- **Sprache**: Deutsch, Englisch oder wie das System.",
+          "- **NAS-Ordner automatisch neu scannen**: wie oft NAS-Ordner geprüft werden. Ein manueller Scan setzt die Zeit zurück.",
+          "- **Daten & Backups**: wo die Daten liegen, Backups erstellen und wiederherstellen.",
+          "- **Dateitypen**: welche Dateien katalogisiert werden. Entfernst du einen Typ, verschwinden dessen Einträge aus dem Katalog – die Dateien selbst bleiben unberührt; vorher entsteht ein Backup.",
+          "- **Modellerkennung**: **Teile-Ordner** werden dem Modell darüber zugeordnet, **Größenvarianten** (z. B. S_Orc, Orc_XL) als Varianten erkannt. Deine Korrekturen bleiben erhalten."
+        ]
+      },
+      {
+        "id": "faq",
+        "title": "Häufige Fragen",
+        "body": [
+          "**Verändert modelkeeper meine Dateien?** Nein. Die App liest Modelldateien nur. Geschrieben wird ausschließlich im eigenen Ordner data neben der modelkeeper.exe.",
+          "**Ich habe einen Ordner verschoben – sind meine Tags weg?** Nein. Verschobene Dateien werden am Hash wiedererkannt; Tags, Notizen und Status bleiben am Modell, sobald der neue Ort gescannt ist.",
+          "**Was bedeutet „2 fehlen“?** Diese Dateien waren beim letzten Scan nicht mehr da. Hast du sie verschoben, ist der Hinweis nach dem Scan des neuen Orts weg. Der Filter **Fehlende Dateien** zeigt alle betroffenen Modelle.",
+          "**Wo liegen meine Daten?** Im Ordner data neben der modelkeeper.exe: Katalog, Einstellungen, Vorschaubilder, Backups und ein Protokoll (modelkeeper.log). **Datenordner öffnen** in den Einstellungen zeigt ihn.",
+          "**Ein Archiv ist als beschädigt markiert.** Die Prüfsumme einer Datei im Archiv stimmt nicht. Lade es am besten neu herunter; die Datei selbst rührt modelkeeper nicht an."
+        ]
+      }
+    ]
   }
 }

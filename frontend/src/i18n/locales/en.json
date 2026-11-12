@@ -195,7 +195,8 @@
   "tabs": {
     "models": "Models",
     "folders": "Folders",
-    "settings": "Settings"
+    "settings": "Settings",
+    "help": "Help"
   },
   "models": {
     "searchPlaceholder": "Search name, creator, path…",
@@ -433,5 +434,138 @@
   "confirm": {
     "cancel": "Cancel",
     "ok": "Continue"
+  },
+  "manual": {
+    "title": "User manual",
+    "intro": "modelkeeper catalogs your 3D printing models on your PC and NAS, so you can find them, tag them and keep track of them. The app only reads your model files: it never moves, changes or deletes a file – not even duplicates.",
+    "search": "Search the manual…",
+    "noResults": "No section matches the search.",
+    "contents": "Contents",
+    "sections": [
+      {
+        "id": "start",
+        "title": "Getting started",
+        "body": [
+          "1. Open the **Folders** tab and click **Add folder…**. Choose a local folder or a NAS path such as \\\\fritz.nas\\…",
+          "2. Click **Scan**. modelkeeper lists all model files, computes a fingerprint (hash) of each – including files inside zip, rar and 7z archives – and detects the models from them.",
+          "3. Switch to the **Models** tab. Everything that was found is there.",
+          "Over the NAS, the first scan can take hours. You can use the app meanwhile. Progress is saved continuously: if you cancel or close the app, the next scan continues where it stopped. After that, only new and changed files are read.",
+          "The first folder level below a root folder counts as the creator (e.g. \"Atlas Miniatures\"). If your folder is organized differently, turn off **First folder level is the creator** for it."
+        ]
+      },
+      {
+        "id": "find",
+        "title": "Finding models",
+        "body": [
+          "The search field searches names, creators, tags, notes and paths. Results appear while you type; the beginnings of words are enough (\"orc war\" finds \"Orc Warlord\").",
+          "- **Favorites** shows only your favorites. Make a model a favorite with the star – in the list or in the detail view.",
+          "- **Filters** opens more criteria: tag, creator, folder, file type, supports and print status, and checkboxes such as **Untagged**, **Duplicates**, **Only in one place** (no backup on NAS or PC), **Offline**, **Damaged archives**, **Extracted and as archive** (candidates for saving space), **Missing files** and **Only in deactivated folders**.",
+          "- **List** and **Grid** switch between a compact list and thumbnails.",
+          "Notes in the list: **in 2 locations** means the model is, for example, on the PC and on the NAS. **missing** means files have disappeared since the last scan. **only in a deactivated folder** means its files are in a folder that is no longer scanned."
+        ]
+      },
+      {
+        "id": "edit",
+        "title": "Editing a model",
+        "body": [
+          "Click a model to open the detail view on the right.",
+          "- **Name**: use the pencil next to the name. A name you set is kept on every scan.",
+          "- **Print status**: not printed, printed successfully, or failed.",
+          "- **Supports**: detected from folder and file names (supported, presupported, unsupported). You can set it yourself; **Automatic** leaves it to the detection again.",
+          "- **Tags**: type and click **Add**. Dashed tags are suggestions from the folder names – accept with + or dismiss with ✕. Suggestions are never applied on their own.",
+          "- **Notes**: saved as soon as you leave the field.",
+          "- **Found in** lists all places of the model, **Files** all its files with variant and identical copies. **Show in Explorer** opens the folder (for files inside archives, the archive).",
+          "modelkeeper makes thumbnails itself: from an image in the model folder, the preview inside a 3MF file, or rendered from the STL. **Change thumbnail** lets you pick another image of the model, an image of your own (**Choose image…**), or go back with **Back to automatic**.",
+          "**3D preview** shows the model in 3D: drag to rotate, right mouse button to pan, mouse wheel to zoom. **Use view as thumbnail** saves the current view as the thumbnail."
+        ]
+      },
+      {
+        "id": "multi",
+        "title": "Several models at once",
+        "body": [
+          "**Ctrl**+click adds single models to the selection, **Shift**+click a whole range. A bar for all selected models then appears at the top:",
+          "- add or remove tags,",
+          "- add to or remove from the favorites,",
+          "- **Merge** into one of the models – when the detection wrongly split one model into several. Tags and notes are kept.",
+          "**Clear selection** ends the multiple selection."
+        ]
+      },
+      {
+        "id": "fix",
+        "title": "Correcting the detection",
+        "body": [
+          "modelkeeper suggests what a model is; you decide. Folders with typical part names (Supported, Parts, Base, STL …) and size variants (S_, M_, 32mm, 75mm …) are added to the model above them. An archive starts out as a model of its own.",
+          "Under **Correct** in the detail view:",
+          "- **Folder above is the model**: everything in the folder above becomes one model.",
+          "- **Not a model of its own**: the folder belongs to the model above.",
+          "- **Split into subfolders**: every subfolder becomes a model of its own.",
+          "- **Split off this location**: one place of a model with several places becomes a model of its own.",
+          "- **Undo corrections**: the detection decides on its own again.",
+          "Corrections are kept on every new scan. You can extend the lists **Part folders** and **Size variants** under Settings → **Model detection**."
+        ]
+      },
+      {
+        "id": "folders",
+        "title": "Folders and scans",
+        "body": [
+          "- **Live**: local folders are watched; changes are picked up automatically after a short pause.",
+          "- **NAS folders** are not watched live but rescanned on a schedule (set under **Settings**). If the NAS is unreachable, all entries stay and are shown as **Offline**.",
+          "- **Scan** reads only new and changed files.",
+          "- **Full check** reads every file again. It finds damaged or silently changed files and can take long, especially over the NAS.",
+          "- **Detect models** applies the detection again without reading files.",
+          "Each folder shows numbers on files, size, duplicates, archives and problems. **Problems in the last scan** lists, for example, damaged or password-protected archives.",
+          "**Share hashes**: if someone else scans the same folder (e.g. the same NAS), they can **import** your hashes instead of reading everything themselves. Tags, notes and favorites are not included."
+        ]
+      },
+      {
+        "id": "remove",
+        "title": "Deactivating and deleting folders",
+        "body": [
+          "**Deactivate…** takes a folder out of scanning and watching. Everything you entered – tags, notes, favorites, print status, corrections – is kept. Models that only exist there stay visible and are marked. If you add the same folder again later, it is reactivated and everything is linked up again.",
+          "Deactivated folders are listed at the bottom of the **Folders** page. There you also find **Delete permanently from the catalog**:",
+          "- The dialog shows how many models with your data will have no location left. If the number is above 0, you have to type it. **Look at these models** shows them first.",
+          "- A backup is made automatically right before deleting. If it fails, nothing is deleted.",
+          "- If the files of such a model show up in a folder again later, it is linked up again automatically.",
+          "In both cases, the files on disk are not touched."
+        ]
+      },
+      {
+        "id": "backup",
+        "title": "Backups and restoring",
+        "body": [
+          "modelkeeper backs up the catalog, the settings and the thumbnails you chose into the folder data\\backups automatically:",
+          "- once a day at start, if something changed since the last backup,",
+          "- before every update of the catalog to a new version,",
+          "- before a folder is deleted permanently and before file types are changed,",
+          "- any time with **Create backup now** (Settings → **Data & backups**).",
+          "It keeps the 14 newest daily backups and all others of the last 90 days, and always at least the 3 newest. Every backup is checked after it is written.",
+          "**Restoring**: under **Show and restore backups**, choose a backup and click **Restore…**. At the next start, modelkeeper replaces catalog, settings and thumbnails with the backup's state. The current state is saved as a backup first – so you can undo a restore the same way.",
+          "If the catalog is damaged at start, modelkeeper stops before anything is written and shows the backups to restore from.",
+          "The backups are on the same drive as the app. So from time to time, copy the whole modelkeeper folder to another drive or a cloud folder – preferably while the app is closed. Run modelkeeper on the PC, not on the NAS."
+        ]
+      },
+      {
+        "id": "settings",
+        "title": "Settings",
+        "body": [
+          "- **Language**: German, English, or the system language.",
+          "- **Rescan NAS folders automatically**: how often NAS folders are checked. A manual scan resets the timer.",
+          "- **Data & backups**: where the data is, create and restore backups.",
+          "- **File types**: which files are cataloged. Removing a type drops its entries from the catalog – the files themselves are not touched; a backup is made first.",
+          "- **Model detection**: **Part folders** are added to the model above, **Size variants** (e.g. S_Orc, Orc_XL) are recognized as variants. Your corrections are kept."
+        ]
+      },
+      {
+        "id": "faq",
+        "title": "Frequently asked questions",
+        "body": [
+          "**Does modelkeeper change my files?** No. The app only reads model files. It writes only into its own data folder next to modelkeeper.exe.",
+          "**I moved a folder – are my tags gone?** No. Moved files are recognized by their hash; tags, notes and status stay with the model once the new place has been scanned.",
+          "**What does \"2 missing\" mean?** These files were not there in the last scan. If you moved them, the note is gone after the new place has been scanned. The **Missing files** filter shows all affected models.",
+          "**Where is my data?** In the data folder next to modelkeeper.exe: catalog, settings, thumbnails, backups and a log (modelkeeper.log). **Open data folder** in the settings shows it.",
+          "**An archive is marked as broken.** The checksum of a file inside it does not match. Best download it again; modelkeeper does not touch the file itself."
+        ]
+      }
+    ]
   }
 }

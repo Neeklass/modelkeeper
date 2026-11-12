@@ -22,7 +22,9 @@ no server, no cloud. The concept and all requirements are in
 - Search and filters, list and grid, detail view with a rotatable 3D preview.
 - Hashes of a folder can be exported and imported by another user of the
   same folder (e.g. the same NAS), so it is not hashed twice.
-- German and English.
+- German and English, with a built-in user manual (Help tab).
+  The manual lives in the translation files (`manual` key), so a new
+  language brings its own manual.
 
 The app only ever reads model files: it never moves, changes or deletes them.
 
