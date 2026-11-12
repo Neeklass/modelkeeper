@@ -36,21 +36,49 @@ modelkeeper\
     catalog.db        catalog
     thumbnails\       thumbnails (incl. manually set ones)
     settings.json     settings
+    backups\          automatic snapshots of the above
     modelkeeper.log   log
 ```
 
-Backup: copy the whole `modelkeeper\` folder while the app is closed.
 Keep it on the local PC, not on the NAS. Requires WebView2 (included in
 Windows 11). The `.exe` is not code-signed, so Windows SmartScreen asks once
 on first start.
+
+### Backup
+
+The app takes snapshots of the catalog, the settings and the manually set
+thumbnails into `data\backups\`: once a day at start, before every catalog
+update, before permanently deleting a root folder or removing file types,
+and when you click "Create backup now" in the settings. It keeps the 14
+newest daily snapshots and all others from the last 90 days (at least the 3
+newest). These snapshots are on the same drive, so also copy the whole
+`modelkeeper\` folder to another drive or a cloud folder from time to time,
+while the app is closed.
+
+At every start the catalog is checked. If it is damaged, the app stops and
+shows the path of the newest snapshot. If `catalog.db` is missing but
+snapshots exist, it asks before starting with an empty catalog.
+
+To restore a snapshot:
+
+1. Close modelkeeper.
+2. Copy `catalog.db`, `settings.json` and `thumbnails\` from the snapshot
+   folder (e.g. `data\backups\2026-11-12_083000_daily\`) into `data\`,
+   replacing the files there. `thumbnails\` in a snapshot only holds the
+   manually set thumbnails: copy its files into the existing
+   `data\thumbnails\` folder, do not replace the folder.
+3. Delete `data\catalog.db-wal` and `data\catalog.db-shm` if they exist.
+4. Start modelkeeper.
 
 ## Build
 
 Requires Go (see `go.mod`) and Node.js.
 
 ```
-go run github.com/wailsapp/wails/v2/cmd/wails@v2.17.1 build -platform windows/amd64 -trimpath
+go run github.com/wailsapp/wails/v2/cmd/wails@v2.17.1 build -platform windows/amd64 -trimpath -ldflags "-X main.version=1.0.0"
 ```
+
+The version is written into each backup's `manifest.json` ("dev" without it).
 
 The result is `build/bin/modelkeeper.exe`. Development with live reload:
 `wails dev` (Wails CLI v2.17).
@@ -74,5 +102,6 @@ resumed) and, if 7-Zip is installed, 7z fixtures. Opt-in performance tests:
 - `internal/watch` – live watching and scheduled NAS rescans
 - `internal/thumbs`, `internal/preview` – thumbnails, files for the 3D preview
 - `internal/hashshare` – hash export/import
+- `internal/backup` – snapshots in data\backups and their rotation
 - `internal/db/migrations` – SQLite schema
 - `frontend/` – React UI, translations in `src/i18n/locales`

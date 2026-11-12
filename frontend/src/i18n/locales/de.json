@@ -77,7 +77,12 @@
     "database": "Datenbankfehler: {{detail}}",
     "modelNotFound": "Dieses Modell existiert nicht mehr.",
     "invalidValue": "Ungültiger Wert.",
-    "rootContainsData": "{{path}} kann kein Stammordner sein: Er enthält den Datenordner von modelkeeper ({{data}}) oder liegt darin. Wähle einen Ordner, der nur Modelle enthält."
+    "rootContainsData": "{{path}} kann kein Stammordner sein: Er enthält den Datenordner von modelkeeper ({{data}}) oder liegt darin. Wähle einen Ordner, der nur Modelle enthält.",
+    "catalogCorrupt": "Der Katalog {{path}} ist beschädigt. modelkeeper arbeitet damit nicht weiter, damit nichts überschrieben wird. Neuestes Backup: {{backup}}",
+    "catalogCorruptNoBackup": "Der Katalog {{path}} ist beschädigt, und es gibt kein Backup in data\\backups. modelkeeper arbeitet damit nicht weiter. Falls du eine externe Sicherung hast, spiele sie zurück.",
+    "catalogMissing": "Der Katalog {{path}} fehlt, es gibt aber Backups. Neuestes Backup: {{backup}}",
+    "backupBeforeMigration": "Vor dem Aktualisieren des Katalogs konnte kein Backup in {{path}} angelegt werden. Der Katalog wurde nicht verändert. Details: {{detail}}",
+    "backupFailed": "Das Backup in {{path}} ist fehlgeschlagen; es wurde nichts geändert. Details: {{detail}}"
   },
   "roots": {
     "title": "Stammordner",
@@ -349,5 +354,24 @@
     "newer": "Diese Hash-Datei stammt von einer neueren modelkeeper-Version. Bitte aktualisieren.",
     "invalid": "Die Hash-Datei ist beschädigt oder ungültig; es wurde nichts importiert. ({{detail}})",
     "noMatch": "Die Hash-Datei gehört nicht zu {{path}}: Von {{checked}} geprüften Dateien wurden {{matching}} mit gleicher Größe und gleichem Datum gefunden. Bitte den Stammordner wählen, der dieselben Dateien zeigt."
+  },
+  "backup": {
+    "create": "Backup jetzt erstellen",
+    "creating": "Backup läuft…",
+    "created": "Backup erstellt: {{path}}",
+    "last": "Letztes Backup: {{when}} ({{reason}}).",
+    "none": "Noch kein Backup.",
+    "hint": "Backups liegen in data\\backups (täglich beim Start und vor riskanten Änderungen). Sie liegen auf demselben Laufwerk: Sichere den modelkeeper-Ordner zusätzlich extern.",
+    "restoreHint": "Wiederherstellen: modelkeeper schließen, catalog.db, settings.json und den Ordner thumbnails aus dem Backup-Ordner in den Datenordner kopieren (vorhandene Dateien ersetzen), catalog.db-wal und catalog.db-shm löschen, falls vorhanden, und modelkeeper neu starten.",
+    "startEmpty": "Mit leerem Katalog starten",
+    "confirmStartEmpty": "Mit einem leeren Katalog starten? Tags, Notizen und Korrekturen sind dann nicht da, bis du ein Backup zurückspielst. Die Backups bleiben erhalten.",
+    "reason": {
+      "daily": "täglich",
+      "manual": "manuell",
+      "preMigration": "vor Katalog-Update",
+      "preRemoveRoot": "vor dem Löschen eines Ordners",
+      "preFileTypes": "vor dem Entfernen von Dateitypen",
+      "other": "sonstiges"
+    }
   }
 }

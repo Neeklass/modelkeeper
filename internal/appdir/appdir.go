@@ -17,6 +17,7 @@ type Layout struct {
 	Catalog    string // .../data/catalog.db
 	Settings   string // .../data/settings.json
 	Thumbnails string // .../data/thumbnails
+	Backups    string // .../data/backups (snapshots, J2)
 	Log        string // .../data/modelkeeper.log
 }
 
@@ -48,7 +49,8 @@ func NewLayout(root string) Layout {
 		Catalog:    filepath.Join(root, "catalog.db"),
 		Settings:   filepath.Join(root, "settings.json"),
 		Thumbnails: filepath.Join(root, "thumbnails"),
-		Log:        filepath.Join(root, "modelkeeper.log"),
+		Backups:    filepath.Join(root, "backups"),
+		Log:       filepath.Join(root, "modelkeeper.log"),
 	}
 }
 

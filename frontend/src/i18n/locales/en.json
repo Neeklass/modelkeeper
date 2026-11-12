@@ -77,7 +77,12 @@
     "database": "Database error: {{detail}}",
     "modelNotFound": "This model no longer exists.",
     "invalidValue": "Invalid value.",
-    "rootContainsData": "{{path}} cannot be a root folder: it contains modelkeeper's data folder ({{data}}) or lies inside it. Choose a folder that only holds models."
+    "rootContainsData": "{{path}} cannot be a root folder: it contains modelkeeper's data folder ({{data}}) or lies inside it. Choose a folder that only holds models.",
+    "catalogCorrupt": "The catalog {{path}} is damaged. modelkeeper stops here so that nothing gets overwritten. Newest backup: {{backup}}",
+    "catalogCorruptNoBackup": "The catalog {{path}} is damaged and there is no backup in data\\backups. modelkeeper stops here. If you have an external backup, restore it.",
+    "catalogMissing": "The catalog {{path}} is missing, but backups exist. Newest backup: {{backup}}",
+    "backupBeforeMigration": "No backup could be written to {{path}} before updating the catalog. The catalog was not changed. Details: {{detail}}",
+    "backupFailed": "The backup in {{path}} failed; nothing was changed. Details: {{detail}}"
   },
   "roots": {
     "title": "Root folders",
@@ -349,5 +354,24 @@
     "newer": "This hash file comes from a newer modelkeeper. Please update.",
     "invalid": "The hash file is damaged or invalid; nothing was imported. ({{detail}})",
     "noMatch": "The hash file does not belong to {{path}}: of {{checked}} sampled files, {{matching}} were found with the same size and date. Choose the root folder that shows the same files."
+  },
+  "backup": {
+    "create": "Create backup now",
+    "creating": "Creating backup…",
+    "created": "Backup created: {{path}}",
+    "last": "Last backup: {{when}} ({{reason}}).",
+    "none": "No backup yet.",
+    "hint": "Backups are kept in data\\backups (daily at start and before risky changes). They are on the same drive: also back up the modelkeeper folder externally.",
+    "restoreHint": "To restore: close modelkeeper, copy catalog.db, settings.json and the thumbnails folder from the backup folder into the data folder (replacing the existing files), delete catalog.db-wal and catalog.db-shm if present, and start modelkeeper again.",
+    "startEmpty": "Start with an empty catalog",
+    "confirmStartEmpty": "Start with an empty catalog? Tags, notes and corrections are missing until you restore a backup. The backups are kept.",
+    "reason": {
+      "daily": "daily",
+      "manual": "manual",
+      "preMigration": "before a catalog update",
+      "preRemoveRoot": "before deleting a folder",
+      "preFileTypes": "before removing file types",
+      "other": "other"
+    }
   }
 }

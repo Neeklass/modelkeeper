@@ -23,6 +23,7 @@ import (
 
 	"modelkeeper/internal/appdir"
 	"modelkeeper/internal/archive"
+	"modelkeeper/internal/backup"
 	"modelkeeper/internal/catalog"
 	"modelkeeper/internal/corrections"
 	"modelkeeper/internal/db"
@@ -57,6 +58,8 @@ type App struct {
 	watch    *watch.Watcher // live watching of local roots (E4); nil if unavailable
 
 	redetectMu sync.Mutex // serializes redetectAll
+	backupMu   sync.Mutex // serializes snapshots and rotation
+	bg         sync.WaitGroup
 	logFile    *os.File
 
 	// startupErr is set when the data folder or catalog could not be opened;
@@ -95,11 +98,60 @@ func (a *App) init() error {
 		return msg.Wrap(err, "error.settingsLoad", "path", layout.Settings)
 	}
 	a.settings = st
-	conn, err := db.Open(layout.Catalog)
+	if err := a.openCatalog(false); err != nil {
+		return err
+	}
+	return a.startServices()
+}
+
+// openCatalog opens and checks the catalog (J2). A damaged catalog stops the
+// start before anything is written, rotated or backed up. A missing one stops
+// it too if snapshots exist, unless allowEmpty (the user chose to start with
+// an empty catalog). Before migrations a snapshot is taken. After a
+// successful open, the daily snapshot runs in the background.
+func (a *App) openCatalog(allowEmpty bool) error {
+	layout := a.layout
+	if _, err := os.Stat(layout.Catalog); errors.Is(err, os.ErrNotExist) && !allowEmpty {
+		if s, ok := backup.Latest(layout.Backups); ok {
+			return msg.Wrap(nil, "error.catalogMissing", "path", layout.Catalog, "backup", s.Path)
+		}
+	}
+	conn, err := db.OpenWith(layout.Catalog, db.Options{
+		BeforeMigrate: func(c *sql.DB, from, to, next int) error {
+			s, err := a.snapshot(c, backup.PreMigration(next))
+			if err != nil {
+				return msg.Wrap(err, "error.backupBeforeMigration", "path", layout.Backups)
+			}
+			log.Printf("catalog schema %d -> %d, snapshot %s", from, to, s.Path)
+			return nil
+		},
+	})
+	if errors.Is(err, db.ErrCorrupt) {
+		log.Printf("catalog damaged: %v", err)
+		if s, ok := backup.Latest(layout.Backups); ok {
+			return msg.Wrap(err, "error.catalogCorrupt", "path", layout.Catalog, "backup", s.Path)
+		}
+		return msg.Wrap(err, "error.catalogCorruptNoBackup", "path", layout.Catalog)
+	}
 	if err != nil {
+		var me *msg.Error
+		if errors.As(err, &me) {
+			return err
+		}
 		return msg.Wrap(err, "error.catalogOpen", "path", layout.Catalog)
 	}
 	a.db = conn
+	a.bg.Add(1)
+	go func() {
+		defer a.bg.Done()
+		a.dailyBackup()
+	}()
+	return nil
+}
+
+// startServices starts scanning and watching once the catalog is open.
+func (a *App) startServices() error {
+	layout, conn, st := a.layout, a.db, a.settings
 	scans, err := scanner.NewManager(conn, st.Get, func(p scanner.Progress) {
 		runtime.EventsEmit(a.ctx, EventScanProgress, p)
 		if !p.Running {
@@ -144,6 +196,7 @@ func (a *App) syncWatch() {
 }
 
 func (a *App) shutdown(ctx context.Context) {
+	a.bg.Wait() // a running snapshot finishes
 	if a.watch != nil {
 		a.watch.Close() // before the scanner, so no new scan starts
 	}
@@ -168,11 +221,29 @@ type AppStatus struct {
 	// NASRescanHours: interval of scheduled NAS rescans, 0 = off (E4).
 	NASRescanHours int      `json:"nasRescanHours"`
 	StartupError   *msg.Msg `json:"startupError,omitempty"`
+	// LastBackup: newest snapshot in data/backups (J2), nil if none.
+	LastBackup *BackupInfo `json:"lastBackup,omitempty"`
+}
+
+// BackupInfo describes a snapshot.
+type BackupInfo struct {
+	Path   string `json:"path"`
+	Reason string `json:"reason"`
+	Time   int64  `json:"time"` // unix ms
+}
+
+func backupInfo(s backup.Snapshot) *BackupInfo {
+	return &BackupInfo{Path: s.Path, Reason: s.Manifest.Reason, Time: s.Time.UnixMilli()}
 }
 
 // GetStatus returns the data folder, the configured language and any startup error.
 func (a *App) GetStatus() AppStatus {
 	s := AppStatus{DataDir: a.layout.Root, StartupError: a.startupErr}
+	if a.layout.Backups != "" {
+		if b, ok := backup.Latest(a.layout.Backups); ok {
+			s.LastBackup = backupInfo(b)
+		}
+	}
 	if a.settings != nil {
 		st := a.settings.Get()
 		s.Language, s.NASRescanHours = st.Language, st.NASRescanHours
@@ -257,6 +328,12 @@ func (a *App) SaveFileTypes(ft settings.FileTypes) (catalog.FileTypesChange, err
 	}
 	prev := a.settings.Get()
 	added := len(ft.Added(prev.FileTypes)) > 0
+	if len(prev.FileTypes.Added(ft)) > 0 {
+		// Removed types drop catalog entries, and with them detection results.
+		if _, err := a.snapshot(a.db, backup.ReasonFileTypes); err != nil {
+			return ch, msg.Wrap(err, "error.backupFailed", "path", a.layout.Backups)
+		}
+	}
 	err = a.scans.Exclusive(func(ctx context.Context) error {
 		if err := a.settings.Update(func(s *settings.Settings) { s.FileTypes = ft }); err != nil {
 			return msg.Wrap(err, "error.settingsSave")
@@ -327,6 +404,70 @@ func (a *App) redetectAll() {
 		}
 	}
 	a.scans.Wait()
+}
+
+// snapshot writes a snapshot of conn into data/backups and rotates the
+// snapshots (J2). Only called with a catalog that passed the integrity check.
+func (a *App) snapshot(conn *sql.DB, reason string) (backup.Snapshot, error) {
+	a.backupMu.Lock()
+	defer a.backupMu.Unlock()
+	src := backup.Source{DB: conn, Settings: a.layout.Settings, Thumbnails: a.layout.Thumbnails, AppVersion: version}
+	s, err := backup.Create(context.Background(), a.layout.Backups, src, reason, time.Now())
+	if err != nil {
+		log.Printf("backup %s: %v", reason, err)
+		return s, err
+	}
+	log.Printf("backup %s: %s", reason, s.Path)
+	if removed, err := backup.Rotate(a.layout.Backups, time.Now()); err != nil {
+		log.Printf("backup rotation: %v", err)
+	} else if len(removed) > 0 {
+		log.Printf("backup rotation removed %v", removed)
+	}
+	return s, nil
+}
+
+// dailyBackup takes the snapshot of the day, at most one per calendar day.
+// A failure is logged and does not stop the app.
+func (a *App) dailyBackup() {
+	a.backupMu.Lock()
+	done := backup.HasDaily(a.layout.Backups, time.Now())
+	a.backupMu.Unlock()
+	if !done {
+		a.snapshot(a.db, backup.ReasonDaily)
+	}
+}
+
+// CreateBackup takes a snapshot now (button in the settings).
+func (a *App) CreateBackup() (*BackupInfo, error) {
+	if err := a.ready(); err != nil {
+		return nil, err
+	}
+	s, err := a.snapshot(a.db, backup.ReasonManual)
+	if err != nil {
+		return nil, msg.Wrap(err, "error.backupFailed", "path", a.layout.Backups)
+	}
+	return backupInfo(s), nil
+}
+
+// StartWithEmptyCatalog starts with a new, empty catalog after the start was
+// stopped because catalog.db is missing although snapshots exist. The
+// snapshots are left as they are.
+func (a *App) StartWithEmptyCatalog() error {
+	if a.startupErr == nil || a.startupErr.Key != "error.catalogMissing" || a.db != nil {
+		return msg.Wrap(nil, "error.notReady")
+	}
+	err := a.openCatalog(true)
+	if err == nil {
+		err = a.startServices()
+	}
+	if err != nil {
+		m := msg.From(err)
+		a.startupErr = &m
+		return err
+	}
+	a.startupErr = nil
+	log.Printf("started with an empty catalog")
+	return nil
 }
 
 // OpenDataFolder opens the data folder in the system file manager.

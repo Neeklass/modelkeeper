@@ -14,6 +14,10 @@ export function CancelScan() {
   return window['go']['main']['App']['CancelScan']();
 }
 
+export function CreateBackup() {
+  return window['go']['main']['App']['CreateBackup']();
+}
+
 export function DetachAnchor(arg1, arg2, arg3) {
   return window['go']['main']['App']['DetachAnchor'](arg1, arg2, arg3);
 }
@@ -164,6 +168,10 @@ export function StartFullCheck(arg1) {
 
 export function StartScan(arg1) {
   return window['go']['main']['App']['StartScan'](arg1);
+}
+
+export function StartWithEmptyCatalog() {
+  return window['go']['main']['App']['StartWithEmptyCatalog']();
 }
 
 export function UpdateModel(arg1, arg2) {

@@ -1,7 +1,8 @@
 import {useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
-import {GetStatus, OpenDataFolder, SetLanguage, SetNASRescanHours} from '../wailsjs/go/main/App'
+import {CreateBackup, GetStatus, OpenDataFolder, SetLanguage, SetNASRescanHours, StartWithEmptyCatalog} from '../wailsjs/go/main/App'
 import {main} from '../wailsjs/go/models'
+import {formatDateTime} from './format'
 import i18n, {languages, resolveLanguage, systemLanguage} from './i18n'
 import {Msg, toMsg, translateMsg} from './i18n/msg'
 import {RootsPanel} from './components/RootsPanel'
@@ -9,6 +10,17 @@ import {ModelsView} from './components/ModelsView'
 import {DetectionSettingsPanel} from './components/DetectionSettings'
 
 type Tab = 'models' | 'folders' | 'settings'
+
+/** Translation key of a snapshot reason ("pre-migration-0007" → backup.reason.preMigration). */
+function backupReasonKey(reason: string): string {
+    if (reason.startsWith('pre-migration-')) return 'backup.reason.preMigration'
+    return {
+        'daily': 'backup.reason.daily',
+        'manual': 'backup.reason.manual',
+        'pre-remove-root': 'backup.reason.preRemoveRoot',
+        'pre-filetypes': 'backup.reason.preFileTypes',
+    }[reason] ?? 'backup.reason.other'
+}
 
 /** Intervals for scheduled NAS rescans in hours (App.NASRescanChoices), 0 = off. */
 const NAS_RESCAN_HOURS = [0, 1, 6, 12, 24, 168]
@@ -31,12 +43,7 @@ function App() {
     }
 
     if (status.startupError) {
-        return (
-            <div className="center">
-                <h1>{t('error.startupTitle')}</h1>
-                <p className="error">{translateMsg(status.startupError as Msg)}</p>
-            </div>
-        )
+        return <StartupError status={status} onStarted={setStatus}/>
     }
 
     return (
@@ -60,9 +67,59 @@ function App() {
     )
 }
 
+/** Shown instead of the app when the catalog could not be opened (J2: damaged or missing catalog). */
+function StartupError({status, onStarted}: { status: main.AppStatus; onStarted: (s: main.AppStatus) => void }) {
+    const {t} = useTranslation()
+    const [error, setError] = useState<Msg | null>(null)
+    const startup = status.startupError as Msg
+    const restorable = startup.key === 'error.catalogCorrupt' || startup.key === 'error.catalogMissing'
+
+    async function startEmpty() {
+        if (!window.confirm(t('backup.confirmStartEmpty'))) return
+        try {
+            await StartWithEmptyCatalog()
+            onStarted(await GetStatus())
+        } catch (e) {
+            setError(toMsg(e))
+        }
+    }
+
+    return (
+        <div className="center">
+            <h1>{t('error.startupTitle')}</h1>
+            <p className="error">{translateMsg(startup)}</p>
+            {restorable && <p className="small">{t('backup.restoreHint')}</p>}
+            <div className="row">
+                {status.dataDir && <button onClick={() => OpenDataFolder().catch(e => setError(toMsg(e)))}>
+                    {t('settings.openDataFolder')}
+                </button>}
+                {startup.key === 'error.catalogMissing' && <button onClick={startEmpty}>{t('backup.startEmpty')}</button>}
+            </div>
+            {error && <p className="error">{translateMsg(error)}</p>}
+        </div>
+    )
+}
+
 function SettingsPanel({status, onChange}: { status: main.AppStatus; onChange: (s: main.AppStatus) => void }) {
     const {t} = useTranslation()
     const [error, setError] = useState<Msg | null>(null)
+    const [backupBusy, setBackupBusy] = useState(false)
+    const [backupDone, setBackupDone] = useState<string | null>(null)
+
+    async function createBackup() {
+        setError(null)
+        setBackupDone(null)
+        setBackupBusy(true)
+        try {
+            const b = await CreateBackup()
+            setBackupDone(b.path)
+            onChange(main.AppStatus.createFrom({...status, lastBackup: b}))
+        } catch (e) {
+            setError(toMsg(e))
+        } finally {
+            setBackupBusy(false)
+        }
+    }
     const sysName = languages.find(l => l.code === systemLanguage())?.name ?? systemLanguage()
 
     async function changeLanguage(code: string) {
@@ -106,7 +163,17 @@ function SettingsPanel({status, onChange}: { status: main.AppStatus; onChange: (
                 <button onClick={() => OpenDataFolder().catch(e => setError(toMsg(e)))}>
                     {t('settings.openDataFolder')}
                 </button>
+                <button onClick={createBackup} disabled={backupBusy}>
+                    {backupBusy ? t('backup.creating') : t('backup.create')}
+                </button>
             </div>
+            <p className="small muted">
+                {status.lastBackup
+                    ? t('backup.last', {when: formatDateTime(status.lastBackup.time), reason: t(backupReasonKey(status.lastBackup.reason))})
+                    : t('backup.none')}
+                {' '}{t('backup.hint')}
+            </p>
+            {backupDone && <p className="small">{t('backup.created', {path: backupDone})}</p>}
             {error && <p className="error">{translateMsg(error)}</p>}
         </section>
     )

@@ -443,11 +443,28 @@ export namespace hashshare {
 
 export namespace main {
 	
+	export class BackupInfo {
+	    path: string;
+	    reason: string;
+	    time: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new BackupInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.reason = source["reason"];
+	        this.time = source["time"];
+	    }
+	}
 	export class AppStatus {
 	    dataDir: string;
 	    language: string;
 	    nasRescanHours: number;
 	    startupError?: msg.Msg;
+	    lastBackup?: BackupInfo;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppStatus(source);
@@ -459,6 +476,7 @@ export namespace main {
 	        this.language = source["language"];
 	        this.nasRescanHours = source["nasRescanHours"];
 	        this.startupError = this.convertValues(source["startupError"], msg.Msg);
+	        this.lastBackup = this.convertValues(source["lastBackup"], BackupInfo);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -479,6 +497,7 @@ export namespace main {
 		    return a;
 		}
 	}
+	
 	export class DetectionSettings {
 	    fileTypes: settings.FileTypes;
 	    partNames: string[];

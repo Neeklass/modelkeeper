@@ -141,7 +141,11 @@ Override  (manual corrections of model detection, survive rescans)
 ## J – Data Safety
 
 - **J1** The app is **read-only** towards model files: it never moves, modifies or deletes files, including duplicates.
-- **J2** No automatic backup; the data folder is backed up manually (see M).
+- **J2** Automatic local snapshots in `data\backups\` (see M): daily at start, always before a catalog
+  migration, before risky catalog changes (permanently deleting a root folder, removing file types) and on
+  demand ("Create backup now"). A damaged catalog (integrity check at start) stops the app before anything is
+  written, with the path to the newest snapshot; restoring is manual. An external backup (another drive,
+  Dropbox …) stays manual.
 
 ## L – Additional Fields
 
@@ -163,9 +167,23 @@ modelkeeper\
     catalog.db-shm      ← only while the app is running
     thumbnails\         ← cache + manually set thumbnails
     settings.json       ← settings (root folders etc.)
+    backups\            ← automatic snapshots (J2)
+      2026-11-12_083000_daily\
+        catalog.db      ← consistent copy (VACUUM INTO)
+        settings.json
+        thumbnails\     ← only the manually set thumbnails (generated ones are reproducible)
+        manifest.json   ← app/schema version, time, reason, number of models/tags
 ```
 
-- Backup: **copy the whole `modelkeeper\` folder while the app is closed.**
+- Snapshots are written to a temporary folder and renamed when complete. Retention: the 14 newest daily
+  snapshots and all event snapshots (`pre-migration-NNNN`, `pre-remove-root`, `pre-filetypes`, `manual`) of
+  the last 90 days; the 3 newest are never deleted. Rotation only deletes folders it created (name scheme
+  and manifest).
+- Restore (manual): close the app, copy `catalog.db`, `settings.json` and `thumbnails\` from a snapshot into
+  `data\`, delete `catalog.db-wal`/`-shm` if present, start the app.
+- The data folder is never catalogued, even if it lies inside a root; a root that contains it or lies inside
+  it is rejected.
+- External backup: **copy the whole `modelkeeper\` folder while the app is closed.**
   On exit, the app checkpoints everything into `catalog.db`.
 - `thumbnails\` must be included in backups (contains manually set thumbnails).
 - The folder must be writable (i.e. **not** under `C:\Program Files`).
