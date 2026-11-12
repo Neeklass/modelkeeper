@@ -4,7 +4,8 @@
   },
   "app": {
     "title": "modelkeeper",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "starting": "Opening and checking the catalog…"
   },
   "settings": {
     "title": "Settings",

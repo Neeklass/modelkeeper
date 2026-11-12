@@ -61,6 +61,8 @@ type App struct {
 	bg       sync.WaitGroup
 	logFile  *os.File
 
+	initDone chan struct{} // closed when the start is over (see started)
+
 	// startupErr is set when the data folder or catalog could not be opened;
 	// the frontend shows it instead of the main UI.
 	startupErr *msg.Msg
@@ -68,14 +70,39 @@ type App struct {
 	notice *msg.Msg
 }
 
-func NewApp() *App { return &App{} }
+func NewApp() *App { return &App{initDone: make(chan struct{})} }
 
+// EventReady tells the frontend that the start (restore, integrity check,
+// migrations) is over; GetStatus then has the result.
+const EventReady = "app:ready"
+
+// startup runs the start in the background, so the window can show that the
+// catalog is being checked (about a second at 100,000 models, longer on slow
+// drives) instead of staying empty.
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	if err := a.init(); err != nil {
-		m := msg.From(err)
-		a.startupErr = &m
-		log.Printf("startup failed: %v", err)
+	go func() {
+		if err := a.init(); err != nil {
+			m := msg.From(err)
+			a.startupErr = &m
+			log.Printf("startup failed: %v", err)
+		}
+		close(a.initDone) // publishes everything init set
+		runtime.EventsEmit(ctx, EventReady)
+	}()
+}
+
+// started reports whether the start is over. Until then, no field set by
+// init may be read. (Apps built without NewApp, in tests, count as started.)
+func (a *App) started() bool {
+	if a.initDone == nil {
+		return true
+	}
+	select {
+	case <-a.initDone:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -209,6 +236,9 @@ func (a *App) syncWatch() {
 }
 
 func (a *App) shutdown(ctx context.Context) {
+	if a.initDone != nil {
+		<-a.initDone // a start in progress (e.g. a restore) finishes first
+	}
 	a.bg.Wait() // a running snapshot finishes
 	if a.watch != nil {
 		a.watch.Close() // before the scanner, so no new scan starts
@@ -242,6 +272,8 @@ type AppStatus struct {
 	// PendingRestore: snapshot to restore at the next start, "" if none.
 	PendingRestore string   `json:"pendingRestore"`
 	Notice         *msg.Msg `json:"notice,omitempty"`
+	// Starting: the start is still running; nothing else is set yet.
+	Starting bool `json:"starting"`
 }
 
 // BackupInfo describes a snapshot.
@@ -286,7 +318,7 @@ func (a *App) applyRestore() {
 // ListBackups returns the snapshots, newest first (also on the startup
 // error screen, without a catalog).
 func (a *App) ListBackups() ([]BackupInfo, error) {
-	if a.layout.Backups == "" {
+	if !a.started() || a.layout.Backups == "" {
 		return nil, msg.Wrap(nil, "error.notReady")
 	}
 	list, err := backup.List(a.layout.Backups)
@@ -305,7 +337,7 @@ func (a *App) ListBackups() ([]BackupInfo, error) {
 // RequestRestore restores a snapshot at the next start of the app, after
 // checking that it is intact. The current state is kept as a snapshot.
 func (a *App) RequestRestore(name string) error {
-	if a.layout.Backups == "" {
+	if !a.started() || a.layout.Backups == "" {
 		return msg.Wrap(nil, "error.notReady")
 	}
 	if err := backup.RequestRestore(context.Background(), a.restoreTarget(), name, time.Now()); err != nil {
@@ -317,6 +349,9 @@ func (a *App) RequestRestore(name string) error {
 
 // CancelRestore drops a requested restore.
 func (a *App) CancelRestore() error {
+	if !a.started() || a.layout.Backups == "" {
+		return msg.Wrap(nil, "error.notReady")
+	}
 	if err := backup.CancelRestore(a.restoreTarget()); err != nil {
 		return msg.Wrap(err, "error.unknown")
 	}
@@ -324,13 +359,20 @@ func (a *App) CancelRestore() error {
 }
 
 // DismissNotice clears the start notice.
-func (a *App) DismissNotice() { a.notice = nil }
+func (a *App) DismissNotice() {
+	if a.started() {
+		a.notice = nil
+	}
+}
 
 // Quit closes the app (e.g. to apply a requested restore).
 func (a *App) Quit() { runtime.Quit(a.ctx) }
 
 // GetStatus returns the data folder, the configured language and any startup error.
 func (a *App) GetStatus() AppStatus {
+	if !a.started() {
+		return AppStatus{Starting: true}
+	}
 	s := AppStatus{DataDir: a.layout.Root, StartupError: a.startupErr, Notice: a.notice}
 	if a.layout.Backups != "" {
 		s.PendingRestore, _ = backup.PendingRestore(a.restoreTarget())
@@ -349,7 +391,7 @@ func (a *App) GetStatus() AppStatus {
 
 // SetLanguage stores the UI language ("" = follow system locale).
 func (a *App) SetLanguage(lang string) error {
-	if a.settings == nil {
+	if !a.started() || a.settings == nil {
 		return msg.Wrap(nil, "error.notReady")
 	}
 	if err := a.settings.Update(func(s *settings.Settings) { s.Language = lang }); err != nil {
@@ -363,7 +405,7 @@ var NASRescanChoices = []int{0, 1, 6, 12, 24, 168}
 
 // SetNASRescanHours sets the interval of scheduled NAS rescans (E4).
 func (a *App) SetNASRescanHours(hours int) error {
-	if a.settings == nil {
+	if !a.started() || a.settings == nil {
 		return msg.Wrap(nil, "error.notReady")
 	}
 	if !slices.Contains(NASRescanChoices, hours) {
@@ -394,7 +436,7 @@ func detectionOf(st settings.Settings) DetectionSettings {
 
 // GetDetectionSettings returns file types, part names and size tokens (F10).
 func (a *App) GetDetectionSettings() (DetectionSettingsView, error) {
-	if a.settings == nil {
+	if !a.started() || a.settings == nil {
 		return DetectionSettingsView{}, msg.Wrap(nil, "error.notReady")
 	}
 	return DetectionSettingsView{Current: detectionOf(a.settings.Get()), Defaults: detectionOf(settings.Defaults())}, nil
@@ -552,7 +594,7 @@ func (a *App) CreateBackup() (*BackupInfo, error) {
 // stopped because catalog.db is missing although snapshots exist. The
 // snapshots are left as they are.
 func (a *App) StartWithEmptyCatalog() error {
-	if a.startupErr == nil || a.startupErr.Key != "error.catalogMissing" || a.db != nil {
+	if !a.started() || a.startupErr == nil || a.startupErr.Key != "error.catalogMissing" || a.db != nil {
 		return msg.Wrap(nil, "error.notReady")
 	}
 	err := a.openCatalog(true)
@@ -571,6 +613,9 @@ func (a *App) StartWithEmptyCatalog() error {
 
 // OpenDataFolder opens the data folder in the system file manager.
 func (a *App) OpenDataFolder() error {
+	if !a.started() || a.layout.Root == "" {
+		return msg.Wrap(nil, "error.notReady")
+	}
 	if err := osopen.Folder(a.layout.Root); err != nil {
 		return msg.Wrap(err, "error.openFolder", "path", a.layout.Root)
 	}
@@ -579,7 +624,7 @@ func (a *App) OpenDataFolder() error {
 
 // ready returns an error when startup failed.
 func (a *App) ready() error {
-	if a.db == nil || a.scans == nil {
+	if !a.started() || a.db == nil || a.scans == nil {
 		return msg.Wrap(nil, "error.notReady")
 	}
 	return nil
@@ -797,14 +842,14 @@ func (a *App) ImportHashes(rootID int64) (*ImportResult, error) {
 
 // CancelScan stops the running scan; work done so far is kept.
 func (a *App) CancelScan() {
-	if a.scans != nil {
+	if a.started() && a.scans != nil {
 		a.scans.Cancel()
 	}
 }
 
 // GetScanProgress returns the current or last scan's progress (nil if none).
 func (a *App) GetScanProgress() *scanner.Progress {
-	if a.scans == nil {
+	if !a.started() || a.scans == nil {
 		return nil
 	}
 	return a.scans.Progress()
@@ -1042,7 +1087,7 @@ func (h assetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h assetHandler) serveThumb(w http.ResponseWriter, r *http.Request, name string) {
 	a := h.a
-	if !thumbName.MatchString(name) || a.layout.Thumbnails == "" {
+	if !a.started() || !thumbName.MatchString(name) || a.layout.Thumbnails == "" {
 		http.NotFound(w, r)
 		return
 	}
@@ -1056,7 +1101,7 @@ func (h assetHandler) serveThumb(w http.ResponseWriter, r *http.Request, name st
 // served. Errors are reported as status codes the frontend translates.
 func (h assetHandler) serveFile(w http.ResponseWriter, r *http.Request, idText string) {
 	id, err := strconv.ParseInt(idText, 10, 64)
-	if err != nil || id <= 0 || h.a.db == nil {
+	if err != nil || id <= 0 || !h.a.started() || h.a.db == nil {
 		http.NotFound(w, r)
 		return
 	}

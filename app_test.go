@@ -42,3 +42,29 @@ func TestThumbHandler(t *testing.T) {
 		}
 	}
 }
+
+// While the start runs in the background, bound methods do not touch its
+// state: the status only says "starting", everything else is not ready.
+func TestStartingGate(t *testing.T) {
+	a := NewApp()
+	if s := a.GetStatus(); !s.Starting || s.DataDir != "" {
+		t.Errorf("status while starting = %+v", s)
+	}
+	if err := a.ready(); err == nil {
+		t.Error("ready while starting")
+	}
+	if _, err := a.ListBackups(); err == nil {
+		t.Error("ListBackups while starting")
+	}
+	rec := httptest.NewRecorder()
+	assetHandler{a}.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/thumbs/0190a5b2-7c4e-7d3a-9f00-123456789abc.jpg", nil))
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("thumbnail while starting: %d", rec.Code)
+	}
+
+	a.layout = appdir.NewLayout(t.TempDir())
+	close(a.initDone)
+	if s := a.GetStatus(); s.Starting || s.DataDir == "" {
+		t.Errorf("status after start = %+v", s)
+	}
+}

@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {CreateBackup, DismissNotice, GetStatus, OpenDataFolder, SetLanguage, SetNASRescanHours, StartWithEmptyCatalog} from '../wailsjs/go/main/App'
 import {main} from '../wailsjs/go/models'
+import {EventsOn} from '../wailsjs/runtime/runtime'
 import {formatBytes, formatDateTime, formatNumber} from './format'
 import i18n, {languages, resolveLanguage, systemLanguage} from './i18n'
 import {Msg, toMsg, translateMsg} from './i18n/msg'
@@ -28,15 +29,28 @@ function App() {
         setTab('models')
     }
 
+    // The start (restore, integrity check, migrations) runs in the background:
+    // load the status when it is over (event), polling as a fallback.
     useEffect(() => {
-        GetStatus().then(s => {
+        let done = false
+        const load = () => GetStatus().then(s => {
+            if (done || s.starting) return
+            done = true
             i18n.changeLanguage(resolveLanguage(s.language))
             setStatus(s)
         }).catch(e => setError(toMsg(e)))
+        const off = EventsOn('app:ready', load)
+        load()
+        const poll = setInterval(() => done ? clearInterval(poll) : load(), 500)
+        return () => {
+            done = true
+            off()
+            clearInterval(poll)
+        }
     }, [])
 
     if (!status) {
-        return <div className="center">{error ? translateMsg(error) : t('app.loading')}</div>
+        return <div className="center">{error ? translateMsg(error) : t('app.starting')}</div>
     }
 
     if (status.startupError) {

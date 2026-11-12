@@ -527,6 +527,7 @@ export namespace main {
 	    backupBytes: number;
 	    pendingRestore: string;
 	    notice?: msg.Msg;
+	    starting: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppStatus(source);
@@ -543,6 +544,7 @@ export namespace main {
 	        this.backupBytes = source["backupBytes"];
 	        this.pendingRestore = source["pendingRestore"];
 	        this.notice = this.convertValues(source["notice"], msg.Msg);
+	        this.starting = source["starting"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
