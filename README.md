@@ -57,7 +57,8 @@ newest). These snapshots are on the same drive, so also copy the whole
 `modelkeeper\` folder to another drive or a cloud folder from time to time,
 while the app is closed.
 
-At every start the catalog is checked. If it is damaged, the app stops and
+At every start the catalog is checked (about one second for 100,000
+models). If it is damaged, the app stops and
 shows the path of the newest snapshot. If `catalog.db` is missing but
 snapshots exist, it asks before starting with an empty catalog.
 
@@ -68,19 +69,23 @@ To restore a snapshot:
    folder (e.g. `data\backups\2026-11-12_083000_daily\`) into `data\`,
    replacing the files there. `thumbnails\` in a snapshot only holds the
    manually set thumbnails: copy its files into the existing
-   `data\thumbnails\` folder, do not replace the folder.
+   `data\thumbnails\` folder (create it if it is gone).
 3. Delete `data\catalog.db-wal` and `data\catalog.db-shm` if they exist.
-4. Start modelkeeper.
+4. Start modelkeeper. Generated thumbnails that are missing are generated
+   again in the background.
 
 ## Build
 
 Requires Go (see `go.mod`) and Node.js.
 
 ```
-go run github.com/wailsapp/wails/v2/cmd/wails@v2.17.1 build -platform windows/amd64 -trimpath -ldflags "-X main.version=1.0.0"
+go run github.com/wailsapp/wails/v2/cmd/wails@v2.17.1 build -platform windows/amd64 -trimpath -ldflags "-X main.version=$(git describe --tags --always --dirty)"
 ```
 
-The version is written into each backup's `manifest.json` ("dev" without it).
+Each backup's `manifest.json` records the app version. Wails builds
+without git information, so the command above passes it (the tag, or the
+commit with `-dirty` for uncommitted changes). Without `-ldflags`, plain
+`go build` builds take it from git; Wails builds record "dev".
 
 The result is `build/bin/modelkeeper.exe`. Development with live reload:
 `wails dev` (Wails CLI v2.17).
