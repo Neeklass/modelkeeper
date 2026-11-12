@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -290,5 +291,39 @@ func TestSnapshotOfDamagedCatalogFails(t *testing.T) {
 	}
 	if err := backup.QuickCheck(context.Background(), raw); err == nil {
 		t.Error("QuickCheck passed a damaged catalog")
+	}
+}
+
+func TestCreateIfChanged(t *testing.T) {
+	e := newEnv(t)
+	now := time.Date(2026, 11, 12, 8, 0, 0, 0, time.Local)
+	first, created, err := backup.CreateIfChanged(context.Background(), e.backups, e.src, backup.ReasonDaily, now)
+	if err != nil || !created || first.Manifest.ContentHash == "" {
+		t.Fatalf("first: %+v, %v, %v", first, created, err)
+	}
+	e.exec(`UPDATE model SET name = name`) // no content change
+	same, created, err := backup.CreateIfChanged(context.Background(), e.backups, e.src, backup.ReasonDaily, now.Add(24*time.Hour))
+	if err != nil || created || same.Name != first.Name {
+		t.Fatalf("unchanged: %+v, %v, %v", same, created, err)
+	}
+	e.exec(`INSERT INTO tag (name) VALUES ('new')`)
+	if _, created, err := backup.CreateIfChanged(context.Background(), e.backups, e.src, backup.ReasonDaily, now.Add(48*time.Hour)); err != nil || !created {
+		t.Fatalf("changed catalog not saved: %v, %v", created, err)
+	}
+	os.WriteFile(e.src.Settings, []byte(`{"language":"en"}`), 0o644)
+	if _, created, _ := backup.CreateIfChanged(context.Background(), e.backups, e.src, backup.ReasonDaily, now.Add(72*time.Hour)); !created {
+		t.Fatal("changed settings not saved")
+	}
+	if list, _ := backup.List(e.backups); len(list) != 3 {
+		t.Errorf("%d snapshots, want 3", len(list))
+	}
+	if n, err := backup.Size(e.backups); err != nil || n <= 0 {
+		t.Errorf("Size = %d, %v", n, err)
+	}
+	entries, _ := os.ReadDir(e.backups)
+	for _, en := range entries {
+		if strings.HasPrefix(en.Name(), ".tmp-") {
+			t.Errorf("left behind: %s", en.Name())
+		}
 	}
 }

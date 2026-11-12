@@ -85,6 +85,12 @@ func closeApp(a *App) {
 // A healthy catalog gets its daily snapshot, and old ones are rotated.
 func TestStartupBacksUpAndRotates(t *testing.T) {
 	layout := startupEnv(t)
+	conn, err := db.Open(layout.Catalog) // a change since the last snapshot
+	if err != nil {
+		t.Fatal(err)
+	}
+	conn.Exec(`UPDATE model SET notes = 'changed' WHERE id = 1`)
+	db.Close(conn)
 	a := &App{layout: layout}
 	if err := a.openCatalog(false); err != nil {
 		t.Fatal(err)
@@ -95,6 +101,27 @@ func TestStartupBacksUpAndRotates(t *testing.T) {
 	}
 	if list, _ := backup.List(layout.Backups); len(list) != backup.KeepDaily {
 		t.Errorf("%d snapshots after rotation, want %d", len(list), backup.KeepDaily)
+	}
+}
+
+// Without changes since the newest snapshot, the day gets no copy, and
+// later starts that day do not even try again.
+func TestStartupSkipsUnchangedDay(t *testing.T) {
+	layout := startupEnv(t)
+	before, _ := backup.List(layout.Backups)
+	for i := 0; i < 2; i++ {
+		a := &App{layout: layout}
+		if err := a.openCatalog(false); err != nil {
+			t.Fatal(err)
+		}
+		closeApp(a)
+	}
+	after, _ := backup.List(layout.Backups)
+	if len(after) != len(before) || backup.HasDaily(layout.Backups, time.Now()) {
+		t.Errorf("snapshots %d -> %d; an unchanged day got a copy", len(before), len(after))
+	}
+	if b, err := os.ReadFile(filepath.Join(layout.Backups, ".last-daily")); err != nil || len(b) == 0 {
+		t.Errorf("daily marker: %q, %v", b, err)
 	}
 }
 

@@ -391,7 +391,7 @@
     "created": "Backup created: {{path}}",
     "last": "Last backup: {{when}} ({{reason}}).",
     "none": "No backup yet.",
-    "hint": "Backups are kept in data\\backups (daily at start and before risky changes). They are on the same drive: also back up the modelkeeper folder externally.",
+    "hint": "Backups are kept in data\\backups: daily at start (only if something changed) and before risky changes. They are on the same drive: also back up the modelkeeper folder externally.",
     "restoreHint": "To restore: close modelkeeper, copy catalog.db, settings.json and the thumbnails folder from the backup folder into the data folder (replacing the existing files), delete catalog.db-wal and catalog.db-shm if present, and start modelkeeper again.",
     "startEmpty": "Start with an empty catalog",
     "confirmStartEmpty": "Start with an empty catalog? Tags, notes and corrections are missing until you restore a backup. The backups are kept.",
@@ -402,6 +402,8 @@
       "preRemoveRoot": "before deleting a folder",
       "preFileTypes": "before changing file types",
       "other": "other"
-    }
+    },
+    "total_one": "{{n}} backup, {{size}} in total.",
+    "total_other": "{{n}} backups, {{size}} in total."
   }
 }

@@ -234,6 +234,9 @@ type AppStatus struct {
 	StartupError   *msg.Msg `json:"startupError,omitempty"`
 	// LastBackup: newest snapshot in data/backups (J2), nil if none.
 	LastBackup *BackupInfo `json:"lastBackup,omitempty"`
+	// Backups and BackupBytes: number and total size of the snapshots.
+	Backups     int   `json:"backups"`
+	BackupBytes int64 `json:"backupBytes"`
 }
 
 // BackupInfo describes a snapshot.
@@ -251,8 +254,10 @@ func backupInfo(s backup.Snapshot) *BackupInfo {
 func (a *App) GetStatus() AppStatus {
 	s := AppStatus{DataDir: a.layout.Root, StartupError: a.startupErr}
 	if a.layout.Backups != "" {
-		if b, ok := backup.Latest(a.layout.Backups); ok {
-			s.LastBackup = backupInfo(b)
+		if list, err := backup.List(a.layout.Backups); err == nil && len(list) > 0 {
+			s.LastBackup = backupInfo(list[0])
+			s.Backups = len(list)
+			s.BackupBytes, _ = backup.Size(a.layout.Backups)
 		}
 	}
 	if a.settings != nil {
@@ -423,30 +428,45 @@ func (a *App) redetectAll() {
 func (a *App) snapshot(conn *sql.DB, reason string) (backup.Snapshot, error) {
 	a.backupMu.Lock()
 	defer a.backupMu.Unlock()
-	src := backup.Source{DB: conn, Settings: a.layout.Settings, Thumbnails: a.layout.Thumbnails, AppVersion: appVersion()}
-	s, err := backup.Create(context.Background(), a.layout.Backups, src, reason, time.Now())
+	s, err := backup.Create(context.Background(), a.layout.Backups, a.backupSource(conn), reason, time.Now())
 	if err != nil {
 		log.Printf("backup %s: %v", reason, err)
 		return s, err
 	}
 	log.Printf("backup %s: %s", reason, s.Path)
+	a.rotate()
+	return s, nil
+}
+
+func (a *App) backupSource(conn *sql.DB) backup.Source {
+	return backup.Source{DB: conn, Settings: a.layout.Settings, Thumbnails: a.layout.Thumbnails, AppVersion: appVersion()}
+}
+
+// rotate applies the retention rules (J2). Caller holds backupMu.
+func (a *App) rotate() {
 	if removed, err := backup.Rotate(a.layout.Backups, time.Now()); err != nil {
 		log.Printf("backup rotation: %v", err)
 	} else if len(removed) > 0 {
 		log.Printf("backup rotation removed %v", removed)
 	}
-	return s, nil
 }
 
 // dailyBackup takes the snapshot of the day, at most one per calendar day.
 // A failure is logged and does not stop the app.
+// A day without changes since the newest snapshot gets no copy.
 func (a *App) dailyBackup() {
 	a.backupMu.Lock()
-	done := backup.HasDaily(a.layout.Backups, time.Now())
-	a.backupMu.Unlock()
-	if !done {
-		a.snapshot(a.db, backup.ReasonDaily)
+	defer a.backupMu.Unlock()
+	s, created, err := backup.Daily(context.Background(), a.layout.Backups, a.backupSource(a.db), time.Now())
+	switch {
+	case err != nil:
+		log.Printf("backup daily: %v", err)
+		return
+	case !created:
+		return
 	}
+	log.Printf("backup daily: %s", s.Path)
+	a.rotate()
 }
 
 // CreateBackup takes a snapshot now (button in the settings).

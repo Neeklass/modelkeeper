@@ -391,7 +391,7 @@
     "created": "Backup erstellt: {{path}}",
     "last": "Letztes Backup: {{when}} ({{reason}}).",
     "none": "Noch kein Backup.",
-    "hint": "Backups liegen in data\\backups (täglich beim Start und vor riskanten Änderungen). Sie liegen auf demselben Laufwerk: Sichere den modelkeeper-Ordner zusätzlich extern.",
+    "hint": "Backups liegen in data\\backups: täglich beim Start (nur wenn sich etwas geändert hat) und vor riskanten Änderungen. Sie liegen auf demselben Laufwerk: Sichere den modelkeeper-Ordner zusätzlich extern.",
     "restoreHint": "Wiederherstellen: modelkeeper schließen, catalog.db, settings.json und den Ordner thumbnails aus dem Backup-Ordner in den Datenordner kopieren (vorhandene Dateien ersetzen), catalog.db-wal und catalog.db-shm löschen, falls vorhanden, und modelkeeper neu starten.",
     "startEmpty": "Mit leerem Katalog starten",
     "confirmStartEmpty": "Mit einem leeren Katalog starten? Tags, Notizen und Korrekturen sind dann nicht da, bis du ein Backup zurückspielst. Die Backups bleiben erhalten.",
@@ -402,6 +402,8 @@
       "preRemoveRoot": "vor dem Löschen eines Ordners",
       "preFileTypes": "vor dem Ändern von Dateitypen",
       "other": "sonstiges"
-    }
+    },
+    "total_one": "{{n}} Backup, zusammen {{size}}.",
+    "total_other": "{{n}} Backups, zusammen {{size}}."
   }
 }

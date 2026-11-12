@@ -49,10 +49,11 @@ on first start.
 ### Backup
 
 The app takes snapshots of the catalog, the settings and the manually set
-thumbnails into `data\backups\`: once a day at start, before every catalog
-update, before permanently deleting a root folder, before removing file
-types or moving them to another category,
-and when you click "Create backup now" in the settings. It keeps the 14
+thumbnails into `data\backups\`: once a day at start (skipped if nothing
+changed since the newest snapshot), before every catalog update, before
+permanently deleting a root folder, before removing file types or moving
+them to another category, and when you click "Create backup now" in the
+settings. The settings show how many snapshots there are and their size. It keeps the 14
 newest daily snapshots and all others from the last 90 days (at least the 3
 newest). These snapshots are on the same drive, so also copy the whole
 `modelkeeper\` folder to another drive or a cloud folder from time to time,

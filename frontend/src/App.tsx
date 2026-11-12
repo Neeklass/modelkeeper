@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {CreateBackup, GetStatus, OpenDataFolder, SetLanguage, SetNASRescanHours, StartWithEmptyCatalog} from '../wailsjs/go/main/App'
 import {main} from '../wailsjs/go/models'
-import {formatDateTime} from './format'
+import {formatBytes, formatDateTime, formatNumber} from './format'
 import i18n, {languages, resolveLanguage, systemLanguage} from './i18n'
 import {Msg, toMsg, translateMsg} from './i18n/msg'
 import {RootsPanel} from './components/RootsPanel'
@@ -169,7 +169,10 @@ function SettingsPanel({status, onChange}: { status: main.AppStatus; onChange: (
             </div>
             <p className="small muted">
                 {status.lastBackup
-                    ? t('backup.last', {when: formatDateTime(status.lastBackup.time), reason: t(backupReasonKey(status.lastBackup.reason))})
+                    ? <>
+                        {t('backup.last', {when: formatDateTime(status.lastBackup.time), reason: t(backupReasonKey(status.lastBackup.reason))})}
+                        {' '}{t('backup.total', {count: status.backups, n: formatNumber(status.backups), size: formatBytes(status.backupBytes)})}
+                    </>
                     : t('backup.none')}
                 {' '}{t('backup.hint')}
             </p>

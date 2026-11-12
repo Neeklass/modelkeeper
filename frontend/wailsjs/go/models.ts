@@ -511,6 +511,8 @@ export namespace main {
 	    nasRescanHours: number;
 	    startupError?: msg.Msg;
 	    lastBackup?: BackupInfo;
+	    backups: number;
+	    backupBytes: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppStatus(source);
@@ -523,6 +525,8 @@ export namespace main {
 	        this.nasRescanHours = source["nasRescanHours"];
 	        this.startupError = this.convertValues(source["startupError"], msg.Msg);
 	        this.lastBackup = this.convertValues(source["lastBackup"], BackupInfo);
+	        this.backups = source["backups"];
+	        this.backupBytes = source["backupBytes"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

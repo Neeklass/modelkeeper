@@ -16,7 +16,9 @@ package backup
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -80,6 +82,10 @@ type Manifest struct {
 	// Verified: the copy passed PRAGMA quick_check (snapshots that fail it
 	// are not kept). False in snapshots from before this check.
 	Verified bool `json:"verified"`
+	// ContentHash: SHA-256 over catalog.db, settings.json and the thumbnails
+	// of the snapshot (VACUUM INTO writes identical copies of an unchanged
+	// catalog), to recognize unchanged days.
+	ContentHash string `json:"contentHash,omitempty"`
 }
 
 // Snapshot is a valid snapshot folder.
@@ -92,11 +98,24 @@ type Snapshot struct {
 
 // Create writes a snapshot into dir (data/backups) and returns it.
 func Create(ctx context.Context, dir string, src Source, reason string, now time.Time) (Snapshot, error) {
+	s, _, err := create(ctx, dir, src, reason, now, false)
+	return s, err
+}
+
+// CreateIfChanged is Create, unless the content (catalog, settings, manual
+// thumbnails) equals the newest snapshot's: then nothing is written and the
+// newest snapshot is returned with created = false. Used for the daily
+// snapshot, so unchanged days do not fill the drive with identical copies.
+func CreateIfChanged(ctx context.Context, dir string, src Source, reason string, now time.Time) (Snapshot, bool, error) {
+	return create(ctx, dir, src, reason, now, true)
+}
+
+func create(ctx context.Context, dir string, src Source, reason string, now time.Time, skipSame bool) (Snapshot, bool, error) {
 	if !reasonRe.MatchString(reason) {
-		return Snapshot{}, fmt.Errorf("invalid backup reason %q", reason)
+		return Snapshot{}, false, fmt.Errorf("invalid backup reason %q", reason)
 	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return Snapshot{}, err
+		return Snapshot{}, false, err
 	}
 	now = now.Truncate(time.Second)
 	name := now.Format(timeLayout) + "_" + reason
@@ -106,7 +125,7 @@ func Create(ctx context.Context, dir string, src Source, reason string, now time
 	}
 	tmp := filepath.Join(dir, tmpPrefix+name)
 	if err := os.Mkdir(tmp, 0o755); err != nil {
-		return Snapshot{}, err
+		return Snapshot{}, false, err
 	}
 	ok := false
 	defer func() {
@@ -117,22 +136,27 @@ func Create(ctx context.Context, dir string, src Source, reason string, now time
 
 	m, err := write(ctx, tmp, src)
 	if err != nil {
-		return Snapshot{}, err
+		return Snapshot{}, false, err
+	}
+	if skipSame {
+		if last, ok := Latest(dir); ok && last.Manifest.ContentHash != "" && last.Manifest.ContentHash == m.ContentHash {
+			return last, false, nil // tmp is removed
+		}
 	}
 	m.App, m.AppVersion, m.Reason, m.Created = App, src.AppVersion, reason, now.Format(time.RFC3339)
 	b, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
-		return Snapshot{}, err
+		return Snapshot{}, false, err
 	}
 	if err := writeFile(filepath.Join(tmp, manifestName), b); err != nil {
-		return Snapshot{}, err
+		return Snapshot{}, false, err
 	}
 	final := filepath.Join(dir, name)
 	if err := os.Rename(tmp, final); err != nil {
-		return Snapshot{}, err
+		return Snapshot{}, false, err
 	}
 	ok = true
-	return Snapshot{Name: name, Path: final, Time: now, Manifest: m}, nil
+	return Snapshot{Name: name, Path: final, Time: now, Manifest: m}, true, nil
 }
 
 // write fills a snapshot folder except for the manifest.
@@ -196,7 +220,66 @@ func write(ctx context.Context, tmp string, src Source) (Manifest, error) {
 			m.Thumbnails++
 		}
 	}
+	snap.Close()
+	if m.ContentHash, err = contentHash(tmp); err != nil {
+		return m, err
+	}
 	return m, nil
+}
+
+// contentHash hashes the files of a snapshot folder (names and contents,
+// in a fixed order), except the manifest.
+func contentHash(dir string) (string, error) {
+	var files []string
+	err := filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() && p != filepath.Join(dir, manifestName) {
+			files = append(files, p)
+		}
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+	sort.Strings(files)
+	h := sha256.New()
+	for _, p := range files {
+		rel, _ := filepath.Rel(dir, p)
+		fmt.Fprintf(h, "%s\x00", filepath.ToSlash(rel))
+		f, err := os.Open(p)
+		if err != nil {
+			return "", err
+		}
+		n, err := io.Copy(h, f)
+		f.Close()
+		if err != nil {
+			return "", err
+		}
+		fmt.Fprintf(h, "\x00%d\x00", n)
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// Size returns the total size in bytes of the valid snapshots in dir.
+func Size(dir string) (int64, error) {
+	list, err := List(dir)
+	if err != nil {
+		return 0, err
+	}
+	var total int64
+	for _, s := range list {
+		filepath.WalkDir(s.Path, func(p string, d fs.DirEntry, err error) error {
+			if err == nil && !d.IsDir() {
+				if fi, err := d.Info(); err == nil {
+					total += fi.Size()
+				}
+			}
+			return nil
+		})
+	}
+	return total, nil
 }
 
 // QuickCheck runs PRAGMA quick_check on conn and returns its first problem.
@@ -287,6 +370,29 @@ func HasDaily(dir string, now time.Time) bool {
 		}
 	}
 	return false
+}
+
+// dailyMarker records the day the daily snapshot was last considered, so an
+// unchanged catalog is not copied again at every start of that day.
+const dailyMarker = ".last-daily"
+
+// Daily takes the daily snapshot unless today's was already taken or
+// skipped, and skips it if nothing changed since the newest snapshot.
+// created reports whether a snapshot was written.
+func Daily(ctx context.Context, dir string, src Source, now time.Time) (s Snapshot, created bool, err error) {
+	today := now.Format("2006-01-02")
+	if b, err := os.ReadFile(filepath.Join(dir, dailyMarker)); err == nil && strings.TrimSpace(string(b)) == today {
+		return Snapshot{}, false, nil
+	}
+	if HasDaily(dir, now) {
+		return Snapshot{}, false, nil
+	}
+	s, created, err = CreateIfChanged(ctx, dir, src, ReasonDaily, now)
+	if err != nil {
+		return s, false, err
+	}
+	os.WriteFile(filepath.Join(dir, dailyMarker), []byte(today+"\n"), 0o644)
+	return s, created, nil
 }
 
 // Retention (J2).
