@@ -2,8 +2,8 @@ package watch
 
 import (
 	"context"
-	"fmt"
 	"database/sql"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -256,7 +256,7 @@ func TestRetryUnreachableRoot(t *testing.T) {
 	}
 	e.expectStarts("unreachable")
 
-	os.MkdirAll(p, 0o755) // drive plugged in again
+	os.MkdirAll(p, 0o755)           // drive plugged in again
 	e.clock.Advance(e.w.opts.Retry) // the retry runs Sync in the background
 	waitFor(t, "the root to be live after it came back", func() bool { return e.w.Live(id) })
 	e.expectStarts("catch-up after reconnect", id)

@@ -1,9 +1,9 @@
 package settings
 
 import (
-	"strings"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
