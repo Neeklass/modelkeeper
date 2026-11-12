@@ -133,10 +133,12 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose}: {
             <Notes notes={d.notes} disabled={busy} onSave={notes => update({notes})}/>
 
             <h3>{t('models.locations')}</h3>
+            {d.inactive && <p className="small notice-inactive">{t('models.inactiveNotice')}</p>}
             <ul className="plain small">
                 {d.anchors.map(a => (
                     <li key={a.rootId + a.path}>
-                        <span className={`badge status-${a.online ? 'online' : 'offline'}`}>{t(`roots.kind.${a.rootKind}`)}</span>
+                        <span className={`badge status-${a.online && !a.rootRemoved ? 'online' : 'offline'}`}>{t(`roots.kind.${a.rootKind}`)}</span>
+                        {a.rootRemoved && <span className="warn-text"> {t('models.rootRemoved')}</span>}
                         {' '}<code>{a.rootPath}\{a.path.replaceAll('/', '\\')}</code>
                     </li>
                 ))}

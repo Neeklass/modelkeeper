@@ -18,6 +18,10 @@ export function CreateBackup() {
   return window['go']['main']['App']['CreateBackup']();
 }
 
+export function DeactivateRoot(arg1) {
+  return window['go']['main']['App']['DeactivateRoot'](arg1);
+}
+
 export function DetachAnchor(arg1, arg2, arg3) {
   return window['go']['main']['App']['DetachAnchor'](arg1, arg2, arg3);
 }
@@ -62,6 +66,10 @@ export function ListLastScanIssues(arg1) {
   return window['go']['main']['App']['ListLastScanIssues'](arg1);
 }
 
+export function ListRemovedRoots() {
+  return window['go']['main']['App']['ListRemovedRoots']();
+}
+
 export function ListRoots() {
   return window['go']['main']['App']['ListRoots']();
 }
@@ -98,12 +106,12 @@ export function PickThumbnailFile(arg1) {
   return window['go']['main']['App']['PickThumbnailFile'](arg1);
 }
 
-export function RedetectRoot(arg1) {
-  return window['go']['main']['App']['RedetectRoot'](arg1);
+export function PurgeRoot(arg1, arg2) {
+  return window['go']['main']['App']['PurgeRoot'](arg1, arg2);
 }
 
-export function RemoveRoot(arg1) {
-  return window['go']['main']['App']['RemoveRoot'](arg1);
+export function RedetectRoot(arg1) {
+  return window['go']['main']['App']['RedetectRoot'](arg1);
 }
 
 export function RemoveTag(arg1, arg2) {

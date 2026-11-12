@@ -27,7 +27,7 @@ func (w *Watcher) checkSchedule(ctx context.Context) {
 		return
 	}
 	rows, err := w.db.QueryContext(ctx, `SELECT id, last_scan_at FROM root
-		WHERE kind = 'nas' AND last_scan_at IS NOT NULL`)
+		WHERE kind = 'nas' AND last_scan_at IS NOT NULL AND removed_at IS NULL`)
 	if err != nil {
 		log.Printf("schedule: %v", err)
 		return

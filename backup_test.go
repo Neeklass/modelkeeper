@@ -12,6 +12,8 @@ import (
 	"modelkeeper/internal/backup"
 	"modelkeeper/internal/db"
 	"modelkeeper/internal/msg"
+	"modelkeeper/internal/scanner"
+	"modelkeeper/internal/settings"
 )
 
 // startupEnv is a data folder with a catalog and 20 old daily snapshots
@@ -142,5 +144,52 @@ func TestMissingCatalogAsksBeforeStartingEmpty(t *testing.T) {
 	closeApp(a)
 	if _, err := os.Stat(filepath.Join(newest.Path, "catalog.db")); err != nil {
 		t.Errorf("snapshot touched: %v", err)
+	}
+}
+
+// Permanently deleting a root takes a snapshot first; if that fails, the root
+// and everything below it stay (E9, J2).
+func TestPurgeRootStopsWhenBackupFails(t *testing.T) {
+	layout := appdir.NewLayout(t.TempDir())
+	if err := layout.Ensure(); err != nil {
+		t.Fatal(err)
+	}
+	a := &App{layout: layout, ctx: context.Background()}
+	if err := a.openCatalog(false); err != nil {
+		t.Fatal(err)
+	}
+	defer closeApp(a)
+	a.bg.Wait()
+	scans, err := scanner.NewManager(a.db, settings.Defaults, nil, scanner.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.scans = scans
+	if _, err := a.db.Exec(`INSERT INTO root (id, path, kind, created_at, removed_at) VALUES (1, 'C:\old', 'local', 0, 1)`); err != nil {
+		t.Fatal(err)
+	}
+	a.db.Exec(`INSERT INTO location (root_id, path, ext, category, size, mtime, first_seen_at) VALUES (1, 'a.stl', 'stl', 'model', 1, 0, 0)`)
+
+	// data\backups cannot be created: a file is in the way.
+	os.RemoveAll(layout.Backups)
+	os.WriteFile(layout.Backups, []byte("not a folder"), 0o644)
+	if err := a.PurgeRoot(1, 0); msg.From(err).Key != "error.backupFailed" {
+		t.Fatalf("PurgeRoot = %v, want error.backupFailed", err)
+	}
+	var n int
+	a.db.QueryRow(`SELECT count(*) FROM root WHERE id = 1`).Scan(&n)
+	var locs int
+	a.db.QueryRow(`SELECT count(*) FROM location WHERE root_id = 1`).Scan(&locs)
+	if n != 1 || locs != 1 {
+		t.Fatalf("root deleted although the backup failed (root %d, locations %d)", n, locs)
+	}
+
+	// With a working backup folder it goes through, after a snapshot.
+	os.Remove(layout.Backups)
+	if err := a.PurgeRoot(1, 0); err != nil {
+		t.Fatal(err)
+	}
+	if s, ok := backup.Latest(layout.Backups); !ok || s.Manifest.Reason != backup.ReasonRemoveRoot {
+		t.Errorf("no pre-remove-root snapshot: %+v", s)
 	}
 }

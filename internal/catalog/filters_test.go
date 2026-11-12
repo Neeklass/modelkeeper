@@ -146,3 +146,63 @@ func TestFilters(t *testing.T) {
 		t.Errorf("exts = %v", exts)
 	}
 }
+
+// Deactivated roots (E9) count for describing a model, not for the checks:
+// a copy there is no backup and no duplicate, nothing there is missing or
+// offline, and a model only there is still listed, marked inactive.
+func TestFiltersWithDeactivatedRoot(t *testing.T) {
+	ctx := context.Background()
+	conn := filterCatalog(t, []loc{
+		{root: 1, path: "Atlas/Elf/elf.stl", content: "elf", present: true},
+		{root: 1, path: "Atlas/Elf/elf_base.stl", content: "elf-base", present: true},
+		{root: 2, path: "Atlas/Elf/elf.stl", content: "elf", present: true}, // copy on the deactivated NAS
+		{root: 2, path: "Atlas/Elf/elf_base.stl", content: "elf-base", present: true},
+		{root: 2, path: "Atlas/Dwarf/dwarf.stl", content: "dwarf", present: true}, // only on the NAS
+		{root: 2, path: "Atlas/Dwarf/axe.stl", content: "axe", present: false},
+		{root: 2, path: "Atlas/Dwarf/Broken.zip", content: "broken", status: "broken", present: true},
+	})
+	conn.Exec(`UPDATE root SET status = 'offline', removed_at = 1 WHERE id = 2`)
+
+	for _, c := range []struct {
+		name string
+		q    ModelQuery
+		want []string
+	}{
+		{"all", ModelQuery{}, []string{"Broken", "Dwarf", "Elf"}}, // the archive is a model of its own (F4b)
+		{"text", ModelQuery{Text: "dwarf"}, []string{"Broken", "Dwarf"}}, // paths are searched too
+		{"root", ModelQuery{RootID: 2}, []string{"Broken", "Dwarf", "Elf"}},
+		{"inactive", ModelQuery{Inactive: true}, []string{"Broken", "Dwarf"}},
+		{"duplicates", ModelQuery{Duplicates: true}, nil},
+		{"single location", ModelQuery{SingleLocation: true}, []string{"Elf"}},
+		{"offline", ModelQuery{Offline: true}, nil},
+		{"missing", ModelQuery{Missing: true}, nil},
+		{"broken archives", ModelQuery{BrokenArchives: true}, nil},
+	} {
+		page, err := SearchModels(ctx, conn, c.q, 0, 50)
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		got := names(page)
+		sort.Strings(got)
+		if !reflect.DeepEqual(got, c.want) {
+			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
+		}
+	}
+
+	page, _ := SearchModels(ctx, conn, ModelQuery{}, 0, 50)
+	for _, r := range page.Items {
+		inactive, roots, missing := r.Name != "Elf", map[string]int{"Elf": 1}[r.Name], 0
+		if r.Inactive != inactive || r.Roots != roots || r.Missing != missing {
+			t.Errorf("%s: inactive %v roots %d missing %d", r.Name, r.Inactive, r.Roots, r.Missing)
+		}
+	}
+	elf, err := GetModel(ctx, conn, modelID(t, conn, "Elf"))
+	if err != nil || elf.Inactive {
+		t.Fatalf("Elf: %+v, %v", elf, err)
+	}
+	for _, f := range elf.Files {
+		if f.Copies != 1 || f.RootRemoved != (f.RootID == 2) {
+			t.Errorf("Elf file %d/%s: copies %d, rootRemoved %v", f.RootID, f.Path, f.Copies, f.RootRemoved)
+		}
+	}
+}

@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
-    AddRoot, CancelScan, ExportHashes, GetRootStats, ImportHashes, GetScanProgress, ListLastScanIssues, ListRoots, PickFolder, RedetectRoot, RemoveRoot,
+    AddRoot, CancelScan, ExportHashes, GetRootStats, ImportHashes, GetScanProgress, ListLastScanIssues, ListRemovedRoots, ListRoots, PickFolder, PurgeRoot, RedetectRoot, DeactivateRoot,
     SetRootCreatorLevel, StartFullCheck, StartScan,
 } from '../../wailsjs/go/main/App'
 import {catalog, scanner} from '../../wailsjs/go/models'
@@ -13,12 +13,14 @@ import {formatBytes, formatDateTime, formatNumber} from '../format'
 export function RootsPanel() {
     const {t} = useTranslation()
     const [roots, setRoots] = useState<catalog.Root[]>([])
+    const [removed, setRemoved] = useState<catalog.RemovedRoot[]>([])
     const [progress, setProgress] = useState<scanner.Progress | null>(null)
     const [error, setError] = useState<Msg | null>(null)
     const [notice, setNotice] = useState<{ rootId: number; text: string } | null>(null)
 
     const reload = useCallback(() => {
         ListRoots().then(setRoots).catch(e => setError(toMsg(e)))
+        ListRemovedRoots().then(setRemoved).catch(e => setError(toMsg(e)))
     }, [])
 
     useEffect(() => {
@@ -59,16 +61,20 @@ export function RootsPanel() {
         setNotice({rootId: r.id, text: parts.join(' ')})
     })
 
+    const addPath = async (path: string) => {
+        const r = await AddRoot(path)
+        if (r.reactivated) setNotice({rootId: r.id, text: t('roots.reactivated')})
+        reload()
+    }
+
     const addRoot = () => run(async () => {
         const path = await PickFolder()
-        if (!path) return
-        await AddRoot(path)
-        reload()
+        if (path) await addPath(path)
     })
 
-    const removeRoot = (r: catalog.Root) => run(async () => {
-        if (!window.confirm(t('roots.confirmRemove', {path: r.path}))) return
-        await RemoveRoot(r.id)
+    const deactivateRoot = (r: catalog.Root) => run(async () => {
+        if (!window.confirm(t('roots.confirmDeactivate', {path: r.path}))) return
+        await DeactivateRoot(r.id)
         reload()
     })
 
@@ -96,13 +102,111 @@ export function RootsPanel() {
                              reload()
                          })}
                          onCancel={() => CancelScan()}
-                         onRemove={() => removeRoot(r)}
+                         onRemove={() => deactivateRoot(r)}
                          onExport={() => exportHashes(r)}
                          onImport={() => importHashes(r)}
                          notice={notice?.rootId === r.id ? notice.text : null}/>
             ))}
             {error && <p className="error">{translateMsg(error)}</p>}
+            {removed.length > 0 && <RemovedRoots roots={removed}
+                                                 onReactivate={r => run(() => addPath(r.path))}
+                                                 onPurged={reload}/>}
         </section>
+    )
+}
+
+/** Deactivated root folders (E9): reactivate, or delete permanently from the catalog. */
+function RemovedRoots({roots, onReactivate, onPurged}: {
+    roots: catalog.RemovedRoot[]
+    onReactivate: (r: catalog.RemovedRoot) => void
+    onPurged: () => void
+}) {
+    const {t} = useTranslation()
+    const [open, setOpen] = useState(false)
+    const [purging, setPurging] = useState<number | null>(null)
+
+    return (
+        <div className="removed-roots">
+            <button className="link" onClick={() => setOpen(o => !o)} aria-expanded={open}>
+                {open ? '▾' : '▸'} {t('roots.removedTitle', {count: roots.length})}
+            </button>
+            {open && <>
+                <p className="small muted">{t('roots.removedHint')}</p>
+                {roots.map(r => (
+                    <div key={r.id} className="root removed">
+                        <div className="row spread">
+                            <div>
+                                <code className="path">{r.path}</code>
+                                <div className="small muted">
+                                    {r.removedAt && t('roots.removedAt', {when: formatDateTime(r.removedAt)})}
+                                    {' · '}{t('roots.removedFiles', {count: r.files, n: formatNumber(r.files)})}
+                                    {r.orphaned > 0 && <span className="warn-text">
+                                        {' · '}{t('roots.removedOrphaned', {count: r.orphaned, n: formatNumber(r.orphaned)})}
+                                    </span>}
+                                </div>
+                            </div>
+                            <div className="row">
+                                <button onClick={() => onReactivate(r)}>{t('roots.reactivate')}</button>
+                                <button className="danger" onClick={() => setPurging(p => p === r.id ? null : r.id)}>
+                                    {t('roots.purge')}
+                                </button>
+                            </div>
+                        </div>
+                        {purging === r.id && <PurgeDialog root={r} onCancel={() => setPurging(null)}
+                                                          onDone={() => { setPurging(null); onPurged() }}/>}
+                    </div>
+                ))}
+            </>}
+        </div>
+    )
+}
+
+/**
+ * Confirmation for permanently deleting a deactivated root. With models that
+ * would lose their last location, the user has to type their number.
+ */
+function PurgeDialog({root, onCancel, onDone}: { root: catalog.RemovedRoot; onCancel: () => void; onDone: () => void }) {
+    const {t} = useTranslation()
+    const [typed, setTyped] = useState('')
+    const [busy, setBusy] = useState(false)
+    const [error, setError] = useState<Msg | null>(null)
+    const n = root.orphaned
+    const ok = n === 0 || typed.trim() === String(n)
+
+    async function purge() {
+        setBusy(true)
+        setError(null)
+        try {
+            await PurgeRoot(root.id, n)
+            onDone()
+        } catch (e) {
+            setError(toMsg(e))
+            setBusy(false)
+        }
+    }
+
+    return (
+        <div className="purge-dialog" role="alertdialog" aria-labelledby={`purge-${root.id}`}>
+            <p id={`purge-${root.id}`}><strong>{t('roots.purgeTitle', {path: root.path})}</strong></p>
+            <p className="small">{t('roots.purgeExplain')}</p>
+            {n > 0
+                ? <>
+                    <p className="warn-text">{t('roots.purgeOrphaned', {count: n, n: formatNumber(n)})}</p>
+                    <label>
+                        {t('roots.purgeType', {n})}
+                        <input type="text" inputMode="numeric" value={typed} autoFocus
+                               onChange={e => setTyped(e.target.value)} disabled={busy}/>
+                    </label>
+                </>
+                : <p className="small">{t('roots.purgeNoOrphans')}</p>}
+            <div className="row">
+                <button onClick={onCancel} disabled={busy}>{t('roots.purgeCancel')}</button>
+                <button className="danger" onClick={purge} disabled={!ok || busy}>
+                    {busy ? t('roots.purging') : t('roots.purgeConfirm')}
+                </button>
+            </div>
+            {error && <p className="error">{translateMsg(error)}</p>}
+        </div>
     )
 }
 
@@ -156,7 +260,7 @@ function RootRow(props: {
                                     title={t('scan.fullCheckHint')}>{t('scan.fullCheck')}</button>
                             <button onClick={props.onRedetect} disabled={props.scanning}>{t('scan.redetect')}</button>
                         </>}
-                    <button onClick={props.onRemove} disabled={running}>{t('roots.remove')}</button>
+                    <button onClick={props.onRemove} disabled={running}>{t('roots.deactivate')}</button>
                 </div>
             </div>
 

@@ -74,6 +74,15 @@ Override  (manual corrections of model detection, survive rescans)
 - **E6** MyMiniFactory purchases are entered manually (link, designer, license). *(post-MVP)*
 - **E7** Automatic MyMiniFactory import later, depending on API capabilities. *(post-MVP)*
 - **E8** Show purchased models that have not been downloaded yet. *(post-MVP)*
+- **E9** Removing a root folder **deactivates** it: it is no longer scanned or watched and not listed with
+  the root folders, but locations, detection anchors, corrections and hashes stay. Models whose files are only
+  on deactivated roots stay visible and are marked. Adding the same path again (compared case-insensitively on
+  Windows, trailing separators ignored) reactivates the root with the same ID, followed by an incremental scan:
+  everything is linked up again. Deactivated roots count for search and descriptive filters, not for the
+  checks (single location, duplicates, extracted + archive, missing, offline, broken archives).
+  **Deleting permanently** from the catalog is a separate action for deactivated roots only: it shows how many
+  models with user data would be left without any location (the number must be typed if > 0) and takes a
+  snapshot right before (J2); if the snapshot fails, nothing is deleted.
 
 ## F – Scanning & Model Detection
 
@@ -122,7 +131,8 @@ Override  (manual corrections of model detection, survive rescans)
 
 - **H1** Full-text search over name, tags, notes, creator, path.
 - **H2** Filters: tag, location, creator, file type, online/offline, duplicates, single-location only,
-  print status, supports, broken archives, "exists both extracted **and** as archive" (space-saving candidates).
+  print status, supports, broken archives, "exists both extracted **and** as archive" (space-saving candidates),
+  only in deactivated root folders (E9).
 - **H3** Grid view (thumbnails) and list view.
 - **H4** Detail view: rotatable 3D preview, variants, all files, all locations.
 - **H5** "Show in Explorer" action. No slicer integration.

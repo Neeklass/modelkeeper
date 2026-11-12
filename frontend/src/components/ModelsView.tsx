@@ -318,6 +318,7 @@ function ModelTileView({row, onChanged}: { row: catalog.ModelRow; onChanged: () 
                 <span className="row small muted">
                     <span className="ellipsis">{row.creator || t('models.noCreator')}</span>
                     {row.variants.length > 0 && <span className="chip">{row.variants.join(' · ')}</span>}
+                    {row.inactive && <span className="warn-text nowrap" title={t('models.inactiveHint')}>{t('models.inactive')}</span>}
                 </span>
             </div>
         </>
@@ -343,6 +344,7 @@ function ModelRowView({row, onChanged}: { row: catalog.ModelRow; onChanged: () =
                 <span className="nowrap">· {t('models.files', {count: row.files, n: formatNumber(row.files)})}</span>
                 {row.roots > 1 && <span className="nowrap">· {t('models.roots', {n: row.roots})}</span>}
                 {row.missing > 0 && <span className="warn-text nowrap">· {t('models.missing', {n: row.missing})}</span>}
+                {row.inactive && <span className="warn-text nowrap" title={t('models.inactiveHint')}>· {t('models.inactive')}</span>}
                 {row.tags.slice(0, ROW_TAGS).map(tag => <span key={tag} className="chip tag">{tag}</span>)}
                 {row.tags.length > ROW_TAGS && <span>+{row.tags.length - ROW_TAGS}</span>}
             </div>

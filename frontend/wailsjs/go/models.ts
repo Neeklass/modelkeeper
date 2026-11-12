@@ -106,6 +106,7 @@ export namespace catalog {
 	    rootKind: string;
 	    creatorLevel: boolean;
 	    online: boolean;
+	    rootRemoved: boolean;
 	    path: string;
 	    kind: string;
 	
@@ -120,6 +121,7 @@ export namespace catalog {
 	        this.rootKind = source["rootKind"];
 	        this.creatorLevel = source["creatorLevel"];
 	        this.online = source["online"];
+	        this.rootRemoved = source["rootRemoved"];
 	        this.path = source["path"];
 	        this.kind = source["kind"];
 	    }
@@ -137,6 +139,7 @@ export namespace catalog {
 	    hash: string;
 	    copies: number;
 	    archiveStatus: string;
+	    rootRemoved: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelFile(source);
@@ -156,6 +159,7 @@ export namespace catalog {
 	        this.hash = source["hash"];
 	        this.copies = source["copies"];
 	        this.archiveStatus = source["archiveStatus"];
+	        this.rootRemoved = source["rootRemoved"];
 	    }
 	}
 	export class ModelDetail {
@@ -176,6 +180,7 @@ export namespace catalog {
 	    tagSuggestions: string[];
 	    files: ModelFile[];
 	    hasCorrections: boolean;
+	    inactive: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelDetail(source);
@@ -200,6 +205,7 @@ export namespace catalog {
 	        this.tagSuggestions = source["tagSuggestions"];
 	        this.files = this.convertValues(source["files"], ModelFile);
 	        this.hasCorrections = source["hasCorrections"];
+	        this.inactive = source["inactive"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -234,6 +240,7 @@ export namespace catalog {
 	    tags: string[];
 	    thumb: string;
 	    favorite: boolean;
+	    inactive: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelRow(source);
@@ -253,6 +260,7 @@ export namespace catalog {
 	        this.tags = source["tags"];
 	        this.thumb = source["thumb"];
 	        this.favorite = source["favorite"];
+	        this.inactive = source["inactive"];
 	    }
 	}
 	export class ModelPage {
@@ -303,6 +311,7 @@ export namespace catalog {
 	    brokenArchives: boolean;
 	    extractedAndArchive: boolean;
 	    missing: boolean;
+	    inactive: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelQuery(source);
@@ -325,6 +334,7 @@ export namespace catalog {
 	        this.brokenArchives = source["brokenArchives"];
 	        this.extractedAndArchive = source["extractedAndArchive"];
 	        this.missing = source["missing"];
+	        this.inactive = source["inactive"];
 	    }
 	}
 	
@@ -347,6 +357,38 @@ export namespace catalog {
 	    }
 	}
 	
+	export class RemovedRoot {
+	    id: number;
+	    path: string;
+	    kind: string;
+	    creatorLevel: boolean;
+	    status: string;
+	    lastScanAt?: number;
+	    removedAt?: number;
+	    live: boolean;
+	    reactivated?: boolean;
+	    files: number;
+	    orphaned: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new RemovedRoot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.path = source["path"];
+	        this.kind = source["kind"];
+	        this.creatorLevel = source["creatorLevel"];
+	        this.status = source["status"];
+	        this.lastScanAt = source["lastScanAt"];
+	        this.removedAt = source["removedAt"];
+	        this.live = source["live"];
+	        this.reactivated = source["reactivated"];
+	        this.files = source["files"];
+	        this.orphaned = source["orphaned"];
+	    }
+	}
 	export class Root {
 	    id: number;
 	    path: string;
@@ -354,7 +396,9 @@ export namespace catalog {
 	    creatorLevel: boolean;
 	    status: string;
 	    lastScanAt?: number;
+	    removedAt?: number;
 	    live: boolean;
+	    reactivated?: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Root(source);
@@ -368,7 +412,9 @@ export namespace catalog {
 	        this.creatorLevel = source["creatorLevel"];
 	        this.status = source["status"];
 	        this.lastScanAt = source["lastScanAt"];
+	        this.removedAt = source["removedAt"];
 	        this.live = source["live"];
+	        this.reactivated = source["reactivated"];
 	    }
 	}
 	export class RootStats {

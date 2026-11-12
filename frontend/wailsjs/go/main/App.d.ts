@@ -15,6 +15,8 @@ export function CancelScan():Promise<void>;
 
 export function CreateBackup():Promise<main.BackupInfo>;
 
+export function DeactivateRoot(arg1:number):Promise<void>;
+
 export function DetachAnchor(arg1:number,arg2:number,arg3:string):Promise<void>;
 
 export function DismissSuggestion(arg1:number,arg2:string):Promise<void>;
@@ -37,6 +39,8 @@ export function ImportHashes(arg1:number):Promise<main.ImportResult>;
 
 export function ListLastScanIssues(arg1:number):Promise<Array<catalog.Issue>>;
 
+export function ListRemovedRoots():Promise<Array<catalog.RemovedRoot>>;
+
 export function ListRoots():Promise<Array<catalog.Root>>;
 
 export function ListTags():Promise<Array<catalog.TagCount>>;
@@ -55,9 +59,9 @@ export function PickFolder():Promise<string>;
 
 export function PickThumbnailFile(arg1:number):Promise<boolean>;
 
-export function RedetectRoot(arg1:number):Promise<void>;
+export function PurgeRoot(arg1:number,arg2:number):Promise<void>;
 
-export function RemoveRoot(arg1:number):Promise<void>;
+export function RedetectRoot(arg1:number):Promise<void>;
 
 export function RemoveTag(arg1:Array<number>,arg2:string):Promise<void>;
 

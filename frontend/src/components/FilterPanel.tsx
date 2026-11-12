@@ -20,16 +20,17 @@ export interface Query {
     brokenArchives: boolean
     extractedAndArchive: boolean
     missing: boolean
+    inactive: boolean
 }
 
 export const emptyQuery: Query = {
     text: '', untagged: false, favorites: false, tagId: 0, creatorId: 0, rootId: 0, ext: '', supports: '', printStatus: '',
     duplicates: false, singleLocation: false, offline: false, brokenArchives: false,
-    extractedAndArchive: false, missing: false,
+    extractedAndArchive: false, missing: false, inactive: false,
 }
 
 const FLAGS = ['untagged', 'duplicates', 'singleLocation', 'offline', 'brokenArchives', 'extractedAndArchive',
-    'missing'] as const
+    'missing', 'inactive'] as const
 
 /** Number of active filters, not counting the search text and the favorites toggle (own button). */
 export function activeFilters(q: Query): number {

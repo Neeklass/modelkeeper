@@ -8,7 +8,9 @@ no server, no cloud. The concept and all requirements are in
 ## What it does
 
 - Scans root folders (local and NAS) in the background; local folders are
-  watched live, NAS folders are rescanned on a schedule.
+  watched live, NAS folders are rescanned on a schedule. Removing a root
+  folder only deactivates it; adding it again links tags and notes up again.
+  Deleting it permanently from the catalog is a separate, confirmed step.
 - Hashes every file (SHA-256), including files inside zip, rar and 7z
   archives, which are read in place and checked for damage. Progress is
   saved continuously; an interrupted scan continues where it stopped.

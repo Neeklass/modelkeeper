@@ -275,3 +275,17 @@ button.star.on { color: #e3a008; }
 .tile-star.on { color: #f5b400; opacity: 1; }
 .detail-title { gap: 6px; min-width: 0; }
 .share-row { gap: 10px; }
+
+/* Deactivated root folders and the permanent-delete confirmation (E9). */
+button.danger { color: var(--danger); }
+button.danger:hover:not(:disabled) { border-color: var(--danger); }
+.removed-roots { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px; }
+.root.removed { opacity: 0.9; }
+.purge-dialog {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--danger);
+    border-radius: 6px;
+}
+.purge-dialog input { width: 8em; margin-left: 8px; }
+.notice-inactive { border-left: 3px solid var(--danger); padding: 4px 8px; }

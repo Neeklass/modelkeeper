@@ -22,16 +22,17 @@ import (
 //
 // A model with nowhere to go keeps its missing files, so the loss is visible.
 
-// userDataCond is true for models with anything the user entered (the
-// counterpart of the garbage condition in Cleanup).
-const userDataCond = `(m.notes <> '' OR m.name_manual = 1 OR m.creator_manual = 1 OR m.supports_manual = 1
+// UserDataCond is true for the model "m" if it has anything the user entered
+// (the counterpart of the garbage condition in Cleanup). Also used to count
+// what permanently deleting a root folder would leave without a location.
+const UserDataCond = `(m.notes <> '' OR m.name_manual = 1 OR m.creator_manual = 1 OR m.supports_manual = 1
 	OR m.print_status <> 'not_printed' OR coalesce(m.thumb_source, '') = 'manual' OR m.favorite = 1
 	OR EXISTS (SELECT 1 FROM model_tag t WHERE t.model_id = m.id)
 	OR EXISTS (SELECT 1 FROM override o WHERE o.model_id = m.id))`
 
 func hasUserData(ctx context.Context, tx *sql.Tx, id int64) (bool, error) {
 	var n int
-	err := tx.QueryRowContext(ctx, `SELECT count(*) FROM model m WHERE m.id = ? AND `+userDataCond, id).Scan(&n)
+	err := tx.QueryRowContext(ctx, `SELECT count(*) FROM model m WHERE m.id = ? AND `+UserDataCond, id).Scan(&n)
 	return n > 0, err
 }
 

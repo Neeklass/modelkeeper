@@ -198,7 +198,7 @@ func (m *Manager) start(rootID int64, mode string) error {
 			return msg.Wrap(nil, "scan.error.alreadyRunning")
 		}
 	}
-	root, err := catalog.GetRoot(context.Background(), m.db, rootID)
+	root, err := catalog.GetActiveRoot(context.Background(), m.db, rootID) // deactivated roots are not scanned (E9)
 	if err != nil {
 		return err
 	}

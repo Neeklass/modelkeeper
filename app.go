@@ -517,28 +517,81 @@ func (a *App) PickFolder() (string, error) {
 	return runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{})
 }
 
-// AddRoot registers a root folder.
+// AddRoot registers a root folder. The path of a deactivated root reactivates
+// it (E9) and starts an incremental scan, which links its entries up again.
 func (a *App) AddRoot(path string) (catalog.Root, error) {
 	if err := a.ready(); err != nil {
 		return catalog.Root{}, err
 	}
 	r, err := catalog.AddRoot(a.ctx, a.db, path, a.layout.Root)
-	return r, wrapDB(err)
+	if err != nil {
+		return r, wrapDB(err)
+	}
+	if r.Reactivated {
+		log.Printf("root %d reactivated: %s", r.ID, r.Path)
+		go a.scanWhenFree(r.ID)
+	}
+	return r, nil
 }
 
-// RemoveRoot removes a root and its entries from the catalog (files are not touched).
-func (a *App) RemoveRoot(id int64) error {
+// scanWhenFree starts an incremental scan of a root, after a running scan.
+func (a *App) scanWhenFree(id int64) {
+	for attempt := 0; attempt < 20; attempt++ {
+		a.scans.Wait()
+		if err := a.scans.Start(id); err == nil {
+			return
+		} else if msg.From(err).Key != "scan.error.alreadyRunning" {
+			log.Printf("scan root %d: %v", id, err)
+			return
+		}
+		time.Sleep(500 * time.Millisecond) // another scan started in between
+	}
+}
+
+// DeactivateRoot removes a root folder from scanning, watching and the root
+// list (E9). Everything the catalog knows below it stays; adding the same
+// path again reactivates it. Files are not touched (J1).
+func (a *App) DeactivateRoot(id int64) error {
 	if err := a.ready(); err != nil {
 		return err
 	}
 	if p := a.scans.Progress(); p != nil && p.Running && p.RootID == id {
 		return msg.Wrap(nil, "scan.error.busy")
 	}
-	if err := catalog.RemoveRoot(a.ctx, a.db, id); err != nil {
+	if err := catalog.DeactivateRoot(a.ctx, a.db, id); err != nil {
 		return wrapDB(err)
 	}
 	go a.syncWatch()
 	return nil
+}
+
+// ListRemovedRoots returns the deactivated root folders with what deleting
+// them permanently would affect.
+func (a *App) ListRemovedRoots() ([]catalog.RemovedRoot, error) {
+	if err := a.ready(); err != nil {
+		return nil, err
+	}
+	r, err := catalog.ListRemovedRootsWithImpact(a.ctx, a.db)
+	return r, wrapDB(err)
+}
+
+// PurgeRoot permanently deletes a deactivated root folder from the catalog
+// (E9). confirm is the number of models with user data that lose their last
+// location, as shown to (and typed by) the user; it must still be current.
+// A snapshot is taken right before; if it fails, nothing is deleted (J2).
+// Files are not touched (J1).
+func (a *App) PurgeRoot(id int64, confirm int) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	return wrapDB(a.scans.Exclusive(func(ctx context.Context) error {
+		return catalog.PurgeRoot(ctx, a.db, id, confirm, func() error {
+			if _, err := a.snapshot(a.db, backup.ReasonRemoveRoot); err != nil {
+				return msg.Wrap(err, "error.backupFailed", "path", a.layout.Backups)
+			}
+			return nil
+		})
+	}))
 }
 
 // GetRootStats returns catalog statistics for a root.
@@ -596,7 +649,7 @@ func (a *App) ExportHashes(rootID int64) (*hashshare.ExportResult, error) {
 	if err := a.ready(); err != nil {
 		return nil, err
 	}
-	root, err := catalog.GetRoot(a.ctx, a.db, rootID)
+	root, err := catalog.GetActiveRoot(a.ctx, a.db, rootID)
 	if err != nil {
 		return nil, wrapDB(err)
 	}
@@ -630,7 +683,7 @@ func (a *App) ImportHashes(rootID int64) (*ImportResult, error) {
 	if err := a.ready(); err != nil {
 		return nil, err
 	}
-	root, err := catalog.GetRoot(a.ctx, a.db, rootID)
+	root, err := catalog.GetActiveRoot(a.ctx, a.db, rootID)
 	if err != nil {
 		return nil, wrapDB(err)
 	}
@@ -741,7 +794,7 @@ func (a *App) SetRootCreatorLevel(id int64, on bool) error {
 // that was never attempted (e.g. catalogs from before these features).
 func (a *App) detectExisting() {
 	rows, err := a.db.Query(`SELECT r.id FROM root r
-		WHERE r.status <> 'offline'
+		WHERE r.status <> 'offline' AND r.removed_at IS NULL
 		  AND EXISTS (SELECT 1 FROM location l WHERE l.root_id = r.id AND l.present = 1)
 		  AND (NOT EXISTS (SELECT 1 FROM model_anchor m WHERE m.root_id = r.id)
 		    OR EXISTS (SELECT 1 FROM model m JOIN model_anchor a ON a.model_id = m.id

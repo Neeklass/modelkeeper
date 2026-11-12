@@ -17,12 +17,14 @@ type ModelRow struct {
 	Supports   string   `json:"supports"`
 	Variants   []string `json:"variants"`
 	Files      int      `json:"files"`      // content files (models, slicer files, archives) present
-	Roots      int      `json:"roots"`      // roots where the model has present files
-	Missing    int      `json:"missing"`    // files gone since the last scan
+	Roots      int      `json:"roots"`      // active roots where the model has present files
+	Missing    int      `json:"missing"`    // files on active roots gone since the last scan
 	Suggestion int      `json:"tagSuggest"` // open tag suggestions
 	Tags       []string `json:"tags"`
 	Thumb      string   `json:"thumb"` // URL of the thumbnail, "" if none
 	Favorite   bool     `json:"favorite"`
+	// Inactive: the model's files are only on deactivated roots (E9).
+	Inactive bool `json:"inactive"`
 }
 
 // ThumbURL is the address under which the app serves a thumbnail file; the
@@ -53,10 +55,25 @@ type ModelQuery struct {
 	BrokenArchives      bool `json:"brokenArchives"`      // contains a damaged archive (F7)
 	ExtractedAndArchive bool `json:"extractedAndArchive"` // files exist extracted and inside an archive
 	Missing             bool `json:"missing"`             // files gone since the last scan
+	Inactive            bool `json:"inactive"`            // files only on deactivated roots (E9)
 }
+
+// Deactivated roots (E9) in these queries: the catalog still knows what lies
+// there, but nothing is checked any more. So they count for what describes a
+// model (text search, tag, creator, file type, file count) - a model whose
+// files are only there stays visible and is marked Inactive - but not for the
+// checks: a copy there is no reliable backup (D5) and no actionable duplicate
+// (D4, extracted + archive), its files are not "missing", it is not "offline",
+// and its archives are not re-checked (F7).
 
 // contentCats limits checks to files that make a model.
 const contentCats = `('model', 'slicer', 'archive')`
+
+// inactiveCond is true for a model with present files, none of them on an
+// active root.
+const inactiveCond = `(EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id AND l.present = 1)
+	AND NOT EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id AND l.present = 1
+		AND l.root_id NOT IN ` + inactiveRoots + `))`
 
 // where builds the FROM/WHERE part and the ORDER BY for a query.
 func (q ModelQuery) where() (from, order string, args []any) {
@@ -102,26 +119,34 @@ func (q ModelQuery) where() (from, order string, args []any) {
 	}
 	if q.Duplicates {
 		add(`EXISTS (SELECT 1 FROM location l JOIN location o ON o.file_id = l.file_id AND o.id <> l.id AND o.present = 1
-			WHERE l.model_id = m.id AND l.present = 1 AND l.category IN ` + contentCats + `)`)
+			WHERE l.model_id = m.id AND l.present = 1 AND l.category IN ` + contentCats + `
+			  AND l.root_id NOT IN ` + inactiveRoots + ` AND o.root_id NOT IN ` + inactiveRoots + `)`)
 	}
 	if q.SingleLocation {
 		add(`(SELECT count(DISTINCT o.root_id) FROM location l JOIN location o ON o.file_id = l.file_id AND o.present = 1
-			WHERE l.model_id = m.id AND l.present = 1 AND l.category IN ` + contentCats + `) = 1`)
+			WHERE l.model_id = m.id AND l.present = 1 AND l.category IN ` + contentCats + `
+			  AND l.root_id NOT IN ` + inactiveRoots + ` AND o.root_id NOT IN ` + inactiveRoots + `) = 1`)
 	}
 	if q.Offline {
 		add(`EXISTS (SELECT 1 FROM model_anchor a JOIN root r ON r.id = a.root_id
-			WHERE a.model_id = m.id AND r.status = 'offline')`)
+			WHERE a.model_id = m.id AND r.status = 'offline' AND r.removed_at IS NULL)`)
 	}
 	if q.BrokenArchives {
-		add(`EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id AND l.present = 1 AND l.archive_status = 'broken')`)
+		add(`EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id AND l.present = 1 AND l.archive_status = 'broken'
+			AND l.root_id NOT IN ` + inactiveRoots + `)`)
 	}
 	if q.ExtractedAndArchive {
 		add(`EXISTS (SELECT 1 FROM location l JOIN location o ON o.file_id = l.file_id
 			WHERE l.model_id = m.id AND l.present = 1 AND l.archive_id IS NULL AND l.category IN ('model', 'slicer')
-			  AND o.archive_id IS NOT NULL AND o.present = 1)`)
+			  AND o.archive_id IS NOT NULL AND o.present = 1
+			  AND l.root_id NOT IN ` + inactiveRoots + ` AND o.root_id NOT IN ` + inactiveRoots + `)`)
 	}
 	if q.Missing {
-		add(`EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id AND l.present = 0)`)
+		add(`EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id AND l.present = 0
+			AND l.root_id NOT IN ` + inactiveRoots + `)`)
+	}
+	if q.Inactive {
+		add(inactiveCond)
 	}
 	if len(conds) > 0 {
 		from += ` WHERE ` + strings.Join(conds, ` AND `)
@@ -162,12 +187,14 @@ func SearchModels(ctx context.Context, db *sql.DB, query ModelQuery, offset, lim
 				(SELECT label FROM variant WHERE model_id = m.id ORDER BY sort, label)), ''),
 			(SELECT count(*) FROM location l WHERE l.model_id = m.id AND l.present = 1
 				AND l.category IN ('model', 'slicer', 'archive')),
-			(SELECT count(DISTINCT l.root_id) FROM location l WHERE l.model_id = m.id AND l.present = 1),
-			(SELECT count(*) FROM location l WHERE l.model_id = m.id AND l.present = 0),
+			(SELECT count(DISTINCT l.root_id) FROM location l WHERE l.model_id = m.id AND l.present = 1
+				AND l.root_id NOT IN `+inactiveRoots+`),
+			(SELECT count(*) FROM location l WHERE l.model_id = m.id AND l.present = 0
+				AND l.root_id NOT IN `+inactiveRoots+`),
 			(SELECT count(*) FROM tag_suggestion s WHERE s.model_id = m.id AND s.state = 'open'),
 			coalesce((SELECT group_concat(name, char(31)) FROM (SELECT t.name FROM model_tag mt
 				JOIN tag t ON t.id = mt.tag_id WHERE mt.model_id = m.id ORDER BY t.name COLLATE NOCASE)), ''),
-			coalesce(m.thumb_file, ''), m.updated_at, m.favorite
+			coalesce(m.thumb_file, ''), m.updated_at, m.favorite, `+inactiveCond+`
 		`+from+` `+order+` LIMIT ? OFFSET ?`, append(args, limit, offset)...)
 	if err != nil {
 		return page, err
@@ -178,7 +205,7 @@ func SearchModels(ctx context.Context, db *sql.DB, query ModelQuery, offset, lim
 		var variants, tags, thumb string
 		var updated int64
 		if err := rows.Scan(&r.ID, &r.Name, &r.Creator, &r.Supports, &variants, &r.Files, &r.Roots,
-			&r.Missing, &r.Suggestion, &tags, &thumb, &updated, &r.Favorite); err != nil {
+			&r.Missing, &r.Suggestion, &tags, &thumb, &updated, &r.Favorite, &r.Inactive); err != nil {
 			return page, err
 		}
 		r.Thumb = ThumbURL(thumb, updated)
@@ -209,6 +236,8 @@ type ModelDetail struct {
 	Files          []ModelFile   `json:"files"`
 	// HasCorrections: manual corrections exist at or below the model's folders.
 	HasCorrections bool `json:"hasCorrections"`
+	// Inactive: the model's files are only on deactivated roots (E9).
+	Inactive bool `json:"inactive"`
 }
 
 // ModelAnchor is a place where the model was detected.
@@ -219,6 +248,7 @@ type ModelAnchor struct {
 	// CreatorLevel: the root's first folder level is the creator (limits corrections).
 	CreatorLevel bool   `json:"creatorLevel"`
 	Online       bool   `json:"online"`
+	RootRemoved  bool   `json:"rootRemoved"` // the root is deactivated (E9)
 	Path         string `json:"path"`
 	Kind         string `json:"kind"`
 }
@@ -235,8 +265,9 @@ type ModelFile struct {
 	Present     bool   `json:"present"`
 	Variant     string `json:"variant"`
 	Hash        string `json:"hash"`   // first 12 hex chars of SHA-256, "" if not hashed
-	Copies      int    `json:"copies"` // present locations with the same content (D4)
+	Copies      int    `json:"copies"` // present locations on active roots with the same content (D4)
 	Status      string `json:"archiveStatus"`
+	RootRemoved bool   `json:"rootRemoved"` // on a deactivated root (E9)
 }
 
 // maxDetailFiles bounds the file list of one model.
@@ -249,10 +280,11 @@ func GetModel(ctx context.Context, db *sql.DB, id int64) (ModelDetail, error) {
 	var thumbFile string
 	var updated int64
 	err := db.QueryRowContext(ctx, `SELECT m.id, m.uid, m.name, coalesce(c.name, ''), m.notes, m.print_status, m.supports,
-		m.supports_manual, coalesce(m.thumb_file, ''), coalesce(m.thumb_source, ''), m.updated_at, m.favorite
+		m.supports_manual, coalesce(m.thumb_file, ''), coalesce(m.thumb_source, ''), m.updated_at, m.favorite,
+		`+inactiveCond+`
 		FROM model m LEFT JOIN creator c ON c.id = m.creator_id WHERE m.id = ?`, id).
 		Scan(&d.ID, &d.UID, &d.Name, &d.Creator, &d.Notes, &d.PrintStatus, &supports, &d.SupportsManual,
-			&thumbFile, &d.ThumbSource, &updated, &d.Favorite)
+			&thumbFile, &d.ThumbSource, &updated, &d.Favorite, &d.Inactive)
 	if err != nil {
 		return d, err
 	}
@@ -287,15 +319,17 @@ func GetModel(ctx context.Context, db *sql.DB, id int64) (ModelDetail, error) {
 		return d, err
 	}
 
-	rows, err := db.QueryContext(ctx, `SELECT a.root_id, r.path, r.kind, r.creator_level, r.status <> 'offline', a.path, a.kind
-		FROM model_anchor a JOIN root r ON r.id = a.root_id WHERE a.model_id = ? ORDER BY r.path, a.path`, id)
+	rows, err := db.QueryContext(ctx, `SELECT a.root_id, r.path, r.kind, r.creator_level, r.status <> 'offline',
+			r.removed_at IS NOT NULL, a.path, a.kind
+		FROM model_anchor a JOIN root r ON r.id = a.root_id WHERE a.model_id = ?
+		ORDER BY r.removed_at IS NOT NULL, r.path, a.path`, id)
 	if err != nil {
 		return d, err
 	}
 	d.Anchors = []ModelAnchor{}
 	for rows.Next() {
 		var a ModelAnchor
-		if err := rows.Scan(&a.RootID, &a.RootPath, &a.RootKind, &a.CreatorLevel, &a.Online, &a.Path, &a.Kind); err != nil {
+		if err := rows.Scan(&a.RootID, &a.RootPath, &a.RootKind, &a.CreatorLevel, &a.Online, &a.RootRemoved, &a.Path, &a.Kind); err != nil {
 			rows.Close()
 			return d, err
 		}
@@ -305,8 +339,9 @@ func GetModel(ctx context.Context, db *sql.DB, id int64) (ModelDetail, error) {
 
 	rows, err = db.QueryContext(ctx, `SELECT l.id, l.root_id, l.path, coalesce(a.path, ''), l.category, l.ext, l.size,
 			l.present, coalesce(v.label, ''), f.sha256,
-			coalesce((SELECT count(*) FROM location o WHERE o.file_id = l.file_id AND o.present = 1), 0),
-			coalesce(l.archive_status, '')
+			coalesce((SELECT count(*) FROM location o WHERE o.file_id = l.file_id AND o.present = 1
+				AND o.root_id NOT IN `+inactiveRoots+`), 0),
+			coalesce(l.archive_status, ''), l.root_id IN `+inactiveRoots+`
 		FROM location l
 		LEFT JOIN location a ON a.id = l.archive_id
 		LEFT JOIN variant v ON v.id = l.variant_id
@@ -323,7 +358,7 @@ func GetModel(ctx context.Context, db *sql.DB, id int64) (ModelDetail, error) {
 		var f ModelFile
 		var sha []byte
 		if err := rows.Scan(&f.LocationID, &f.RootID, &f.Path, &f.ArchivePath, &f.Category, &f.Ext, &f.Size,
-			&f.Present, &f.Variant, &sha, &f.Copies, &f.Status); err != nil {
+			&f.Present, &f.Variant, &sha, &f.Copies, &f.Status, &f.RootRemoved); err != nil {
 			return d, err
 		}
 		if len(sha) > 0 {

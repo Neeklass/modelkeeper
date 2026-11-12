@@ -82,14 +82,16 @@
     "catalogCorruptNoBackup": "The catalog {{path}} is damaged and there is no backup in data\\backups. modelkeeper stops here. If you have an external backup, restore it.",
     "catalogMissing": "The catalog {{path}} is missing, but backups exist. Newest backup: {{backup}}",
     "backupBeforeMigration": "No backup could be written to {{path}} before updating the catalog. The catalog was not changed. Details: {{detail}}",
-    "backupFailed": "The backup in {{path}} failed; nothing was changed. Details: {{detail}}"
+    "backupFailed": "The backup in {{path}} failed; nothing was changed. Details: {{detail}}",
+    "rootRemoved": "The folder {{path}} is deactivated. Add it again to use it.",
+    "rootNotRemoved": "{{path}} is not deactivated. Only deactivated folders can be deleted permanently.",
+    "purgeCountChanged": "The number of affected models has changed (now {{count}}). Please check it again.",
+    "rootOverlapRemoved": "{{path}} overlaps with the deactivated folder {{other}}. Reactivate {{other}} or delete it permanently from the catalog before adding this folder."
   },
   "roots": {
     "title": "Root folders",
     "add": "Add folder…",
-    "remove": "Remove",
     "empty": "No root folder yet. Add a local folder or a NAS path (\\\\fritz.nas\\…).",
-    "confirmRemove": "Remove {{path}} from the catalog? Files on disk are not touched.",
     "lastScan": "Last scan: {{when}}",
     "neverScanned": "Not scanned yet",
     "live": "Live",
@@ -103,7 +105,29 @@
       "online": "Online",
       "offline": "Offline"
     },
-    "creatorLevel": "First folder level is the creator"
+    "creatorLevel": "First folder level is the creator",
+    "deactivate": "Deactivate",
+    "confirmDeactivate": "Deactivate {{path}}?\n\nThe folder is no longer scanned or watched. Tags, notes, favorites, print status and corrections stay in the catalog; models that only exist here stay visible and are marked.\n\nIf you add the same folder again later, everything is linked up again. Files on disk are not touched.",
+    "reactivated": "The folder was deactivated and is active again. Tags and notes are linked up again; a scan is running.",
+    "removedTitle_one": "{{count}} deactivated folder",
+    "removedTitle_other": "{{count}} deactivated folders",
+    "removedHint": "Deactivated folders are not scanned. Their entries stay in the catalog until you delete them permanently.",
+    "removedAt": "Deactivated: {{when}}",
+    "removedFiles_one": "{{n}} file in the catalog",
+    "removedFiles_other": "{{n}} files in the catalog",
+    "removedOrphaned_one": "{{n}} model with your data exists only here",
+    "removedOrphaned_other": "{{n}} models with your data exist only here",
+    "reactivate": "Reactivate",
+    "purge": "Delete permanently from the catalog",
+    "purgeTitle": "Delete {{path}} permanently from the catalog?",
+    "purgeExplain": "All entries of this folder are deleted from the catalog: files, locations, hashes and corrections. Only a backup can undo this; one is created automatically right before. If you add the folder again later, new models are created. Files on disk are not touched.",
+    "purgeOrphaned_one": "{{n}} model with tags, notes or other data of yours will have no location left. It stays in the catalog, but separated from its files.",
+    "purgeOrphaned_other": "{{n}} models with tags, notes or other data of yours will have no location left. They stay in the catalog, but separated from their files.",
+    "purgeType": "Type {{n}} to confirm:",
+    "purgeNoOrphans": "No model with your data loses its last location.",
+    "purgeCancel": "Cancel",
+    "purgeConfirm": "Delete permanently",
+    "purging": "Backing up and deleting…"
   },
   "scan": {
     "start": "Scan",
@@ -195,7 +219,11 @@
     "notes": "Notes",
     "notesPlaceholder": "Notes, print settings…",
     "rename": "Rename",
-    "nameEmpty": "The name must not be empty."
+    "nameEmpty": "The name must not be empty.",
+    "inactive": "only in a deactivated folder",
+    "inactiveHint": "The files are only in deactivated folders and are no longer checked.",
+    "inactiveNotice": "This model's files are only in deactivated folders. They are no longer scanned; add the folder again to check them.",
+    "rootRemoved": "deactivated"
   },
   "supports": {
     "presupported": "Presupported",
@@ -277,7 +305,9 @@
     "extractedAndArchive": "Extracted and as archive",
     "extractedAndArchiveHint": "Files exist extracted and inside an archive – candidates for saving space",
     "missing": "Missing files",
-    "missingHint": "Files disappeared since the last scan"
+    "missingHint": "Files disappeared since the last scan",
+    "inactive": "Only in deactivated folders",
+    "inactiveHint": "All files are in deactivated folders that are no longer scanned"
   },
   "views": {
     "label": "View",

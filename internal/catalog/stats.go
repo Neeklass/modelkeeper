@@ -41,11 +41,44 @@ func GetRootStats(ctx context.Context, db *sql.DB, rootID int64) (RootStats, err
 	if err != nil {
 		return s, err
 	}
+	// Copies on deactivated roots are not checked any more (E9) and do not count.
 	err = db.QueryRowContext(ctx, `SELECT count(*) FROM (
 		SELECT file_id FROM location WHERE present = 1 AND file_id IS NOT NULL
+		  AND root_id NOT IN `+inactiveRoots+`
 		  AND file_id IN (SELECT file_id FROM location WHERE root_id = ? AND present = 1)
 		GROUP BY file_id HAVING count(*) > 1)`, rootID).Scan(&s.DuplicateFiles)
 	return s, err
+}
+
+// RemovedRoot is a deactivated root with what permanently deleting it would
+// affect (E9).
+type RemovedRoot struct {
+	Root
+	Files int `json:"files"` // present files on disk the catalog keeps for it
+	// Orphaned: models with user data that would have no location left (PurgeImpact).
+	Orphaned int `json:"orphaned"`
+}
+
+// ListRemovedRootsWithImpact returns the deactivated roots with file counts
+// and PurgeImpact.
+func ListRemovedRootsWithImpact(ctx context.Context, db *sql.DB) ([]RemovedRoot, error) {
+	roots, err := ListRemovedRoots(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	out := []RemovedRoot{}
+	for _, r := range roots {
+		rr := RemovedRoot{Root: r}
+		if err := db.QueryRowContext(ctx, `SELECT count(*) FROM location
+			WHERE root_id = ? AND archive_id IS NULL AND present = 1`, r.ID).Scan(&rr.Files); err != nil {
+			return nil, err
+		}
+		if rr.Orphaned, err = PurgeImpact(ctx, db, r.ID); err != nil {
+			return nil, err
+		}
+		out = append(out, rr)
+	}
+	return out, nil
 }
 
 // Issue is a problem recorded by a scan.

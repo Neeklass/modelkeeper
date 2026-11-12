@@ -82,14 +82,16 @@
     "catalogCorruptNoBackup": "Der Katalog {{path}} ist beschädigt, und es gibt kein Backup in data\\backups. modelkeeper arbeitet damit nicht weiter. Falls du eine externe Sicherung hast, spiele sie zurück.",
     "catalogMissing": "Der Katalog {{path}} fehlt, es gibt aber Backups. Neuestes Backup: {{backup}}",
     "backupBeforeMigration": "Vor dem Aktualisieren des Katalogs konnte kein Backup in {{path}} angelegt werden. Der Katalog wurde nicht verändert. Details: {{detail}}",
-    "backupFailed": "Das Backup in {{path}} ist fehlgeschlagen; es wurde nichts geändert. Details: {{detail}}"
+    "backupFailed": "Das Backup in {{path}} ist fehlgeschlagen; es wurde nichts geändert. Details: {{detail}}",
+    "rootRemoved": "Der Ordner {{path}} ist deaktiviert. Füge ihn wieder hinzu, um ihn zu nutzen.",
+    "rootNotRemoved": "{{path}} ist nicht deaktiviert. Nur deaktivierte Ordner können endgültig gelöscht werden.",
+    "purgeCountChanged": "Die Zahl der betroffenen Modelle hat sich geändert (jetzt {{count}}). Bitte prüfe sie erneut.",
+    "rootOverlapRemoved": "{{path}} überschneidet sich mit dem deaktivierten Ordner {{other}}. Reaktiviere {{other}} oder lösche ihn endgültig aus dem Katalog, bevor du diesen Ordner hinzufügst."
   },
   "roots": {
     "title": "Stammordner",
     "add": "Ordner hinzufügen…",
-    "remove": "Entfernen",
     "empty": "Noch kein Stammordner. Füge einen lokalen Ordner oder einen NAS-Pfad (\\\\fritz.nas\\…) hinzu.",
-    "confirmRemove": "{{path}} aus dem Katalog entfernen? Dateien auf der Festplatte bleiben unberührt.",
     "lastScan": "Letzter Scan: {{when}}",
     "neverScanned": "Noch nicht gescannt",
     "live": "Live",
@@ -103,7 +105,29 @@
       "online": "Online",
       "offline": "Offline"
     },
-    "creatorLevel": "Erste Ordnerebene ist der Ersteller"
+    "creatorLevel": "Erste Ordnerebene ist der Ersteller",
+    "deactivate": "Deaktivieren",
+    "confirmDeactivate": "{{path}} deaktivieren?\n\nDer Ordner wird nicht mehr gescannt und nicht mehr überwacht. Tags, Notizen, Favoriten, Druckstatus und Korrekturen bleiben im Katalog erhalten; Modelle, die nur hier liegen, bleiben sichtbar und werden markiert.\n\nWenn du denselben Ordner später wieder hinzufügst, ist alles wieder verknüpft. Dateien auf der Festplatte bleiben unberührt.",
+    "reactivated": "Der Ordner war deaktiviert und ist wieder aktiv. Tags und Notizen sind wieder verknüpft; ein Scan läuft.",
+    "removedTitle_one": "{{count}} deaktivierter Ordner",
+    "removedTitle_other": "{{count}} deaktivierte Ordner",
+    "removedHint": "Deaktivierte Ordner werden nicht gescannt. Ihre Einträge bleiben im Katalog, bis du sie endgültig löschst.",
+    "removedAt": "Deaktiviert: {{when}}",
+    "removedFiles_one": "{{n}} Datei im Katalog",
+    "removedFiles_other": "{{n}} Dateien im Katalog",
+    "removedOrphaned_one": "{{n}} Modell mit deinen Daten liegt nur hier",
+    "removedOrphaned_other": "{{n}} Modelle mit deinen Daten liegen nur hier",
+    "reactivate": "Reaktivieren",
+    "purge": "Endgültig aus dem Katalog löschen",
+    "purgeTitle": "{{path}} endgültig aus dem Katalog löschen?",
+    "purgeExplain": "Alle Einträge dieses Ordners werden aus dem Katalog gelöscht: Dateien, Fundorte, Hashes und Korrekturen. Das lässt sich nur über ein Backup rückgängig machen; unmittelbar vorher wird automatisch eines erstellt. Wenn du den Ordner später wieder hinzufügst, entstehen neue Modelle. Dateien auf der Festplatte bleiben unberührt.",
+    "purgeOrphaned_one": "{{n}} Modell mit Tags, Notizen oder anderen Daten von dir hat danach keinen Ort mehr. Es bleibt im Katalog, ist aber von seinen Dateien getrennt.",
+    "purgeOrphaned_other": "{{n}} Modelle mit Tags, Notizen oder anderen Daten von dir haben danach keinen Ort mehr. Sie bleiben im Katalog, sind aber von ihren Dateien getrennt.",
+    "purgeType": "Zum Bestätigen {{n}} eintippen:",
+    "purgeNoOrphans": "Kein Modell mit deinen Daten verliert dadurch seinen letzten Ort.",
+    "purgeCancel": "Abbrechen",
+    "purgeConfirm": "Endgültig löschen",
+    "purging": "Backup und Löschen…"
   },
   "scan": {
     "start": "Scannen",
@@ -195,7 +219,11 @@
     "notes": "Notizen",
     "notesPlaceholder": "Notizen, Druckeinstellungen…",
     "rename": "Umbenennen",
-    "nameEmpty": "Der Name darf nicht leer sein."
+    "nameEmpty": "Der Name darf nicht leer sein.",
+    "inactive": "nur in deaktiviertem Ordner",
+    "inactiveHint": "Die Dateien liegen nur in deaktivierten Ordnern und werden nicht mehr geprüft.",
+    "inactiveNotice": "Die Dateien dieses Modells liegen nur in deaktivierten Ordnern. Sie werden nicht mehr gescannt; füge den Ordner wieder hinzu, um sie zu prüfen.",
+    "rootRemoved": "deaktiviert"
   },
   "supports": {
     "presupported": "Vorgestützt",
@@ -277,7 +305,9 @@
     "extractedAndArchive": "Entpackt und als Archiv",
     "extractedAndArchiveHint": "Dateien liegen entpackt und zusätzlich in einem Archiv – Kandidaten zum Platzsparen",
     "missing": "Fehlende Dateien",
-    "missingHint": "Dateien sind seit dem letzten Scan verschwunden"
+    "missingHint": "Dateien sind seit dem letzten Scan verschwunden",
+    "inactive": "Nur in deaktivierten Ordnern",
+    "inactiveHint": "Alle Dateien liegen in deaktivierten Ordnern, die nicht mehr gescannt werden"
   },
   "views": {
     "label": "Ansicht",
