@@ -22,24 +22,36 @@ export interface Query {
     missing: boolean
     inactive: boolean
     orphanedBy: number
+    /** "" = by name, "newest" = most recently added first. */
+    sort: string
 }
 
 export const emptyQuery: Query = {
     text: '', untagged: false, favorites: false, tagId: 0, creatorId: 0, rootId: 0, ext: '', supports: '', printStatus: '',
     duplicates: false, singleLocation: false, offline: false, brokenArchives: false,
-    extractedAndArchive: false, missing: false, inactive: false, orphanedBy: 0,
+    extractedAndArchive: false, missing: false, inactive: false, orphanedBy: 0, sort: '',
 }
 
-const FLAGS = ['untagged', 'duplicates', 'singleLocation', 'offline', 'brokenArchives', 'extractedAndArchive',
+export const FLAGS = ['duplicates', 'singleLocation', 'offline', 'brokenArchives', 'extractedAndArchive',
     'missing', 'inactive'] as const
 
-/** Number of active filters, not counting the search text and the favorites toggle (own button). */
+/** Fields that choose the view (sidebar) rather than filter it. */
+const VIEW_FIELDS = new Set(['text', 'favorites', 'untagged', 'sort', 'orphanedBy'])
+
+/** Number of active filters, not counting the search text and the view (favorites, to catalog, sort). */
 export function activeFilters(q: Query): number {
     let n = 0
     for (const [k, v] of Object.entries(q)) {
-        if (k !== 'text' && k !== 'favorites' && v !== (emptyQuery as unknown as Record<string, unknown>)[k]) n++
+        if (!VIEW_FIELDS.has(k) && v !== (emptyQuery as unknown as Record<string, unknown>)[k]) n++
     }
     return n
+}
+
+/** The query without its filters; the search text and the view stay. */
+export function clearFilters(q: Query): Query {
+    const next = {...emptyQuery} as unknown as Record<string, unknown>
+    for (const k of VIEW_FIELDS) next[k] = (q as unknown as Record<string, unknown>)[k]
+    return next as unknown as Query
 }
 
 export function FilterPanel({query, onChange, allTags, version}: {
@@ -110,7 +122,7 @@ export function FilterPanel({query, onChange, allTags, version}: {
                 ))}
             </div>
             {activeFilters(query) > 0 && (
-                <button className="link small" onClick={() => onChange({...emptyQuery, text: query.text})}>
+                <button className="link small" onClick={() => onChange(clearFilters(query))}>
                     {t('filters.reset')}
                 </button>
             )}

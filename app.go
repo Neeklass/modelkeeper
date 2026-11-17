@@ -11,6 +11,7 @@ import (
 	_ "image/png"
 	"io"
 	"log"
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -1181,7 +1182,14 @@ func (h assetHandler) serveFile(w http.ResponseWriter, r *http.Request, idText s
 		return
 	}
 	defer f.Close()
-	w.Header().Set("Content-Type", "application/octet-stream")
+	ctype := "application/octet-stream"
+	if preview.ImageExts[src.Ext] { // picture gallery
+		if t := mime.TypeByExtension("." + src.Ext); t != "" {
+			ctype = t
+		}
+	}
+	w.Header().Set("Content-Type", ctype)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Cache-Control", "no-store")
 	http.ServeContent(w, r, src.Name, mod, f)
 }

@@ -5,11 +5,12 @@ import {catalog} from '../../wailsjs/go/models'
  * Text input for tags with autocomplete from existing tags. Enter (or the
  * button) submits; several tags can be separated by commas.
  */
-export function TagInput({allTags, placeholder, buttonLabel, disabled, onSubmit}: {
+export function TagInput({allTags, placeholder, buttonLabel, disabled, autoFocus, onSubmit}: {
     allTags: catalog.TagCount[]
     placeholder: string
     buttonLabel: string
     disabled?: boolean
+    autoFocus?: boolean
     onSubmit: (names: string[]) => Promise<void> | void
 }) {
     const [value, setValue] = useState('')
@@ -22,7 +23,7 @@ export function TagInput({allTags, placeholder, buttonLabel, disabled, onSubmit}
     }
     return (
         <span className="row tag-input">
-            <input list={listId} value={value} placeholder={placeholder} disabled={disabled}
+            <input list={listId} value={value} placeholder={placeholder} disabled={disabled} autoFocus={autoFocus}
                    onChange={e => setValue(e.target.value)}
                    onKeyDown={e => {
                        if (e.key === 'Enter') {

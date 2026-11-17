@@ -344,6 +344,7 @@ export namespace catalog {
 	    missing: boolean;
 	    inactive: boolean;
 	    orphanedBy: number;
+	    sort: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelQuery(source);
@@ -368,6 +369,7 @@ export namespace catalog {
 	        this.missing = source["missing"];
 	        this.inactive = source["inactive"];
 	        this.orphanedBy = source["orphanedBy"];
+	        this.sort = source["sort"];
 	    }
 	}
 	
