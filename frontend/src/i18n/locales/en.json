@@ -91,7 +91,7 @@
     "rootOverlapRemoved": "{{path}} overlaps with the deactivated folder {{other}}. Reactivate {{other}} or delete it permanently from the catalog before adding this folder.",
     "dataDirOnNetwork": "The modelkeeper folder is on a network drive ({{path}}). The catalog can be damaged there, because SQLite cannot lock reliably over network shares. Copy the whole modelkeeper folder to the PC, e.g. to C:\\modelkeeper, and start it from there. The models themselves may stay on the NAS.",
     "openCopy": "{{name}} could not be copied for the slicer: {{detail}}",
-    "openProgram": "The program for {{name}} could not be started: {{detail}}",
+    "openProgram": "The program for {{name}} could not be started. If no program is set up for this file type, choose one under Settings → Slicer. ({{detail}})",
     "fileOffline": "{{name}} is in a folder that cannot be reached right now.",
     "fileNotFound": "{{name}} was not found. It may have been moved; a scan brings the catalog up to date.",
     "fileTooLargeToCopy": "{{name}} is too large to copy out of the archive. Extract the archive yourself and open the file directly.",
@@ -655,7 +655,8 @@
     "openShort": "Slicer",
     "openHint": "Opens a read-only copy in the slicer. The original stays untouched.",
     "chooseFile": "Choose another file",
-    "opened": "{{name}} was opened in the slicer as a copy. Save slicer projects somewhere of your own."
+    "opened": "{{name}} was opened in the slicer as a copy. Save slicer projects somewhere of your own.",
+    "copying": "Copying {{name}} for the slicer…"
   },
   "nav": {
     "label": "Navigation",

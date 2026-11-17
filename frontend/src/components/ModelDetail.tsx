@@ -74,6 +74,7 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
     const [media, setMedia] = useState<Media>({kind: 'thumb'})
     const [lightbox, setLightbox] = useState<number | null>(null)
     const [opened, setOpened] = useState<string | null>(null)
+    const [copying, setCopying] = useState<string | null>(null)
 
     useEffect(() => {
         setMedia({kind: 'thumb'})
@@ -120,9 +121,12 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
         ...images.map(f => ({src: `/files/${f.locationId}`, label: basename(f.path)})),
     ]
     const openSlicer = (f: catalog.ModelFile) => {
+        if (copying) return
         setError(null)
         setOpened(null)
+        setCopying(basename(f.path)) // a large file on the NAS takes a moment to copy
         OpenInSlicer(f.locationId).then(() => setOpened(basename(f.path))).catch(e => setError(toMsg(e)))
+            .finally(() => setCopying(null))
     }
 
     const groups = new Map<string, catalog.ModelFile[]>()
@@ -194,7 +198,7 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
 
             <div className="actions">
                 {slicer.length > 0 && (
-                    <SlicerButton files={slicer} onOpen={openSlicer}/>
+                    <SlicerButton files={slicer} onOpen={openSlicer} busy={copying !== null}/>
                 )}
                 {(slicer[0] ?? d.files.find(f => f.present)) && (
                     <button onClick={() => ShowInExplorer((slicer[0] ?? d.files.find(f => f.present))!.locationId).catch(e => setError(toMsg(e)))}>
@@ -202,6 +206,7 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
                     </button>
                 )}
             </div>
+            {copying && <p className="small muted">{t('slicer.copying', {name: copying})}</p>}
             {opened && <p className="small ok-text">{t('slicer.opened', {name: opened})}</p>}
 
             <section className="detail-section">
@@ -364,16 +369,16 @@ function DetailNav({onPrev, onNext, onClose, position}: {
 }
 
 /** "Open in slicer" with the likely file, and a menu for the others (H5). */
-function SlicerButton({files, onOpen}: { files: catalog.ModelFile[]; onOpen: (f: catalog.ModelFile) => void }) {
+function SlicerButton({files, onOpen, busy}: { files: catalog.ModelFile[]; onOpen: (f: catalog.ModelFile) => void; busy: boolean }) {
     const {t} = useTranslation()
     const [open, setOpen] = useState(false)
     return (
         <span className="split-button">
-            <button className="primary" onClick={() => onOpen(files[0])} title={t('slicer.openHint')}>
+            <button className="primary" onClick={() => onOpen(files[0])} title={t('slicer.openHint')} disabled={busy}>
                 ▶ {t('slicer.open')}
             </button>
             {files.length > 1 && (
-                <button className="primary split-toggle" aria-expanded={open} aria-label={t('slicer.chooseFile')}
+                <button className="primary split-toggle" aria-expanded={open} aria-label={t('slicer.chooseFile')} disabled={busy}
                         onClick={() => setOpen(o => !o)}>▾</button>
             )}
             {open && (
