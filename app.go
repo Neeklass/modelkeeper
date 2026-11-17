@@ -68,6 +68,8 @@ type App struct {
 	startupErr *msg.Msg
 	// notice is shown once after start (e.g. a snapshot was restored).
 	notice *msg.Msg
+	// stop is closed at shutdown; it ends the daily-snapshot ticker.
+	stop chan struct{}
 }
 
 func NewApp() *App { return &App{initDone: make(chan struct{})} }
@@ -112,6 +114,12 @@ func (a *App) init() error {
 		return msg.Wrap(err, "error.dataDirResolve")
 	}
 	a.layout = layout
+	// SQLite is not safe on network shares (locking over SMB is unreliable):
+	// the catalog could be damaged. The models may live on the NAS, the
+	// modelkeeper folder must not.
+	if catalog.DetectKind(layout.Root) == "nas" {
+		return msg.Wrap(nil, "error.dataDirOnNetwork", "path", layout.Root)
+	}
 	if err := layout.Ensure(); err != nil {
 		return msg.Wrap(err, "error.dataDirNotWritable", "path", layout.Root)
 	}
@@ -203,7 +211,15 @@ func (a *App) startServices() error {
 			log.Printf("thumbnails: %d missing generated ones will be generated again, %d manual ones are missing", reset, lost)
 		}
 		a.detectExisting()
+		a.cleanupOpenCopies()
+		// A scan the app was closed (or crashed) in continues where it stopped.
+		if err := scans.ResumeUnfinished(context.Background()); err != nil {
+			log.Printf("resume unfinished scans: %v", err)
+		}
 	}()
+
+	a.stop = make(chan struct{})
+	go a.runDailyTicker(a.stop)
 
 	w, err := watch.New(conn, scans, watch.Options{
 		Exclude: layout.Root,
@@ -239,6 +255,9 @@ func (a *App) shutdown(ctx context.Context) {
 	if a.initDone != nil {
 		<-a.initDone // a start in progress (e.g. a restore) finishes first
 	}
+	if a.stop != nil {
+		close(a.stop)
+	}
 	a.bg.Wait() // a running snapshot finishes
 	if a.watch != nil {
 		a.watch.Close() // before the scanner, so no new scan starts
@@ -272,6 +291,12 @@ type AppStatus struct {
 	// PendingRestore: snapshot to restore at the next start, "" if none.
 	PendingRestore string   `json:"pendingRestore"`
 	Notice         *msg.Msg `json:"notice,omitempty"`
+	// SlicerPath: program for "Open in slicer", "" = system default (H5).
+	SlicerPath string `json:"slicerPath"`
+	// ExternalBackupDir: second backup folder, "" = off (J2).
+	ExternalBackupDir string `json:"externalBackupDir"`
+	// LastRestoreTest: result of the newest restore test, nil if none ran.
+	LastRestoreTest *backup.RestoreCheck `json:"lastRestoreTest,omitempty"`
 	// Starting: the start is still running; nothing else is set yet.
 	Starting bool `json:"starting"`
 }
@@ -385,6 +410,10 @@ func (a *App) GetStatus() AppStatus {
 	if a.settings != nil {
 		st := a.settings.Get()
 		s.Language, s.NASRescanHours = st.Language, st.NASRescanHours
+		s.SlicerPath, s.ExternalBackupDir = st.SlicerPath, st.ExternalBackupDir
+	}
+	if a.layout.Root != "" {
+		s.LastRestoreTest = backup.LastRestoreCheck(a.layout.Root)
 	}
 	return s
 }
@@ -544,6 +573,7 @@ func (a *App) snapshot(conn *sql.DB, reason string) (backup.Snapshot, error) {
 	}
 	log.Printf("backup %s: %s", reason, s.Path)
 	a.rotate()
+	a.afterBackupAsync(true)
 	return s, nil
 }
 
@@ -572,10 +602,12 @@ func (a *App) dailyBackup() {
 		log.Printf("backup daily: %v", err)
 		return
 	case !created:
+		a.afterBackup(false) // retests only when due
 		return
 	}
 	log.Printf("backup daily: %s", s.Path)
 	a.rotate()
+	a.afterBackup(true)
 }
 
 // CreateBackup takes a snapshot now (button in the settings).
@@ -742,12 +774,28 @@ func (a *App) ListLastScanIssues(id int64) ([]catalog.Issue, error) {
 	return is, wrapDB(err)
 }
 
-// StartScan starts a background scan of a root; progress arrives as "scan:progress" events.
+// StartScan starts a background scan of a root; progress arrives as
+// "scan:progress" events. A paused root is resumed: the scan continues where
+// the paused one stopped.
 func (a *App) StartScan(id int64) error {
 	if err := a.ready(); err != nil {
 		return err
 	}
-	return wrapDB(a.scans.Start(id))
+	err := a.scans.ResumeRoot(id)
+	runtime.EventsEmit(a.ctx, EventRootsChanged)
+	return wrapDB(err)
+}
+
+// PauseScan pauses scanning of a root (F1): a running scan of it stops,
+// everything hashed so far is kept, and the root is not scanned automatically
+// until the user resumes it with StartScan, also across restarts of the app.
+func (a *App) PauseScan(id int64) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	err := a.scans.PauseRoot(id)
+	runtime.EventsEmit(a.ctx, EventRootsChanged)
+	return wrapDB(err)
 }
 
 // StartFullCheck re-reads and re-hashes every file of a root in the
@@ -757,6 +805,10 @@ func (a *App) StartFullCheck(id int64) error {
 	if err := a.ready(); err != nil {
 		return err
 	}
+	if err := catalog.SetScanPaused(a.ctx, a.db, id, false); err != nil {
+		return wrapDB(err)
+	}
+	runtime.EventsEmit(a.ctx, EventRootsChanged)
 	return wrapDB(a.scans.StartFull(id))
 }
 

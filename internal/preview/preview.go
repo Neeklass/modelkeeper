@@ -22,8 +22,15 @@ import (
 // Exts are the file types the preview can display.
 var Exts = map[string]bool{"stl": true, "obj": true, "3mf": true, "ply": true}
 
+// ImageExts are the image types shown in the model's picture gallery.
+var ImageExts = map[string]bool{"jpg": true, "jpeg": true, "png": true, "webp": true, "gif": true}
+
 // MaxBytes is the largest file the preview loads.
 const MaxBytes = 300 << 20
+
+// MaxCopyMemberBytes is the largest archive member LookupAny reads (into
+// memory); files on disk are streamed and have no limit.
+const MaxCopyMemberBytes = 1 << 30
 
 var (
 	ErrNotFound    = errors.New("file not found")
@@ -37,13 +44,40 @@ type Source struct {
 	Name        string // base name of the file
 	Ext         string
 	Size        int64
+	InArchive   bool
 	rootPath    string
 	path        string
 	archivePath string
+	limit       int64 // largest size Open reads; 0 = no limit for files on disk
 }
 
-// Lookup resolves a location to a previewable file.
+// Lookup resolves a location to a file for the 3D preview or the picture
+// gallery (Exts, ImageExts).
 func Lookup(ctx context.Context, db *sql.DB, locationID int64) (Source, error) {
+	s, err := lookup(ctx, db, locationID)
+	switch {
+	case err != nil:
+		return s, err
+	case !Exts[s.Ext] && !ImageExts[s.Ext]:
+		return s, ErrUnsupported
+	case s.Size > MaxBytes:
+		return s, ErrTooLarge
+	}
+	s.limit = MaxBytes
+	return s, nil
+}
+
+// LookupAny resolves a location of any type, for opening a copy of it in
+// another program. Archive members up to MaxCopyMemberBytes are supported.
+func LookupAny(ctx context.Context, db *sql.DB, locationID int64) (Source, error) {
+	s, err := lookup(ctx, db, locationID)
+	if err == nil && s.InArchive && s.Size > MaxCopyMemberBytes {
+		return s, ErrTooLarge
+	}
+	return s, err
+}
+
+func lookup(ctx context.Context, db *sql.DB, locationID int64) (Source, error) {
 	var s Source
 	var status string
 	var present bool
@@ -55,16 +89,13 @@ func Lookup(ctx context.Context, db *sql.DB, locationID int64) (Source, error) {
 		return s, ErrNotFound
 	case err != nil:
 		return s, err
-	case !Exts[s.Ext]:
-		return s, ErrUnsupported
 	case status == "offline":
 		return s, ErrOffline
 	case !present:
 		return s, ErrNotFound
-	case s.Size > MaxBytes:
-		return s, ErrTooLarge
 	}
 	s.Name = path.Base(s.path)
+	s.InArchive = s.archivePath != ""
 	return s, nil
 }
 
@@ -73,7 +104,11 @@ func (s Source) Open() (io.ReadSeekCloser, time.Time, error) {
 	if s.archivePath != "" {
 		arch := filepath.Join(s.rootPath, filepath.FromSlash(s.archivePath))
 		ext := strings.ToLower(strings.TrimPrefix(path.Ext(s.archivePath), "."))
-		data, err := archive.ReadMember(arch, ext, s.path, MaxBytes)
+		limit := s.limit
+		if limit <= 0 {
+			limit = MaxCopyMemberBytes
+		}
+		data, err := archive.ReadMember(arch, ext, s.path, limit)
 		if err != nil {
 			return nil, time.Time{}, err
 		}
@@ -91,7 +126,7 @@ func (s Source) Open() (io.ReadSeekCloser, time.Time, error) {
 		f.Close()
 		return nil, time.Time{}, err
 	}
-	if fi.Size() > MaxBytes {
+	if s.limit > 0 && fi.Size() > s.limit {
 		f.Close()
 		return nil, time.Time{}, ErrTooLarge
 	}
