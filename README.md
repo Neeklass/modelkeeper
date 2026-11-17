@@ -7,8 +7,10 @@ no server, no cloud. The concept and all requirements are in
 
 ## What it does
 
-- Scans root folders (local and NAS) in the background; local folders are
-  watched live, NAS folders are rescanned on a schedule. Removing a root
+- Scans root folders (mainly on the NAS, also local) in the background;
+  local folders are watched live, NAS folders are rescanned on a schedule.
+  Scans can be paused and resumed; a scan the app was closed in continues
+  at the next start. Removing a root
   folder only deactivates it; adding it again links tags and notes up again.
   Deleting it permanently from the catalog is a separate, confirmed step.
 - Hashes every file (SHA-256), including files inside zip, rar and 7z
@@ -19,14 +21,19 @@ no server, no cloud. The concept and all requirements are in
 - Duplicates, models without a backup, files both extracted and archived,
   broken archives, silently changed files (full check).
 - Tags with suggestions, favorites, notes, print status, bulk editing.
-- Search and filters, list and grid, detail view with a rotatable 3D preview.
+- Sidebar with views (all, to catalog, favorites, recently added), creators,
+  tags and locations; search, filter chips, grid with three tile sizes or
+  list, keyboard navigation; detail view with picture gallery, rotatable 3D
+  preview and a cataloging flow (tag, Enter, next model).
+- "Open in slicer" opens a read-only copy, never the original.
 - Hashes of a folder can be exported and imported by another user of the
   same folder (e.g. the same NAS), so it is not hashed twice.
 - German and English, with a built-in user manual (Help tab).
   The manual lives in the translation files (`manual` key), so a new
   language brings its own manual.
 
-The app only ever reads model files: it never moves, changes or deletes them.
+The app only ever reads model files: it never moves, changes or deletes them,
+and no other program gets the originals from it.
 
 ## Use
 
@@ -44,7 +51,8 @@ modelkeeper\
     modelkeeper.log   log
 ```
 
-Keep it on the local PC, not on the NAS. Requires WebView2 (included in
+It must be on the local PC, not on the NAS (the app refuses to start from a
+network share). Requires WebView2 (included in
 Windows 11). The `.exe` is not code-signed, so Windows SmartScreen asks once
 on first start.
 
@@ -57,9 +65,14 @@ permanently deleting a root folder, before removing file types or moving
 them to another category, and when you click "Create backup now" in the
 settings. The settings show how many snapshots there are and their size. It keeps the 14
 newest daily snapshots and all others from the last 90 days (at least the 3
-newest). These snapshots are on the same drive, so also copy the whole
-`modelkeeper\` folder to another drive or a cloud folder from time to time,
-while the app is closed.
+newest). Snapshots are also taken once a day while the app keeps running. They are on
+the same drive, so choose a second backup folder in the settings (another
+drive, Dropbox, a separate NAS share): every snapshot is copied there together
+with `modelkeeper.exe` and a `README.txt` for restoring on a new PC. After
+every new snapshot and at least daily, the newest snapshot (preferably the
+external copy) is restore-tested: content hash, full `integrity_check` of a
+temporary copy, counts against the manifest. The result is shown in the
+settings.
 
 At every start the catalog is checked (about one second for 100,000
 models). If it is damaged, the app stops and
@@ -119,6 +132,7 @@ resumed) and, if 7-Zip is installed, 7z fixtures. Opt-in performance tests:
 - `internal/watch` – live watching and scheduled NAS rescans
 - `internal/thumbs`, `internal/preview` – thumbnails, files for the 3D preview
 - `internal/hashshare` – hash export/import
-- `internal/backup` – snapshots in data\backups and their rotation
+- `internal/backup` – snapshots in data\backups, rotation, external copies, restore tests
+- `internal/opencopy` – read-only copies for "Open in slicer"
 - `internal/db/migrations` – SQLite schema
 - `frontend/` – React UI, translations in `src/i18n/locales`

@@ -132,13 +132,17 @@ export function ModelsView({query, onQuery, library, scopeLabel}: {
     useEffect(() => {
         const el = listRef.current
         if (!el) return
-        const ro = new ResizeObserver(() => {
+        // The tiles are placed inside the padding: measure the content width.
+        const measure = () => {
+            const cs = getComputedStyle(el)
             setHeight(el.clientHeight)
-            setWidth(el.clientWidth)
-        })
+            setWidth(el.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0))
+        }
+        const ro = new ResizeObserver(measure)
         ro.observe(el)
+        measure()
         return () => ro.disconnect()
-    }, [])
+    }, [view])
 
     // Layout: the list is a grid with one column (H3, C3).
     const cols = view === 'grid' ? Math.max(1, Math.floor(width / TILE_SIZES[size])) : 1
@@ -206,7 +210,7 @@ export function ModelsView({query, onQuery, library, scopeLabel}: {
         }
     }, [tick, pendingSelect]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    const step = (d: number) => select((cursor ?? -1) + d)
+    const step = (d: number) => select(cursor === null ? 0 : cursor + d)
     const hasPrev = cursor !== null && cursor > 0
     const hasNext = cursor !== null ? cursor < total - 1 : total > 0
 

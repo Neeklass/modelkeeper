@@ -494,22 +494,36 @@
         "id": "start",
         "title": "Erste Schritte",
         "body": [
-          "1. Öffne den Tab **Ordner** und klicke auf **Ordner hinzufügen…**. Wähle einen lokalen Ordner oder einen NAS-Pfad wie \\\\fritz.nas\\…",
+          "1. Klicke links unten auf **Ordner** und dann auf **Ordner hinzufügen…**. Wähle deinen Modellordner auf dem NAS (am besten über den Netzwerkpfad wie \\\\fritz.nas\\…, nicht über einen Laufwerksbuchstaben) und bei Bedarf weitere Ordner auf dem PC.",
           "2. Klicke auf **Scannen**. modelkeeper listet alle Modelldateien auf, berechnet für jede einen Fingerabdruck (Hash) – auch für Dateien in ZIP-, RAR- und 7z-Archiven – und erkennt daraus die Modelle.",
-          "3. Wechsle zum Tab **Modelle**. Dort findest du alles, was erkannt wurde.",
-          "Der erste Scan kann über das NAS Stunden dauern. Du kannst die App währenddessen benutzen. Der Fortschritt wird laufend gespeichert: Brichst du ab oder schließt die App, macht der nächste Scan an derselben Stelle weiter. Danach werden nur noch neue und geänderte Dateien gelesen.",
-          "Die erste Ordnerebene unter einem Stammordner gilt als Ersteller (z. B. „Atlas Miniatures“). Ist dein Ordner anders aufgebaut, schalte **Erste Ordnerebene ist der Ersteller** für diesen Ordner aus."
+          "3. Wenn der Scan durch ist, klicke links auf **Alle Modelle**. Dort findest du alles, was erkannt wurde.",
+          "Der erste Scan einer großen Sammlung auf dem NAS dauert lange, oft einen Tag oder mehr. Die geschätzte Restzeit steht unter dem Fortschrittsbalken. Du kannst die App währenddessen benutzen, mit **Pausieren** anhalten oder die App einfach schließen: Alles bisher Gehashte bleibt gespeichert, auch mitten in einer großen Datei. Nach dem Schließen geht es beim nächsten Start von selbst weiter; nach **Pausieren** erst, wenn du **Fortsetzen** klickst. Danach werden nur noch neue und geänderte Dateien gelesen.",
+          "Die erste Ordnerebene unter einem Stammordner gilt als Ersteller (z. B. „Atlas Miniatures“). Ist dein Ordner anders aufgebaut, schalte **Erste Ordnerebene ist der Ersteller** für diesen Ordner aus.",
+          "Den modelkeeper-Ordner selbst (mit modelkeeper.exe und data) legst du auf den PC, nicht aufs NAS: Auf einer Netzwerkfreigabe kann der Katalog beschädigt werden. Liegt er doch dort, startet die App nicht und sagt dir, was zu tun ist."
         ]
       },
       {
         "id": "find",
         "title": "Modelle finden",
         "body": [
+          "Links findest du die Ansichten deiner Sammlung: **Alle Modelle**, **Zu katalogisieren** (Modelle ohne Tags), **Favoriten** und **Neu hinzugefügt**. Darunter stehen deine **Creator**, die häufigsten **Tags** und die **Speicherorte**. Ein Klick filtert die Liste, ein zweiter Klick hebt den Filter wieder auf. Filter lassen sich kombinieren, z. B. „Zu katalogisieren“ von einem bestimmten Creator.",
           "Das Suchfeld durchsucht Name, Ersteller, Tags, Notizen und Pfade. Die Ergebnisse erscheinen beim Tippen; Wortanfänge genügen („orc war“ findet „Orc Warlord“).",
-          "- **Favoriten** zeigt nur deine Favoriten. Ein Modell machst du mit dem Stern zum Favoriten – in der Liste oder in der Detailansicht.",
-          "- **Filter** öffnet weitere Kriterien: Tag, Ersteller, Ordner, Dateityp, Supports und Druckstatus sowie Häkchen wie **Ohne Tags**, **Duplikate**, **Nur an einem Ort** (keine Sicherung auf NAS oder PC), **Offline**, **Beschädigte Archive**, **Entpackt und als Archiv** (Kandidaten zum Platzsparen), **Fehlende Dateien** und **Nur in deaktivierten Ordnern**.",
-          "- **Liste** und **Raster** schalten zwischen kompakter Liste und Vorschaubildern um.",
-          "Hinweise in der Liste: **an 2 Orten** heißt, das Modell liegt z. B. auf PC und NAS. **fehlen** heißt, Dateien sind seit dem letzten Scan verschwunden. **nur in deaktiviertem Ordner** heißt, die Dateien liegen in einem Ordner, der nicht mehr gescannt wird."
+          "- **Filter** öffnet weitere Kriterien: Tag, Ersteller, Ordner, Dateityp, Supports und Druckstatus sowie Häkchen wie **Duplikate**, **Nur an einem Ort**, **Offline** oder **Beschädigte Archive**. Aktive Filter stehen als Chips unter dem Suchfeld; ✕ entfernt einen.",
+          "- **Sortieren**: nach Name (beim Suchen nach Relevanz) oder **Neu hinzugefügt**.",
+          "- Rechts oben schaltest du zwischen **Raster** und **Liste** um und wählst die **Kachelgröße**.",
+          "- Mit den **Pfeiltasten** bewegst du dich durch die Kacheln, **Pos1**/**Ende** springen an den Anfang und das Ende, **F** macht das gewählte Modell zum Favoriten, **Esc** schließt die Detailansicht. Im Suchfeld führt **Pfeil runter** in die Liste.",
+          "Hinweise auf den Kacheln: **neu** heißt, das Modell hat noch keine Tags. **!** heißt, Dateien sind seit dem letzten Scan verschwunden. In der Listenansicht steht zusätzlich, an wie vielen Orten ein Modell liegt."
+        ]
+      },
+      {
+        "id": "catalog",
+        "title": "Katalogisieren",
+        "body": [
+          "In **Zu katalogisieren** stehen alle Modelle ohne Tags – so arbeitest du die Sammlung nach und nach ab:",
+          "1. Klicke auf das erste Modell. Rechts öffnet sich die Detailansicht, das Tag-Feld hat schon den Cursor.",
+          "2. Tippe Tags ein, mehrere mit Komma getrennt, und drücke **Enter**. Gestrichelte Vorschläge aus den Ordnernamen übernimmst du mit +, alle auf einmal mit **Alle übernehmen**.",
+          "3. Sobald das Modell Tags hat, verschwindet es aus der Liste und das nächste ist ausgewählt. Mit **←**/**→** oder **Überspringen** gehst du weiter, ohne zu taggen.",
+          "Bilder im Modellordner erscheinen in der Detailansicht als Galerie unter dem großen Bild; ein Klick vergrößert sie, **←**/**→** blättert, **Esc** schließt. **Als Vorschaubild verwenden** macht das gezeigte Bild zur Kachel."
         ]
       },
       {
@@ -524,7 +538,8 @@
           "- **Notizen**: werden gespeichert, sobald du das Feld verlässt.",
           "- **Gefunden in** zeigt alle Orte des Modells, **Dateien** alle Dateien mit Variante und identischen Kopien. **Im Explorer zeigen** öffnet den Ordner (bei Dateien in Archiven das Archiv).",
           "Vorschaubilder erzeugt modelkeeper selbst: aus einem Bild im Modellordner, der Vorschau einer 3MF-Datei oder gerendert aus der STL. Über **Vorschaubild ändern** wählst du ein anderes Bild aus dem Modell, ein eigenes Bild (**Bild auswählen…**) oder kehrst mit **Wieder automatisch** zurück.",
-          "**3D-Vorschau** zeigt das Modell drehbar: Ziehen dreht, rechte Maustaste verschiebt, das Mausrad zoomt. **Ansicht als Vorschaubild** speichert die aktuelle Ansicht als Vorschaubild."
+          "**3D-Vorschau** zeigt das Modell drehbar: Ziehen dreht, rechte Maustaste verschiebt, das Mausrad zoomt. **Ansicht als Vorschaubild** speichert die aktuelle Ansicht als Vorschaubild.",
+          "**Im Slicer öffnen** öffnet die wahrscheinlich richtige Datei (zuerst ein Slicer-Projekt, sonst die Hauptdatei); über ▾ wählst du eine andere. Der Slicer bekommt immer eine schreibgeschützte Kopie, nie das Original – er kann in deiner Sammlung nichts überschreiben. Welches Programm verwendet wird, stellst du unter Einstellungen → **Slicer** ein. Speichere Slicer-Projekte an einem eigenen Ort; die Kopien werden nach 7 Tagen entfernt."
         ]
       },
       {
@@ -561,6 +576,7 @@
           "- **Scannen** liest nur neue und geänderte Dateien.",
           "- **Vollprüfung** liest alle Dateien erneut. Sie findet beschädigte oder unbemerkt veränderte Dateien und kann – besonders über das NAS – lange dauern.",
           "- **Modelle erkennen** wendet die Erkennung neu an, ohne Dateien zu lesen.",
+          "- **Pausieren** hält einen laufenden Scan an. Der Ordner wird dann nicht automatisch gescannt (weder live noch nach Zeitplan noch beim Start), bis du **Fortsetzen** klickst. Das bleibt auch nach einem Neustart so. Den laufenden Scan siehst und pausierst du auch links unten in der Seitenleiste.",
           "Unter jedem Ordner stehen Zahlen zu Dateien, Größe, Duplikaten, Archiven und Problemen. **Probleme beim letzten Scan** listet z. B. beschädigte oder passwortgeschützte Archive.",
           "**Hashes teilen**: Scannt jemand anderes denselben Ordner (z. B. dasselbe NAS), kann er deine Hashes **importieren**, statt alles selbst zu lesen. Tags, Notizen und Favoriten sind darin nicht enthalten."
         ]
@@ -581,15 +597,17 @@
         "id": "backup",
         "title": "Backups und Wiederherstellen",
         "body": [
-          "modelkeeper sichert Katalog, Einstellungen und deine selbst gewählten Vorschaubilder automatisch in den Ordner data\\backups:",
-          "- einmal täglich beim Start, wenn sich seit dem letzten Backup etwas geändert hat,",
+          "modelkeeper sichert Katalog, Einstellungen und deine selbst gewählten Vorschaubilder automatisch in den Ordner data\\backups im modelkeeper-Ordner:",
+          "- einmal am Tag, wenn sich seit dem letzten Backup etwas geändert hat – beim Start und auch, wenn die App tagelang offen bleibt,",
           "- vor jedem Update des Katalogs auf eine neue Version,",
           "- vor dem endgültigen Löschen eines Ordners und vor Änderungen an den Dateitypen,",
           "- jederzeit über **Backup jetzt erstellen** (Einstellungen → **Daten & Backups**).",
           "Aufbewahrt werden die 14 neuesten täglichen Backups und alle anderen der letzten 90 Tage, mindestens aber die 3 neuesten. Jedes Backup wird nach dem Schreiben geprüft.",
+          "**Sicherung außerhalb des PCs**: Wähle unter Einstellungen einen zweiten Sicherungsordner, z. B. eine externe Festplatte, deinen Dropbox-Ordner oder eine eigene Freigabe auf dem NAS (nicht den Modellordner). Jedes Backup wird dorthin kopiert, zusammen mit modelkeeper.exe und einer Anleitung (README.txt).",
+          "**Wiederherstellungstest**: Einmal am Tag und nach jedem neuen Backup prüft modelkeeper, ob sich das neueste Backup wirklich wiederherstellen lässt – bevorzugt die Kopie im zweiten Ordner. Das Ergebnis steht in den Einstellungen; schlägt der Test fehl, zeigt die Seitenleiste ein Warnzeichen an **Einstellungen**. Mit **Jetzt testen** prüfst du sofort.",
           "**Wiederherstellen**: Unter **Backups anzeigen und wiederherstellen** ein Backup wählen und **Wiederherstellen…** klicken. Beim nächsten Start ersetzt modelkeeper Katalog, Einstellungen und Vorschaubilder durch den Stand des Backups. Der bisherige Stand wird vorher selbst als Backup abgelegt – so kannst du die Wiederherstellung genauso rückgängig machen.",
-          "Ist der Katalog beim Start beschädigt, hält modelkeeper an, bevor etwas geschrieben wird, und zeigt dir die Backups zum Wiederherstellen.",
-          "Die Backups liegen auf demselben Laufwerk wie die App. Kopiere den ganzen modelkeeper-Ordner deshalb ab und zu auf ein anderes Laufwerk oder in einen Cloud-Ordner – am besten bei geschlossener App. Betreibe modelkeeper auf dem PC, nicht auf dem NAS."
+          "**Neuer PC**: modelkeeper.exe aus dem zweiten Sicherungsordner in einen neuen Ordner kopieren, darin data\\backups anlegen, den gewünschten Backup-Ordner hineinkopieren und modelkeeper starten. Die App bietet das Backup zum Wiederherstellen an.",
+          "Ist der Katalog beim Start beschädigt, hält modelkeeper an, bevor etwas geschrieben wird, und zeigt dir die Backups zum Wiederherstellen."
         ]
       },
       {
@@ -599,6 +617,8 @@
           "- **Sprache**: Deutsch, Englisch oder wie das System.",
           "- **NAS-Ordner automatisch neu scannen**: wie oft NAS-Ordner geprüft werden. Ein manueller Scan setzt die Zeit zurück.",
           "- **Daten & Backups**: wo die Daten liegen, Backups erstellen und wiederherstellen.",
+          "- **Slicer**: welches Programm **Im Slicer öffnen** verwendet. Ohne Auswahl nimmt Windows das Programm, das zum Dateityp gehört.",
+          "- **Sicherung außerhalb des PCs**: zweiter Sicherungsordner und Wiederherstellungstest.",
           "- **Dateitypen**: welche Dateien katalogisiert werden. Entfernst du einen Typ, verschwinden dessen Einträge aus dem Katalog – die Dateien selbst bleiben unberührt; vorher entsteht ein Backup.",
           "- **Modellerkennung**: **Teile-Ordner** werden dem Modell darüber zugeordnet, **Größenvarianten** (z. B. S_Orc, Orc_XL) als Varianten erkannt. Deine Korrekturen bleiben erhalten."
         ]
@@ -608,6 +628,8 @@
         "title": "Häufige Fragen",
         "body": [
           "**Verändert modelkeeper meine Dateien?** Nein. Die App liest Modelldateien nur. Geschrieben wird ausschließlich im eigenen Ordner data neben der modelkeeper.exe.",
+          "**Kann der Slicer meine Dateien verändern?** Nein. **Im Slicer öffnen** übergibt immer eine schreibgeschützte Kopie aus data\\open, nie die Datei aus deiner Sammlung.",
+          "**Ist Hashen gefährlich für meine Dateien?** Nein. Beim Hashen werden Dateien nur gelesen. Pausieren, Schließen der App oder ein Absturz können keine Datei beschädigen; der Scan macht danach an derselben Stelle weiter.",
           "**Ich habe einen Ordner verschoben – sind meine Tags weg?** Nein. Verschobene Dateien werden am Hash wiedererkannt; Tags, Notizen und Status bleiben am Modell, sobald der neue Ort gescannt ist.",
           "**Was bedeutet „2 fehlen“?** Diese Dateien waren beim letzten Scan nicht mehr da. Hast du sie verschoben, ist der Hinweis nach dem Scan des neuen Orts weg. Der Filter **Fehlende Dateien** zeigt alle betroffenen Modelle.",
           "**Wo liegen meine Daten?** Im Ordner data neben der modelkeeper.exe: Katalog, Einstellungen, Vorschaubilder, Backups und ein Protokoll (modelkeeper.log). **Datenordner öffnen** in den Einstellungen zeigt ihn.",
@@ -663,7 +685,7 @@
   "empty": {
     "libraryTitle": "Noch keine Modelle",
     "noFolders": "Füge unter „Ordner“ deine Modellordner hinzu, lokal oder auf dem NAS, und starte einen Scan.",
-    "notScanned": "Starte unter „Ordner“ einen Scan. Gefundene Modelle erscheinen hier, während der Scan noch läuft.",
+    "notScanned": "Starte unter „Ordner“ einen Scan. Die Modelle erscheinen, sobald der Scan eines Ordners durchgelaufen ist – beim ersten Scan einer großen Sammlung auf dem NAS kann das dauern.",
     "catalogedTitle": "Alles katalogisiert",
     "cataloged": "Jedes Modell hat mindestens einen Tag.",
     "clearSearch": "Suche und Filter zurücksetzen"
