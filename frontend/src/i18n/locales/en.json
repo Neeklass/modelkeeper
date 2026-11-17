@@ -88,7 +88,14 @@
     "rootRemoved": "The folder {{path}} is deactivated. Add it again to use it.",
     "rootNotRemoved": "{{path}} is not deactivated. Only deactivated folders can be deleted permanently.",
     "purgeCountChanged": "The number of affected models has changed (now {{count}}). Please check it again.",
-    "rootOverlapRemoved": "{{path}} overlaps with the deactivated folder {{other}}. Reactivate {{other}} or delete it permanently from the catalog before adding this folder."
+    "rootOverlapRemoved": "{{path}} overlaps with the deactivated folder {{other}}. Reactivate {{other}} or delete it permanently from the catalog before adding this folder.",
+    "dataDirOnNetwork": "The modelkeeper folder is on a network drive ({{path}}). The catalog can be damaged there, because SQLite cannot lock reliably over network shares. Copy the whole modelkeeper folder to the PC, e.g. to C:\\modelkeeper, and start it from there. The models themselves may stay on the NAS.",
+    "openCopy": "{{name}} could not be copied for the slicer: {{detail}}",
+    "openProgram": "The program for {{name}} could not be started: {{detail}}",
+    "fileOffline": "{{name}} is in a folder that cannot be reached right now.",
+    "fileNotFound": "{{name}} was not found. It may have been moved; a scan brings the catalog up to date.",
+    "fileTooLargeToCopy": "{{name}} is too large to copy out of the archive. Extract the archive yourself and open the file directly.",
+    "fileEncrypted": "{{name}} is in a password-protected archive."
   },
   "roots": {
     "title": "Root folders",
@@ -151,7 +158,7 @@
     "issues_other": "{{count}} problems in the last scan",
     "result": {
       "done": "Scan finished: {{new}} new, {{changed}} changed, {{missing}} missing, {{hashed}} hashed.",
-      "cancelled": "Scan cancelled. Progress so far is saved: {{new}} new, {{hashed}} hashed.",
+      "cancelled": "Scan paused. Progress so far is saved: {{new}} new, {{hashed}} hashed. \"Resume\" continues from there.",
       "offline": "Scan not possible.",
       "failed": "Scan failed.",
       "fullDone": "Full check finished: {{hashed}} files and {{archives}} archives checked."
@@ -179,7 +186,14 @@
     "fullCheckConfirm": "Read every file of this folder again? This finds damaged or silently changed files and can take a while.",
     "fullCheckConfirmNas": "Read every file of this NAS folder again? Over the network this can take hours. You can cancel at any time; nothing is lost.",
     "hashChanged_one": "{{n}} file changed although its size and date did not: possibly damaged, see the problems list.",
-    "hashChanged_other": "{{n}} files changed although their size and date did not: possibly damaged, see the problems list."
+    "hashChanged_other": "{{n}} files changed although their size and date did not: possibly damaged, see the problems list.",
+    "pause": "Pause",
+    "pauseHint": "Stops the scan. Everything hashed so far is kept, even inside large files. Until you resume, the folder is not scanned automatically, not even after a restart.",
+    "resume": "Resume",
+    "resumeHint": "Continues the paused scan where it stopped.",
+    "paused": "Paused",
+    "pausedHint": "The scan is paused. This folder is not scanned automatically until you resume it.",
+    "eta": "about {{time}} left"
   },
   "stats": {
     "files": "Files",
@@ -230,7 +244,13 @@
     "inactiveNotice": "This model's files are only in deactivated folders. They are no longer scanned; add the folder again to check them.",
     "rootRemoved": "deactivated",
     "orphanedScope": "Only models that lose their last location when {{path}} is deleted permanently.",
-    "orphanedScopeClear": "Show all models"
+    "orphanedScopeClear": "Show all models",
+    "untaggedBadge": "new",
+    "showCreator": "All models by {{name}}",
+    "prev": "Previous model",
+    "next": "Next model",
+    "position": "{{i}} of {{n}}",
+    "showInExplorerShort": "Explorer"
   },
   "supports": {
     "presupported": "Presupported",
@@ -284,7 +304,8 @@
     "added_other": "Tagged {{count}} models with {{tags}}.",
     "removed_one": "Removed {{tags}} from {{count}} model.",
     "removed_other": "Removed {{tags}} from {{count}} models.",
-    "invalid": "Tags must not be empty and can have at most {{max}} characters."
+    "invalid": "Tags must not be empty and can have at most {{max}} characters.",
+    "acceptAll": "Accept all"
   },
   "printStatus": {
     "not_printed": "Not printed",
@@ -314,12 +335,17 @@
     "missing": "Missing files",
     "missingHint": "Files disappeared since the last scan",
     "inactive": "Only in deactivated folders",
-    "inactiveHint": "All files are in deactivated folders that are no longer scanned"
+    "inactiveHint": "All files are in deactivated folders that are no longer scanned",
+    "remove": "Remove filter {{name}}"
   },
   "views": {
     "label": "View",
     "list": "List",
-    "grid": "Grid"
+    "grid": "Grid",
+    "size": "Tile size",
+    "size_s": "Small",
+    "size_m": "Medium",
+    "size_l": "Large"
   },
   "thumbs": {
     "none": "No thumbnail yet",
@@ -334,7 +360,9 @@
       "image": "Image from the model folder",
       "embedded": "Preview from the 3MF file",
       "rendered": "Rendered from the STL"
-    }
+    },
+    "current": "Thumbnail",
+    "fromViewHint": "Tip: in the 3D preview you can also use the current view as the thumbnail."
   },
   "preview": {
     "show": "3D preview",
@@ -429,7 +457,27 @@
     "restoreConfirm": "Restore at next start",
     "title": "Data & backups",
     "restoreTitle": "Restore a backup",
-    "restoreByHand": "Restore by hand"
+    "restoreByHand": "Restore by hand",
+    "externalInDataDir": "{{path}} is inside the modelkeeper folder or contains it. Choose a folder on another drive or in the cloud.",
+    "externalInRoot": "{{path}} is inside a model folder ({{root}}). modelkeeper never writes into model folders. Choose another folder.",
+    "nothingToCheck": "There is no backup to check yet.",
+    "checkFailedShort": "The last restore test failed.",
+    "externalTitle": "Backup outside this PC",
+    "externalIntro": "The backups above are on the same drive as the app. If the PC breaks, they are gone with it. So choose a second folder, e.g. an external drive, your Dropbox folder or a separate share on the NAS. Every backup is copied there automatically, together with modelkeeper.exe and instructions for restoring.",
+    "externalFolder": "Second backup folder",
+    "externalNone": "not set up",
+    "externalChoose": "Choose folder…",
+    "externalChange": "Choose another folder…",
+    "externalOpen": "Open folder",
+    "externalOff": "Stop copying",
+    "checkTitle": "Restore test",
+    "checkOk": "Last checked {{when}}: backup {{name}} can be restored ({{models}} models, {{tags}} tags).",
+    "checkOkExternal": "Last checked {{when}}: the copy {{name}} in the second backup folder can be restored ({{models}} models, {{tags}} tags).",
+    "checkFailed": "Test of {{when}} failed: {{problem}}",
+    "checkNone": "No test has run yet.",
+    "checkNow": "Test now",
+    "checking": "Testing…",
+    "checkHint": "Once a day and after every new backup, modelkeeper checks the newest backup (preferably the copy in the second folder): its files must be unchanged, a copy of the catalog must pass the full integrity check, and the numbers of models and tags must match. The backup itself is only read."
   },
   "confirm": {
     "cancel": "Cancel",
@@ -567,5 +615,63 @@
         ]
       }
     ]
+  },
+  "duration": {
+    "lessThanMinute": "< 1 min",
+    "minutes": "{{m}} min",
+    "hours": "{{h}} h {{m}} min",
+    "days": "{{d}} days {{h}} h"
+  },
+  "slicer": {
+    "title": "Slicer",
+    "program": "Program",
+    "systemDefault": "the program Windows uses for the file type",
+    "choose": "Choose slicer…",
+    "useDefault": "Use the default program",
+    "hint": "\"Open in slicer\" always gives the slicer a read-only copy (in the modelkeeper folder under data\\open), never the original file. So the slicer cannot overwrite anything in your collection. Copies are removed after 7 days; what you save next to them yourself stays.",
+    "open": "Open in slicer",
+    "openShort": "Slicer",
+    "openHint": "Opens a read-only copy in the slicer. The original stays untouched.",
+    "chooseFile": "Choose another file",
+    "opened": "{{name}} was opened in the slicer as a copy. Save slicer projects somewhere of your own."
+  },
+  "nav": {
+    "label": "Navigation",
+    "all": "All models",
+    "untagged": "To catalog",
+    "untaggedHint": "Models without tags",
+    "favorites": "Favorites",
+    "newest": "Recently added",
+    "creators": "Creators",
+    "tags": "Tags",
+    "locations": "Locations",
+    "filterList": "Filter…",
+    "showAll": "Show all {{n}}",
+    "showLess": "Show less"
+  },
+  "sort": {
+    "label": "Sort",
+    "name": "Name",
+    "relevance": "Relevance",
+    "newest": "Recently added"
+  },
+  "catalogMode": {
+    "hint": "Cataloging: pick a model, type tags and press Enter. As soon as a model has tags, it leaves this list and the next one is up. ← and → move on without tagging.",
+    "detailHint": "Enter adds the tags, then the next model follows.",
+    "skip": "Skip"
+  },
+  "empty": {
+    "libraryTitle": "No models yet",
+    "noFolders": "Add your model folders under \"Folders\", local or on the NAS, and start a scan.",
+    "notScanned": "Start a scan under \"Folders\". Models found appear here while the scan is still running.",
+    "catalogedTitle": "Everything cataloged",
+    "cataloged": "Every model has at least one tag.",
+    "clearSearch": "Reset search and filters"
+  },
+  "gallery": {
+    "enlarge": "Enlarge",
+    "useAsThumbnail": "Use as thumbnail",
+    "prev": "Previous picture",
+    "next": "Next picture"
   }
 }

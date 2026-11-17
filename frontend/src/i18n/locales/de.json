@@ -88,7 +88,14 @@
     "rootRemoved": "Der Ordner {{path}} ist deaktiviert. Füge ihn wieder hinzu, um ihn zu nutzen.",
     "rootNotRemoved": "{{path}} ist nicht deaktiviert. Nur deaktivierte Ordner können endgültig gelöscht werden.",
     "purgeCountChanged": "Die Zahl der betroffenen Modelle hat sich geändert (jetzt {{count}}). Bitte prüfe sie erneut.",
-    "rootOverlapRemoved": "{{path}} überschneidet sich mit dem deaktivierten Ordner {{other}}. Reaktiviere {{other}} oder lösche ihn endgültig aus dem Katalog, bevor du diesen Ordner hinzufügst."
+    "rootOverlapRemoved": "{{path}} überschneidet sich mit dem deaktivierten Ordner {{other}}. Reaktiviere {{other}} oder lösche ihn endgültig aus dem Katalog, bevor du diesen Ordner hinzufügst.",
+    "dataDirOnNetwork": "Der modelkeeper-Ordner liegt auf einem Netzlaufwerk ({{path}}). Dort kann der Katalog beschädigt werden, weil SQLite über Netzwerkfreigaben nicht zuverlässig sperrt. Kopiere den ganzen modelkeeper-Ordner auf den PC, z. B. nach C:\\modelkeeper, und starte ihn von dort. Die Modelle selbst dürfen auf dem NAS bleiben.",
+    "openCopy": "{{name}} konnte nicht für den Slicer kopiert werden: {{detail}}",
+    "openProgram": "Das Programm für {{name}} konnte nicht gestartet werden: {{detail}}",
+    "fileOffline": "{{name}} liegt in einem Ordner, der gerade nicht erreichbar ist.",
+    "fileNotFound": "{{name}} wurde nicht gefunden. Vielleicht wurde die Datei verschoben; ein Scan bringt den Katalog auf den neuesten Stand.",
+    "fileTooLargeToCopy": "{{name}} ist zu groß, um es aus dem Archiv zu kopieren. Entpacke das Archiv selbst und öffne die Datei direkt.",
+    "fileEncrypted": "{{name}} liegt in einem passwortgeschützten Archiv."
   },
   "roots": {
     "title": "Stammordner",
@@ -151,7 +158,7 @@
     "issues_other": "{{count}} Probleme beim letzten Scan",
     "result": {
       "done": "Scan abgeschlossen: {{new}} neu, {{changed}} geändert, {{missing}} fehlen, {{hashed}} gehasht.",
-      "cancelled": "Scan abgebrochen. Der bisherige Fortschritt ist gespeichert: {{new}} neu, {{hashed}} gehasht.",
+      "cancelled": "Scan pausiert. Der bisherige Fortschritt ist gespeichert: {{new}} neu, {{hashed}} gehasht. „Fortsetzen“ macht dort weiter.",
       "offline": "Scan nicht möglich.",
       "failed": "Scan fehlgeschlagen.",
       "fullDone": "Vollprüfung abgeschlossen: {{hashed}} Dateien und {{archives}} Archive geprüft."
@@ -179,7 +186,14 @@
     "fullCheckConfirm": "Alle Dateien dieses Ordners erneut lesen? Das findet beschädigte oder unbemerkt veränderte Dateien und kann eine Weile dauern.",
     "fullCheckConfirmNas": "Alle Dateien dieses NAS-Ordners erneut lesen? Über das Netzwerk kann das Stunden dauern. Abbrechen ist jederzeit möglich, es geht nichts verloren.",
     "hashChanged_one": "{{n}} Datei hat sich verändert, obwohl Größe und Datum gleich sind: möglicherweise beschädigt, siehe Problemliste.",
-    "hashChanged_other": "{{n}} Dateien haben sich verändert, obwohl Größe und Datum gleich sind: möglicherweise beschädigt, siehe Problemliste."
+    "hashChanged_other": "{{n}} Dateien haben sich verändert, obwohl Größe und Datum gleich sind: möglicherweise beschädigt, siehe Problemliste.",
+    "pause": "Pausieren",
+    "pauseHint": "Hält den Scan an. Alles bisher Gehashte bleibt gespeichert, auch mitten in großen Dateien. Bis du fortsetzt, wird der Ordner nicht automatisch gescannt, auch nicht nach einem Neustart.",
+    "resume": "Fortsetzen",
+    "resumeHint": "Setzt den pausierten Scan dort fort, wo er angehalten wurde.",
+    "paused": "Pausiert",
+    "pausedHint": "Der Scan ist pausiert. Dieser Ordner wird nicht automatisch gescannt, bis du ihn fortsetzt.",
+    "eta": "noch etwa {{time}}"
   },
   "stats": {
     "files": "Dateien",
@@ -230,7 +244,13 @@
     "inactiveNotice": "Die Dateien dieses Modells liegen nur in deaktivierten Ordnern. Sie werden nicht mehr gescannt; füge den Ordner wieder hinzu, um sie zu prüfen.",
     "rootRemoved": "deaktiviert",
     "orphanedScope": "Nur Modelle, die beim endgültigen Löschen von {{path}} ihren letzten Ort verlieren.",
-    "orphanedScopeClear": "Alle Modelle zeigen"
+    "orphanedScopeClear": "Alle Modelle zeigen",
+    "untaggedBadge": "neu",
+    "showCreator": "Alle Modelle von {{name}}",
+    "prev": "Vorheriges Modell",
+    "next": "Nächstes Modell",
+    "position": "{{i}} von {{n}}",
+    "showInExplorerShort": "Explorer"
   },
   "supports": {
     "presupported": "Vorgestützt",
@@ -284,7 +304,8 @@
     "added_other": "{{count}} Modelle mit {{tags}} getaggt.",
     "removed_one": "{{tags}} von {{count}} Modell entfernt.",
     "removed_other": "{{tags}} von {{count}} Modellen entfernt.",
-    "invalid": "Tags dürfen nicht leer sein und höchstens {{max}} Zeichen haben."
+    "invalid": "Tags dürfen nicht leer sein und höchstens {{max}} Zeichen haben.",
+    "acceptAll": "Alle übernehmen"
   },
   "printStatus": {
     "not_printed": "Nicht gedruckt",
@@ -314,12 +335,17 @@
     "missing": "Fehlende Dateien",
     "missingHint": "Dateien sind seit dem letzten Scan verschwunden",
     "inactive": "Nur in deaktivierten Ordnern",
-    "inactiveHint": "Alle Dateien liegen in deaktivierten Ordnern, die nicht mehr gescannt werden"
+    "inactiveHint": "Alle Dateien liegen in deaktivierten Ordnern, die nicht mehr gescannt werden",
+    "remove": "Filter {{name}} entfernen"
   },
   "views": {
     "label": "Ansicht",
     "list": "Liste",
-    "grid": "Raster"
+    "grid": "Raster",
+    "size": "Kachelgröße",
+    "size_s": "Klein",
+    "size_m": "Mittel",
+    "size_l": "Groß"
   },
   "thumbs": {
     "none": "Noch kein Vorschaubild",
@@ -334,7 +360,9 @@
       "image": "Bild aus dem Modellordner",
       "embedded": "Vorschau aus der 3MF-Datei",
       "rendered": "Aus der STL gerendert"
-    }
+    },
+    "current": "Vorschaubild",
+    "fromViewHint": "Tipp: In der 3D-Vorschau kannst du auch die aktuelle Ansicht als Vorschaubild verwenden."
   },
   "preview": {
     "show": "3D-Vorschau",
@@ -429,7 +457,27 @@
     "restoreConfirm": "Beim nächsten Start wiederherstellen",
     "title": "Daten & Backups",
     "restoreTitle": "Backup wiederherstellen",
-    "restoreByHand": "Von Hand wiederherstellen"
+    "restoreByHand": "Von Hand wiederherstellen",
+    "externalInDataDir": "{{path}} liegt im modelkeeper-Ordner oder enthält ihn. Wähle einen Ordner auf einem anderen Laufwerk oder in der Cloud.",
+    "externalInRoot": "{{path}} liegt in einem Modellordner ({{root}}). modelkeeper schreibt nie in die Modellordner. Wähle einen anderen Ordner.",
+    "nothingToCheck": "Es gibt noch keine Sicherung, die geprüft werden kann.",
+    "checkFailedShort": "Der letzte Wiederherstellungstest ist fehlgeschlagen.",
+    "externalTitle": "Sicherung außerhalb des PCs",
+    "externalIntro": "Die Sicherungen oben liegen auf demselben Laufwerk wie die App. Wenn der PC kaputtgeht, sind sie mit weg. Wähle deshalb einen zweiten Ordner, z. B. eine externe Festplatte, den Dropbox-Ordner oder eine eigene Freigabe auf dem NAS. Jede Sicherung wird automatisch dorthin kopiert, zusammen mit modelkeeper.exe und einer Anleitung zum Wiederherstellen.",
+    "externalFolder": "Zweiter Sicherungsordner",
+    "externalNone": "nicht eingerichtet",
+    "externalChoose": "Ordner wählen…",
+    "externalChange": "Anderen Ordner wählen…",
+    "externalOpen": "Ordner öffnen",
+    "externalOff": "Nicht mehr kopieren",
+    "checkTitle": "Wiederherstellungstest",
+    "checkOk": "Zuletzt geprüft {{when}}: Sicherung {{name}} lässt sich wiederherstellen ({{models}} Modelle, {{tags}} Tags).",
+    "checkOkExternal": "Zuletzt geprüft {{when}}: Die Kopie {{name}} im zweiten Sicherungsordner lässt sich wiederherstellen ({{models}} Modelle, {{tags}} Tags).",
+    "checkFailed": "Test vom {{when}} fehlgeschlagen: {{problem}}",
+    "checkNone": "Noch kein Test gelaufen.",
+    "checkNow": "Jetzt testen",
+    "checking": "Wird getestet…",
+    "checkHint": "Einmal am Tag und nach jeder neuen Sicherung prüft modelkeeper die neueste Sicherung (bevorzugt die Kopie im zweiten Ordner): Die Dateien müssen unverändert sein, eine Kopie des Katalogs muss die vollständige Integritätsprüfung bestehen, und die Zahl der Modelle und Tags muss stimmen. Die Sicherung selbst wird dabei nur gelesen."
   },
   "confirm": {
     "cancel": "Abbrechen",
@@ -567,5 +615,63 @@
         ]
       }
     ]
+  },
+  "duration": {
+    "lessThanMinute": "< 1 Min.",
+    "minutes": "{{m}} Min.",
+    "hours": "{{h}} Std. {{m}} Min.",
+    "days": "{{d}} Tage {{h}} Std."
+  },
+  "slicer": {
+    "title": "Slicer",
+    "program": "Programm",
+    "systemDefault": "Standardprogramm von Windows für den Dateityp",
+    "choose": "Slicer wählen…",
+    "useDefault": "Standardprogramm verwenden",
+    "hint": "„Im Slicer öffnen“ übergibt dem Slicer immer eine schreibgeschützte Kopie (im modelkeeper-Ordner unter data\\open), nie die Originaldatei. So kann der Slicer nichts in deiner Sammlung überschreiben. Kopien werden nach 7 Tagen entfernt; was du selbst daneben speicherst, bleibt.",
+    "open": "Im Slicer öffnen",
+    "openShort": "Slicer",
+    "openHint": "Öffnet eine schreibgeschützte Kopie im Slicer. Das Original bleibt unberührt.",
+    "chooseFile": "Andere Datei wählen",
+    "opened": "{{name}} wurde als Kopie im Slicer geöffnet. Speichere Slicer-Projekte an einem eigenen Ort."
+  },
+  "nav": {
+    "label": "Navigation",
+    "all": "Alle Modelle",
+    "untagged": "Zu katalogisieren",
+    "untaggedHint": "Modelle ohne Tags",
+    "favorites": "Favoriten",
+    "newest": "Neu hinzugefügt",
+    "creators": "Creator",
+    "tags": "Tags",
+    "locations": "Speicherorte",
+    "filterList": "Filtern…",
+    "showAll": "Alle {{n}} anzeigen",
+    "showLess": "Weniger anzeigen"
+  },
+  "sort": {
+    "label": "Sortieren",
+    "name": "Name",
+    "relevance": "Relevanz",
+    "newest": "Neu hinzugefügt"
+  },
+  "catalogMode": {
+    "hint": "Katalogisieren: Modell wählen, Tags eintippen und mit Enter bestätigen. Sobald ein Modell Tags hat, verschwindet es aus dieser Liste und das nächste ist dran. Mit ← und → wechselst du ohne Taggen.",
+    "detailHint": "Enter übernimmt die Tags, danach geht es mit dem nächsten Modell weiter.",
+    "skip": "Überspringen"
+  },
+  "empty": {
+    "libraryTitle": "Noch keine Modelle",
+    "noFolders": "Füge unter „Ordner“ deine Modellordner hinzu, lokal oder auf dem NAS, und starte einen Scan.",
+    "notScanned": "Starte unter „Ordner“ einen Scan. Gefundene Modelle erscheinen hier, während der Scan noch läuft.",
+    "catalogedTitle": "Alles katalogisiert",
+    "cataloged": "Jedes Modell hat mindestens einen Tag.",
+    "clearSearch": "Suche und Filter zurücksetzen"
+  },
+  "gallery": {
+    "enlarge": "Vergrößern",
+    "useAsThumbnail": "Als Vorschaubild verwenden",
+    "prev": "Vorheriges Bild",
+    "next": "Nächstes Bild"
   }
 }
