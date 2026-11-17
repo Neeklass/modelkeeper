@@ -123,3 +123,33 @@ func TestOpenVanishedFile(t *testing.T) {
 		t.Errorf("err %v, want ErrNotFound", err)
 	}
 }
+
+// LookupAny serves every file type and size (for opening a copy in another
+// program), but still not missing or offline files.
+func TestLookupAny(t *testing.T) {
+	f := setup(t)
+	ctx := context.Background()
+	for name, id := range map[string]int64{"text file": f.txt, "large file": f.huge, "member": f.member} {
+		if _, err := LookupAny(ctx, f.db, id); err != nil {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+	for name, c := range map[string]struct {
+		id   int64
+		want error
+	}{
+		"not present": {f.gone, ErrNotFound},
+		"offline":     {f.remote, ErrOffline},
+	} {
+		if _, err := LookupAny(ctx, f.db, c.id); !errors.Is(err, c.want) {
+			t.Errorf("%s: err %v, want %v", name, err, c.want)
+		}
+	}
+	s, err := LookupAny(ctx, f.db, f.member)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !s.InArchive || read(t, s) != "v 0 0 0" {
+		t.Errorf("member: %+v", s)
+	}
+}

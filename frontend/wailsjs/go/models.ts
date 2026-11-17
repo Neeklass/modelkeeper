@@ -1,3 +1,34 @@
+export namespace backup {
+	
+	export class RestoreCheck {
+	    time: number;
+	    snapshot: string;
+	    path: string;
+	    external: boolean;
+	    ok: boolean;
+	    problem?: string;
+	    models: number;
+	    tags: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new RestoreCheck(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.time = source["time"];
+	        this.snapshot = source["snapshot"];
+	        this.path = source["path"];
+	        this.external = source["external"];
+	        this.ok = source["ok"];
+	        this.problem = source["problem"];
+	        this.models = source["models"];
+	        this.tags = source["tags"];
+	    }
+	}
+
+}
+
 export namespace catalog {
 	
 	export class FileTypesChange {
@@ -313,6 +344,7 @@ export namespace catalog {
 	    missing: boolean;
 	    inactive: boolean;
 	    orphanedBy: number;
+	    sort: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelQuery(source);
@@ -337,6 +369,7 @@ export namespace catalog {
 	        this.missing = source["missing"];
 	        this.inactive = source["inactive"];
 	        this.orphanedBy = source["orphanedBy"];
+	        this.sort = source["sort"];
 	    }
 	}
 	
@@ -400,6 +433,7 @@ export namespace catalog {
 	    lastScanAt?: number;
 	    removedAt?: number;
 	    live: boolean;
+	    scanPaused: boolean;
 	    reactivated?: boolean;
 	
 	    static createFrom(source: any = {}) {
@@ -416,6 +450,7 @@ export namespace catalog {
 	        this.lastScanAt = source["lastScanAt"];
 	        this.removedAt = source["removedAt"];
 	        this.live = source["live"];
+	        this.scanPaused = source["scanPaused"];
 	        this.reactivated = source["reactivated"];
 	    }
 	}
@@ -527,6 +562,9 @@ export namespace main {
 	    backupBytes: number;
 	    pendingRestore: string;
 	    notice?: msg.Msg;
+	    slicerPath: string;
+	    externalBackupDir: string;
+	    lastRestoreTest?: backup.RestoreCheck;
 	    starting: boolean;
 	
 	    static createFrom(source: any = {}) {
@@ -544,6 +582,9 @@ export namespace main {
 	        this.backupBytes = source["backupBytes"];
 	        this.pendingRestore = source["pendingRestore"];
 	        this.notice = this.convertValues(source["notice"], msg.Msg);
+	        this.slicerPath = source["slicerPath"];
+	        this.externalBackupDir = source["externalBackupDir"];
+	        this.lastRestoreTest = this.convertValues(source["lastRestoreTest"], backup.RestoreCheck);
 	        this.starting = source["starting"];
 	    }
 	

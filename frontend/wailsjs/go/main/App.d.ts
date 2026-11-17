@@ -5,6 +5,7 @@ import {main} from '../models';
 import {hashshare} from '../models';
 import {scanner} from '../models';
 import {thumbs} from '../models';
+import {backup} from '../models';
 import {settings} from '../models';
 
 export function AddRoot(arg1:string):Promise<catalog.Root>;
@@ -108,3 +109,19 @@ export function StartScan(arg1:number):Promise<void>;
 export function StartWithEmptyCatalog():Promise<void>;
 
 export function UpdateModel(arg1:number,arg2:catalog.ModelUpdate):Promise<void>;
+
+export function PauseScan(arg1:number):Promise<void>;
+
+export function OpenInSlicer(arg1:number):Promise<void>;
+
+export function ChooseSlicer():Promise<string>;
+
+export function ClearSlicer():Promise<void>;
+
+export function ChooseExternalBackupDir():Promise<string>;
+
+export function ClearExternalBackupDir():Promise<void>;
+
+export function CheckRestoreNow():Promise<backup.RestoreCheck>;
+
+export function OpenExternalBackupDir():Promise<void>;

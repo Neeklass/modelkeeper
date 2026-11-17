@@ -59,6 +59,9 @@ type ModelQuery struct {
 	// OrphanedBy: models that deleting this (deactivated) root permanently
 	// would leave without a location (PurgeImpact).
 	OrphanedBy int64 `json:"orphanedBy"`
+	// Sort: "" = by name (by relevance while searching), "newest" = most
+	// recently added first.
+	Sort string `json:"sort"`
 }
 
 // Deactivated roots (E9) in these queries: the catalog still knows what lies
@@ -88,6 +91,9 @@ func (q ModelQuery) where() (from, order string, args []any) {
 		conds = append(conds, `model_fts MATCH ?`)
 		args = append(args, fts)
 		order = `ORDER BY bm25(model_fts, 10, 5, 5, 1, 1), m.name COLLATE NOCASE`
+	}
+	if q.Sort == "newest" {
+		order = `ORDER BY m.created_at DESC, m.id DESC`
 	}
 	if q.Untagged {
 		conds = append(conds, `NOT EXISTS (SELECT 1 FROM model_tag mt WHERE mt.model_id = m.id)`)

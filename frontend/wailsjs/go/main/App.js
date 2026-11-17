@@ -205,3 +205,35 @@ export function StartWithEmptyCatalog() {
 export function UpdateModel(arg1, arg2) {
   return window['go']['main']['App']['UpdateModel'](arg1, arg2);
 }
+
+export function PauseScan(arg1) {
+  return window['go']['main']['App']['PauseScan'](arg1);
+}
+
+export function OpenInSlicer(arg1) {
+  return window['go']['main']['App']['OpenInSlicer'](arg1);
+}
+
+export function ChooseSlicer() {
+  return window['go']['main']['App']['ChooseSlicer']();
+}
+
+export function ClearSlicer() {
+  return window['go']['main']['App']['ClearSlicer']();
+}
+
+export function ChooseExternalBackupDir() {
+  return window['go']['main']['App']['ChooseExternalBackupDir']();
+}
+
+export function ClearExternalBackupDir() {
+  return window['go']['main']['App']['ClearExternalBackupDir']();
+}
+
+export function CheckRestoreNow() {
+  return window['go']['main']['App']['CheckRestoreNow']();
+}
+
+export function OpenExternalBackupDir() {
+  return window['go']['main']['App']['OpenExternalBackupDir']();
+}

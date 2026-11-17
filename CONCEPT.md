@@ -1,7 +1,10 @@
 # modelkeeper – Concept
 
-Desktop app for cataloging, tagging and searching 3D printing models (resin) that are spread
-across the local PC, a Fritz!NAS and (as purchase origin) MyMiniFactory.
+Desktop app for cataloging, tagging and searching 3D printing models (resin) that live mainly on a
+NAS, partly on the local PC, and (as purchase origin) on MyMiniFactory.
+
+Priorities, in this order: model files are never changed or damaged; the app is pleasant to use for
+browsing and cataloging; it adds real value over a file manager.
 
 Date: 2026-11-08 · Status: agreed, ready for implementation
 
@@ -67,7 +70,9 @@ Override  (manual corrections of model detection, survive rescans)
 ## E – Sources
 
 - **E1** Local folders are scanned recursively.
-- **E2** Fritz!NAS via SMB path (`\\fritz.nas\…` or mapped drive), treated like a folder.
+- **E2** NAS via SMB path (`\\fritz.nas\…` or mapped drive), treated like a folder. The NAS is the main
+  storage; being offline is a normal state: browsing, searching and tagging work without it (thumbnails
+  are local), only the 3D preview, pictures, "Open in slicer" and "Show in Explorer" need it.
 - **E3** NAS unreachable → entries remain, status "offline".
 - **E4** Local folders: live watching (`fsnotify`). NAS: manual or scheduled rescan.
 - **E5** MyMiniFactory is an **origin** ("purchased at"), not a storage location.
@@ -87,7 +92,11 @@ Override  (manual corrections of model detection, survive rescans)
 
 ## F – Scanning & Model Detection
 
-- **F1** Scanning runs in the background with a progress indicator; the app stays usable.
+- **F1** Scanning runs in the background with a progress indicator and the estimated time left; the app
+  stays usable. A scan can be **paused** per root folder: work done so far stays (also inside large
+  files), and the root is not scanned automatically (live, schedule, start) until the user resumes it,
+  also across restarts. A scan stopped by closing the app or a crash continues by itself at the next start.
+  Hashing is always done by the app itself (no NAS-side helper), reading files only.
 - **F2** Rescans only process new/changed files (criteria: path + size + modification time).
 - **F3** Only new/changed files are hashed.
 - **F4** Model detection: **the app suggests, the user decides.**
@@ -134,9 +143,16 @@ Override  (manual corrections of model detection, survive rescans)
 - **H2** Filters: tag, location, creator, file type, online/offline, duplicates, single-location only,
   print status, supports, broken archives, "exists both extracted **and** as archive" (space-saving candidates),
   only in deactivated root folders (E9).
-- **H3** Grid view (thumbnails) and list view.
-- **H4** Detail view: rotatable 3D preview, variants, all files, all locations.
-- **H5** "Show in Explorer" action. No slicer integration.
+- **H3** Grid view (thumbnails, three tile sizes; default) and list view. A sidebar offers the views
+  *All models*, *To catalog* (untagged, G4), *Favorites*, *Recently added*, and creators, tags and
+  locations as one-click filters. Active filters are shown as removable chips. Keyboard: arrows,
+  Home/End, F (favorite), Esc.
+- **H4** Detail view: large picture with a gallery of the model's pictures (lightbox), rotatable 3D
+  preview, variants, all files, all locations; previous/next model. In *To catalog*, the tag field has
+  the focus and a model that got tags is replaced by the next one.
+- **H5** "Show in Explorer" and **"Open in slicer"**: the slicer (chosen in the settings, or the
+  program associated with the file type) always gets a fresh read-only copy in `data\open`, never the
+  original (J1); copies are removed after 7 days, files the user saved next to them stay.
 
 ## I – Thumbnails
 
@@ -158,8 +174,16 @@ Override  (manual corrections of model detection, survive rescans)
   backup now"). Every snapshot is checked with `quick_check` after writing. A damaged catalog (integrity
   check at start) stops the app before anything is written, with the path to the newest snapshot. A snapshot
   can be restored from the app (settings or the startup error screen): it is applied at the next start,
-  before anything is opened, and the replaced state is kept as a `pre-restore` snapshot. An external backup
-  (another drive, Dropbox …) stays manual.
+  before anything is opened, and the replaced state is kept as a `pre-restore` snapshot. The daily snapshot
+  is also taken while the app keeps running for days.
+- **J3** Optional **second backup folder** (another drive, Dropbox, a separate NAS share; never inside a
+  model folder or the data folder): every snapshot is mirrored there with the same retention, together
+  with `modelkeeper.exe` and a README for restoring on a new PC.
+- **J4** **Restore test**: after every new snapshot and at least daily, the newest snapshot (preferably
+  its external copy) is checked: content hash unchanged, a temporary copy of its catalog passes the full
+  `integrity_check`, schema and the numbers of models and tags match the manifest, settings are valid,
+  manual thumbnails complete. The result is shown in the settings and, if it failed, in the sidebar.
+- **J5** The data folder on a network share is refused at start (SQLite over SMB is unreliable).
 
 ## L – Additional Fields
 
@@ -181,6 +205,8 @@ modelkeeper\
     catalog.db-shm      ← only while the app is running
     thumbnails\         ← cache + manually set thumbnails
     settings.json       ← settings (root folders etc.)
+    open\               ← read-only copies opened in a slicer (H5), removed after 7 days
+    restore-test.json   ← result of the newest restore test (J4)
     backups\            ← automatic snapshots (J2)
       2026-11-12_083000_daily\
         catalog.db      ← consistent copy (VACUUM INTO)
@@ -202,7 +228,7 @@ modelkeeper\
   On exit, the app checkpoints everything into `catalog.db`.
 - `thumbnails\` must be included in backups (contains manually set thumbnails).
 - The folder must be writable (i.e. **not** under `C:\Program Files`).
-- Recommendation: keep the folder on the **local PC**, not on the NAS (SQLite over network shares is unreliable).
+- The folder must be on the **local PC**, not on the NAS (SQLite over network shares is unreliable, J5).
 - Settings include an "Open data folder" action.
 
 ## N – Localization
