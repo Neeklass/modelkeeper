@@ -220,8 +220,9 @@ func restoreState(ctx context.Context, tx *sql.Tx, id int64, s modelState) error
 	}
 	for _, name := range s.Tags {
 		var tagID int64
+		// The stored spelling comes back too (undoing a rename that only changed case).
 		if err := tx.QueryRowContext(ctx, `INSERT INTO tag (name) VALUES (?)
-			ON CONFLICT (name) DO UPDATE SET name = name RETURNING id`, name).Scan(&tagID); err != nil {
+			ON CONFLICT (name) DO UPDATE SET name = excluded.name RETURNING id`, name).Scan(&tagID); err != nil {
 			return err
 		}
 		if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO model_tag (model_id, tag_id) VALUES (?, ?)`, id, tagID); err != nil {

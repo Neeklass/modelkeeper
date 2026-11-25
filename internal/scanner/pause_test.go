@@ -94,3 +94,39 @@ func TestResumeUnfinished(t *testing.T) {
 	expect(t, "offline", unfinished(StatusOffline, "scan.error.offline"), false)
 	expect(t, "done", unfinished(StatusDone, ""), false)
 }
+
+// Interrupting stops a running scan for an action in between and lets the
+// scan continue right after it; without a running scan it is like Exclusive.
+func TestInterrupting(t *testing.T) {
+	e := newEnv(t)
+	for i := 0; i < 40; i++ {
+		e.write(filepath.ToSlash(filepath.Join("m", string(rune('a'+i%26))+string(rune('a'+i/26))+".stl")),
+			bytes.Repeat([]byte{byte(i + 1)}, 1<<20))
+	}
+	if err := e.mgr.Start(e.id); err != nil {
+		t.Fatal(err)
+	}
+	ran := false
+	err := e.mgr.Interrupting(func(ctx context.Context) error {
+		ran = true
+		// Nothing else may start meanwhile.
+		if err := e.mgr.Start(e.id); err == nil {
+			t.Error("a scan started inside Interrupting")
+		}
+		return nil
+	})
+	if err != nil || !ran {
+		t.Fatalf("Interrupting: ran=%v, %v", ran, err)
+	}
+	e.mgr.WaitIdle()
+	expect(t, "scan finished after the interruption", e.mgr.Progress().Status, StatusDone)
+	expect(t, "all hashed", e.int(`SELECT count(*) FROM location WHERE file_id IS NULL`), 0)
+
+	// Idle: runs right away, nothing is started afterwards.
+	runs := e.int(`SELECT count(*) FROM scan_run`)
+	if err := e.mgr.Interrupting(func(context.Context) error { return nil }); err != nil {
+		t.Fatal(err)
+	}
+	e.mgr.WaitIdle()
+	expect(t, "no extra scan", e.int(`SELECT count(*) FROM scan_run`), runs)
+}

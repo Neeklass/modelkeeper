@@ -1019,6 +1019,20 @@ func (a *App) correct(op func(ctx context.Context) ([]int64, error)) error {
 	if err := a.ready(); err != nil {
 		return err
 	}
+	// While a scan runs (the first scan of a NAS takes hours), the correction
+	// is stored right away and the detection follows when the scan is done:
+	// every scan ends with a detection, which applies it.
+	if a.scans.Busy() {
+		roots, err := op(a.ctx)
+		if err != nil {
+			return wrapDB(err)
+		}
+		for _, r := range roots {
+			a.scans.EnqueueRedetect(r)
+		}
+		runtime.EventsEmit(a.ctx, EventCorrectionQueued, nil)
+		return nil
+	}
 	return wrapDB(a.scans.Exclusive(func(ctx context.Context) error {
 		roots, err := op(ctx)
 		if err != nil {
@@ -1032,6 +1046,10 @@ func (a *App) correct(op func(ctx context.Context) ([]int64, error)) error {
 		return nil
 	}))
 }
+
+// EventCorrectionQueued: a correction was stored while a scan runs; the
+// detection applies it when the scan is done.
+const EventCorrectionQueued = "corrections:queued"
 
 // MarkFolderModel marks a folder as a model: everything below belongs to it.
 func (a *App) MarkFolderModel(rootID int64, path string) error {

@@ -241,32 +241,91 @@ func Build(ctx context.Context, db *sql.DB, o Options) (*Export, error) {
 		return nil, err
 	}
 	uidOf := map[int64]string{}
+	index := map[int64]int{} // model id -> position in e.Models
+	for i, p := range ids {
+		uidOf[p.id] = e.Models[i].UID
+		index[p.id] = i
+		e.Models[i].Tags, e.Models[i].Anchors, e.Models[i].Content = []string{}, []Anchor{}, []string{}
+	}
+	// The details of all exported models in a few queries (not per model:
+	// the export runs with every snapshot, also at 100,000 models).
+	selected := `SELECT m.id FROM model m WHERE ` + userDataCond + ` OR EXISTS (SELECT 1 FROM override o WHERE o.model_id = m.id)`
+	each := func(q string, fn func(i int, rows *sql.Rows) error) error {
+		rows, err := db.QueryContext(ctx, q)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			if err := fn(-1, rows); err != nil {
+				return err
+			}
+		}
+		return rows.Err()
+	}
+	pair := func(q string, add func(m *Model, v string)) error {
+		return each(q, func(_ int, rows *sql.Rows) error {
+			var id int64
+			var v string
+			if err := rows.Scan(&id, &v); err != nil {
+				return err
+			}
+			if i, ok := index[id]; ok {
+				add(&e.Models[i], v)
+			}
+			return nil
+		})
+	}
+	if err := pair(`SELECT mt.model_id, t.name FROM model_tag mt JOIN tag t ON t.id = mt.tag_id
+		WHERE mt.model_id IN (`+selected+`) ORDER BY mt.model_id, t.name COLLATE NOCASE, t.name`,
+		func(m *Model, v string) { m.Tags = append(m.Tags, v) }); err != nil {
+		return nil, err
+	}
+	if err := pair(`SELECT model_id, name FROM tag_suggestion WHERE state = 'dismissed'
+		AND model_id IN (`+selected+`) ORDER BY model_id, name COLLATE NOCASE, name`,
+		func(m *Model, v string) { m.DismissedSuggestions = append(m.DismissedSuggestions, v) }); err != nil {
+		return nil, err
+	}
+	if err := each(`SELECT model_id, root_id, path, kind, origin FROM model_anchor
+		WHERE model_id IN (`+selected+`) ORDER BY model_id, root_id, path`, func(_ int, rows *sql.Rows) error {
+		var id, rootID int64
+		var a Anchor
+		if err := rows.Scan(&id, &rootID, &a.Path, &a.Kind, &a.Origin); err != nil {
+			return err
+		}
+		a.Root = rootKey[rootID]
+		if a.Origin == "auto" {
+			a.Origin = ""
+		}
+		if i, ok := index[id]; ok {
+			e.Models[i].Anchors = append(e.Models[i].Anchors, a)
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	// Content: hashed content files (present or missing) and the fingerprints
+	// of models that lost their last location (E9).
+	if err := each(`SELECT DISTINCT model_id, sha FROM (
+			SELECT l.model_id, f.sha256 AS sha FROM location l JOIN file f ON f.id = l.file_id
+			WHERE l.category IN `+contentCats+` AND l.model_id IN (`+selected+`)
+			UNION SELECT model_id, sha256 FROM model_fingerprint WHERE model_id IN (`+selected+`))
+		ORDER BY model_id, sha`, func(_ int, rows *sql.Rows) error {
+		var id int64
+		var b []byte
+		if err := rows.Scan(&id, &b); err != nil {
+			return err
+		}
+		if i, ok := index[id]; ok {
+			e.Models[i].Content = append(e.Models[i].Content, hex.EncodeToString(b))
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
 	for i, p := range ids {
 		m := &e.Models[i]
-		uidOf[p.id] = m.UID
-		if m.Tags, err = strings1(ctx, db, `SELECT t.name FROM model_tag mt JOIN tag t ON t.id = mt.tag_id
-			WHERE mt.model_id = ? ORDER BY t.name COLLATE NOCASE, t.name`, p.id); err != nil {
-			return nil, err
-		}
-		if m.DismissedSuggestions, err = strings1(ctx, db, `SELECT name FROM tag_suggestion
-			WHERE model_id = ? AND state = 'dismissed' ORDER BY name COLLATE NOCASE, name`, p.id); err != nil {
-			return nil, err
-		}
-		if len(m.DismissedSuggestions) == 0 {
-			m.DismissedSuggestions = nil
-		}
-		if m.Anchors, err = anchors(ctx, db, p.id, rootKey); err != nil {
-			return nil, err
-		}
-		// Content: hashed content files (present or missing) and the
-		// fingerprints of models that lost their last location (E9).
-		if m.Content, err = strings1hex(ctx, db, `SELECT DISTINCT sha FROM (
-				SELECT f.sha256 AS sha FROM location l JOIN file f ON f.id = l.file_id
-				WHERE l.model_id = ?1 AND l.category IN `+contentCats+`
-				UNION SELECT sha256 FROM model_fingerprint WHERE model_id = ?1)
-			ORDER BY sha`, p.id); err != nil {
-			return nil, err
-		}
+		sort.Strings(m.Content)
 		if p.thumb != "" && filepath.Base(p.thumb) == p.thumb {
 			th := &Thumbnail{File: p.thumb}
 			if o.EmbedThumbnails {
@@ -318,29 +377,6 @@ func Build(ctx context.Context, db *sql.DB, o Options) (*Export, error) {
 	return e, rows.Err()
 }
 
-func anchors(ctx context.Context, db *sql.DB, modelID int64, rootKey map[int64]string) ([]Anchor, error) {
-	rows, err := db.QueryContext(ctx, `SELECT root_id, path, kind, origin FROM model_anchor
-		WHERE model_id = ? ORDER BY root_id, path`, modelID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	out := []Anchor{}
-	for rows.Next() {
-		var a Anchor
-		var rootID int64
-		if err := rows.Scan(&rootID, &a.Path, &a.Kind, &a.Origin); err != nil {
-			return nil, err
-		}
-		a.Root = rootKey[rootID]
-		if a.Origin == "auto" {
-			a.Origin = ""
-		}
-		out = append(out, a)
-	}
-	return out, rows.Err()
-}
-
 func strings1(ctx context.Context, db *sql.DB, q string, args ...any) ([]string, error) {
 	rows, err := db.QueryContext(ctx, q, args...)
 	if err != nil {
@@ -355,24 +391,6 @@ func strings1(ctx context.Context, db *sql.DB, q string, args ...any) ([]string,
 		}
 		out = append(out, s)
 	}
-	return out, rows.Err()
-}
-
-func strings1hex(ctx context.Context, db *sql.DB, q string, args ...any) ([]string, error) {
-	rows, err := db.QueryContext(ctx, q, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	out := []string{}
-	for rows.Next() {
-		var b []byte
-		if err := rows.Scan(&b); err != nil {
-			return nil, err
-		}
-		out = append(out, hex.EncodeToString(b))
-	}
-	sort.Strings(out)
 	return out, rows.Err()
 }
 

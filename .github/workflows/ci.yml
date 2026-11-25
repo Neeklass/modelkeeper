@@ -53,3 +53,47 @@ jobs:
           name: modelkeeper-${{ github.sha }}
           path: build/bin/modelkeeper.exe
           retention-days: 30
+
+  # Linux must keep working (A2): the same tests on Ubuntu, and a Linux build.
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: System packages (WebKitGTK for Wails)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev p7zip-full
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Vet
+        run: go vet -tags webkit2_41 ./...
+
+      - name: Test
+        run: go test -tags webkit2_41 ./...
+
+      - name: Build modelkeeper
+        run: |
+          go run github.com/wailsapp/wails/v2/cmd/wails@v2.17.1 build -platform linux/amd64 -trimpath -tags webkit2_41 \
+            -ldflags "-X main.version=$(git describe --tags --always --dirty)-ci"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: modelkeeper-linux-${{ github.sha }}
+          path: build/bin/modelkeeper
+          retention-days: 30

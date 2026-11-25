@@ -50,6 +50,7 @@ const (
 	ReasonFileTypes    = "pre-filetypes"
 	ReasonImport       = "pre-import"
 	ReasonRelocate     = "pre-relocate"
+	ReasonForget       = "pre-forget"
 	reasonPreMigration = "pre-migration"
 )
 

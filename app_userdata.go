@@ -155,7 +155,8 @@ type ImportOutcome struct {
 }
 
 // ApplyImport imports the chosen export with the given root folder choices.
-// A snapshot is taken first (if it fails, nothing is imported). The import
+// A running scan is stopped for it and continues afterwards. A snapshot is
+// taken first (if it fails, nothing is imported). The import
 // only adds: nothing the user entered in this catalog is removed or
 // overwritten. Added root folders are scanned, changed ones detected again.
 // importSettings also takes over the file types and detection rules.
@@ -168,7 +169,7 @@ func (a *App) ApplyImport(choices []userexport.RootChoice, importSettings bool) 
 		return nil, err
 	}
 	out := &ImportOutcome{}
-	err = a.scans.Exclusive(func(ctx context.Context) error {
+	err = a.scans.Interrupting(func(ctx context.Context) error {
 		s, err := a.snapshot(a.db, backup.ReasonImport)
 		if err != nil {
 			return msg.Wrap(err, "error.backupFailed", "path", a.layout.Backups)
@@ -244,14 +245,15 @@ func (a *App) CheckRelocateRoot(id int64, path string) (catalog.RelocateCheck, e
 }
 
 // RelocateRoot gives a root folder its new path, keeping its ID and
-// everything below it; a snapshot is taken first. A scan follows, which
+// everything below it; a snapshot is taken first. A running scan is stopped
+// for it (and continues afterwards). A scan follows, which
 // finds the files at the new place. Files are not touched (J1).
 func (a *App) RelocateRoot(id int64, path string) (catalog.Root, error) {
 	if err := a.ready(); err != nil {
 		return catalog.Root{}, err
 	}
 	var r catalog.Root
-	err := a.scans.Exclusive(func(ctx context.Context) error {
+	err := a.scans.Interrupting(func(ctx context.Context) error {
 		var err error
 		r, err = catalog.RelocateRoot(ctx, a.db, id, path, a.layout.Root, func() error {
 			if _, err := a.snapshot(a.db, backup.ReasonRelocate); err != nil {
@@ -304,4 +306,37 @@ func dataDirWarning(root string) (*msg.Msg, error) {
 		m := msg.New("warning.dataDir."+r, "path", root)
 		return &m, nil
 	}
+}
+
+// RenameTag renames a tag on all its models (merging it into an existing tag
+// of that name). Undoable. Returns the number of models.
+func (a *App) RenameTag(from, to string) (int, error) {
+	if err := a.ready(); err != nil {
+		return 0, err
+	}
+	n, err := catalog.RenameTag(a.ctx, a.db, from, to)
+	return n, wrapDB(err)
+}
+
+// DeleteTag removes a tag from all its models. Undoable.
+func (a *App) DeleteTag(name string) (int, error) {
+	if err := a.ready(); err != nil {
+		return 0, err
+	}
+	n, err := catalog.DeleteTag(a.ctx, a.db, name)
+	return n, wrapDB(err)
+}
+
+// ForgetWaitingModels removes models that have no files in the catalog
+// (imported models whose files are gone for good). A snapshot is taken
+// first. Models with files are never removed this way.
+func (a *App) ForgetWaitingModels(ids []int64) (int, error) {
+	if err := a.ready(); err != nil {
+		return 0, err
+	}
+	if _, err := a.snapshot(a.db, backup.ReasonForget); err != nil {
+		return 0, msg.Wrap(err, "error.backupFailed", "path", a.layout.Backups)
+	}
+	n, err := catalog.ForgetWaiting(a.ctx, a.db, ids)
+	return n, wrapDB(err)
 }
