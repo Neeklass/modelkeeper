@@ -233,7 +233,11 @@ func TestWaitsWhileScannerBusy(t *testing.T) {
 	e.expectStarts("busy")
 
 	e.scan.setBusy(false)
-	e.clock.Advance(quiet) // one root per tick
+	// Linux reports a write as several events (create, write, close); a late
+	// one moves the quiet period on. Let them all arrive, then give the quiet
+	// period and one tick per root.
+	e.fence()
+	e.clock.Advance(2 * quiet) // one root per tick
 	e.w.flush()
 	var got []int64
 	for _, id := range e.scan.take() {
