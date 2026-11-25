@@ -285,22 +285,48 @@ type UndoResult struct {
 	Skipped int `json:"skipped"`
 }
 
-// Undo reverts the newest action that is not undone yet.
-func Undo(ctx context.Context, db *sql.DB) (UndoResult, error) {
+// NextUndo returns the action Undo would revert (msg "history.nothingToUndo"
+// if there is none). Corrections (Action starting with CorrectionPrefix) need
+// the detection: the caller runs Undo for them without a scan running.
+func NextUndo(ctx context.Context, db *sql.DB) (HistoryEntry, error) {
+	var h HistoryEntry
+	var params string
+	err := db.QueryRowContext(ctx, `SELECT id, at, action, coalesce(params, ''), models FROM journal
+		WHERE undone_at IS NULL ORDER BY id DESC LIMIT 1`).Scan(&h.ID, &h.At, &h.Action, &params, &h.Models)
+	if errors.Is(err, sql.ErrNoRows) {
+		return h, msg.Wrap(nil, "history.nothingToUndo")
+	}
+	if params != "" {
+		json.Unmarshal([]byte(params), &h.Params)
+	}
+	return h, err
+}
+
+// Undo reverts the newest action that is not undone yet. detect runs the
+// detection for roots; it is needed to undo a correction (nil otherwise).
+func Undo(ctx context.Context, db *sql.DB, detect func(ctx context.Context, roots []int64) error) (UndoResult, error) {
 	var res UndoResult
-	err := inTx(ctx, db, func(tx *sql.Tx) error {
-		var state, params string
-		err := tx.QueryRowContext(ctx, `SELECT id, at, action, coalesce(params, ''), models, state FROM journal
-			WHERE undone_at IS NULL ORDER BY id DESC LIMIT 1`).
-			Scan(&res.ID, &res.At, &res.Action, &params, &res.Models, &state)
-		if errors.Is(err, sql.ErrNoRows) {
-			return msg.Wrap(nil, "history.nothingToUndo")
-		}
-		if err != nil {
+	h, err := NextUndo(ctx, db)
+	if err != nil {
+		return res, err
+	}
+	res.HistoryEntry = h
+	var state string
+	if err := db.QueryRowContext(ctx, `SELECT state FROM journal WHERE id = ?`, h.ID).Scan(&state); err != nil {
+		return res, err
+	}
+	if strings.HasPrefix(h.Action, CorrectionPrefix) {
+		err := undoCorrection(ctx, db, &res, state, detect)
+		return res, err
+	}
+	err = inTx(ctx, db, func(tx *sql.Tx) error {
+		// Still the newest one (nothing happened in between)?
+		var undone sql.NullInt64
+		if err := tx.QueryRowContext(ctx, `SELECT undone_at FROM journal WHERE id = ?`, h.ID).Scan(&undone); err != nil {
 			return err
 		}
-		if params != "" {
-			json.Unmarshal([]byte(params), &res.Params)
+		if undone.Valid {
+			return msg.Wrap(nil, "history.nothingToUndo")
 		}
 		var changes []stateChange
 		if err := json.Unmarshal([]byte(state), &changes); err != nil {

@@ -50,7 +50,7 @@ func TestTagManagement(t *testing.T) {
 		t.Errorf("troll after delete %q", got)
 	}
 	for _, want := range []string{"history.tagDeleted", "history.tagRenamed", "history.tagMerged"} {
-		r, err := Undo(ctx, conn)
+		r, err := Undo(ctx, conn, nil)
 		if err != nil || r.Action != want {
 			t.Fatalf("undo: %+v, %v, want %s", r, err, want)
 		}

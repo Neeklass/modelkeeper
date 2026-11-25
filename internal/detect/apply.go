@@ -95,7 +95,7 @@ func Apply(ctx context.Context, db *sql.DB, rootID int64, rules Rules) (Result, 
 				return res, err
 			}
 		}
-		if err := w.anchor(rootID, modelID, cd, m.movedFrom[cd.Anchor]); err != nil {
+		if err := w.anchor(rootID, modelID, cd, m.movedFrom[cd.Anchor], how == matchMerged); err != nil {
 			return res, err
 		}
 		if err := w.assign(modelID, cd); err != nil {
@@ -199,6 +199,8 @@ type matcher struct {
 	movedFrom    map[string]string        // new anchor path -> old anchor path
 	ov           overrides
 	exists       map[int64]bool // all model ids (merge targets must exist)
+	// merged: places a model has only because of a merge (model_anchor.merged).
+	merged map[string]bool
 }
 
 func newMatcher(ctx context.Context, tx *sql.Tx, rootID int64, cands []Candidate, ov overrides) (*matcher, error) {
@@ -206,6 +208,7 @@ func newMatcher(ctx context.Context, tx *sql.Tx, rootID int64, cands []Candidate
 		anchors: map[string]int64{}, orphanModels: map[int64]bool{}, orphanPaths: map[int64][]string{},
 		files: map[int64]map[int64]bool{}, byFile: map[int64][]int64{}, byFileOther: map[int64][]int64{},
 		rootModels: map[int64]bool{}, used: map[int64]bool{}, movedFrom: map[string]string{},
+		merged: map[string]bool{},
 	}
 	detected := map[string]bool{}
 	for _, c := range cands {
@@ -227,18 +230,22 @@ func newMatcher(ctx context.Context, tx *sql.Tx, rootID int64, cands []Candidate
 		m.exists[id] = true
 	}
 	ids.Close()
-	rows, err := tx.QueryContext(ctx, `SELECT path, model_id FROM model_anchor WHERE root_id = ?`, rootID)
+	rows, err := tx.QueryContext(ctx, `SELECT path, model_id, merged FROM model_anchor WHERE root_id = ?`, rootID)
 	if err != nil {
 		return nil, err
 	}
 	for rows.Next() {
 		var p string
 		var id int64
-		if err := rows.Scan(&p, &id); err != nil {
+		var merged bool
+		if err := rows.Scan(&p, &id, &merged); err != nil {
 			rows.Close()
 			return nil, err
 		}
 		m.anchors[p] = id
+		if merged {
+			m.merged[p] = true
+		}
 		m.rootModels[id] = true
 		if !detected[p] {
 			m.orphanModels[id] = true
@@ -352,6 +359,12 @@ func (m *matcher) match(cd *Candidate) (int64, matchKind) {
 	}
 	for _, p := range paths {
 		if id, ok := m.anchors[p]; ok && !exclude[id] {
+			// The place came to this model by a merge that is gone now (undone,
+			// corrections reset): the folder is a model of its own again.
+			if m.merged[p] {
+				exclude[id] = true
+				continue
+			}
 			m.used[id] = true
 			return id, matchAnchor
 		}
@@ -452,7 +465,9 @@ func (w *writer) updateModel(id int64, cd *Candidate) error {
 	return err
 }
 
-func (w *writer) anchor(rootID, modelID int64, cd *Candidate, oldPath string) error {
+// merged marks places the model has only because another model was merged
+// into it (see matcher.match).
+func (w *writer) anchor(rootID, modelID int64, cd *Candidate, oldPath string, merged bool) error {
 	if oldPath != "" {
 		// Moved (F6): the old, now missing locations no longer belong to the model.
 		if _, err := w.tx.ExecContext(w.ctx, `UPDATE location SET model_id = NULL, variant_id = NULL
@@ -465,9 +480,10 @@ func (w *writer) anchor(rootID, modelID int64, cd *Candidate, oldPath string) er
 		}
 	}
 	for _, p := range append([]string{cd.Anchor}, cd.Extra...) {
-		if _, err := w.tx.ExecContext(w.ctx, `INSERT INTO model_anchor (model_id, root_id, path, kind) VALUES (?, ?, ?, ?)
-			ON CONFLICT (root_id, path) DO UPDATE SET model_id = excluded.model_id, kind = excluded.kind`,
-			modelID, rootID, p, cd.Kind); err != nil {
+		if _, err := w.tx.ExecContext(w.ctx, `INSERT INTO model_anchor (model_id, root_id, path, kind, merged) VALUES (?, ?, ?, ?, ?)
+			ON CONFLICT (root_id, path) DO UPDATE SET model_id = excluded.model_id, kind = excluded.kind,
+			merged = excluded.merged`,
+			modelID, rootID, p, cd.Kind, merged); err != nil {
 			return err
 		}
 	}

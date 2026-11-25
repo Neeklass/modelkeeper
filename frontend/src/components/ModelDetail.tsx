@@ -651,10 +651,11 @@ function InlineText({value, disabled, placeholder, onSave}: {
 function Corrections({d, busy, act}: {
     d: catalog.ModelDetail
     busy: boolean
-    act: (fn: () => Promise<void>, confirmText?: string) => void
+    act: (fn: () => Promise<void>, confirmText?: string, undoText?: string) => void
 }) {
     const {t} = useTranslation()
     const [open, setOpen] = useState(false)
+    const done = t('corrections.done')
 
     return (
         <>
@@ -676,18 +677,18 @@ function Corrections({d, busy, act}: {
                                 <code className="small">{a.path}</code>
                                 <div className="row wrap">
                                     {a.kind === 'folder' && segs.length - 1 >= minModelDepth && (
-                                        <button disabled={busy} onClick={() => act(() => MarkFolderModel(a.rootId, parent))}
+                                        <button disabled={busy} onClick={() => act(() => MarkFolderModel(a.rootId, parent), undefined, done)}
                                                 title={t('corrections.parentIsModelHint', {name: segs[segs.length - 2]})}>
                                             {t('corrections.parentIsModel')}
                                         </button>
                                     )}
                                     {a.kind === 'folder' && segs.length > minModelDepth && (
-                                        <button disabled={busy} onClick={() => act(() => MarkFolderNotModel(a.rootId, a.path))}>
+                                        <button disabled={busy} onClick={() => act(() => MarkFolderNotModel(a.rootId, a.path), undefined, done)}>
                                             {t('corrections.notModel')}
                                         </button>
                                     )}
                                     {d.anchors.length > 1 && (
-                                        <button disabled={busy} onClick={() => act(() => DetachAnchor(d.id, a.rootId, a.path))}>
+                                        <button disabled={busy} onClick={() => act(() => DetachAnchor(d.id, a.rootId, a.path), undefined, done)}>
                                             {t('corrections.detach')}
                                         </button>
                                     )}
@@ -698,7 +699,7 @@ function Corrections({d, busy, act}: {
                                             <li key={s.path} className="row spread">
                                                 <span className="ellipsis">{s.name} <span className="muted">({s.files})</span></span>
                                                 <button className="link" disabled={busy}
-                                                        onClick={() => act(() => MarkFolderModel(a.rootId, s.path))}>
+                                                        onClick={() => act(() => MarkFolderModel(a.rootId, s.path), undefined, done)}>
                                                     {t('corrections.ownModel')}
                                                 </button>
                                             </li>
@@ -711,13 +712,13 @@ function Corrections({d, busy, act}: {
                     <div className="row wrap">
                         {d.anchors.some(a => a.kind === 'folder' && subfolders(d.files, a).length > 1) && (
                             <button disabled={busy}
-                                    onClick={() => act(() => SplitModel(d.id), t('corrections.confirmSplit'))}>
+                                    onClick={() => act(() => SplitModel(d.id), t('corrections.confirmSplit'), done)}>
                                 {t('corrections.split')}
                             </button>
                         )}
                         {d.hasCorrections && (
                             <button disabled={busy}
-                                    onClick={() => act(() => ResetCorrections(d.id), t('corrections.confirmReset'))}>
+                                    onClick={() => act(() => ResetCorrections(d.id), t('corrections.confirmReset'), done)}>
                                 {t('corrections.reset')}
                             </button>
                         )}

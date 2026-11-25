@@ -61,8 +61,9 @@ known until the user confirms it** (once per folder pattern, not once per model)
 ## 2. Recoverability of catalog work (J2, G1, G2, F4d)
 
 - [~] **2.1 Undo for every catalog change.** *Done: journal for tags, fields, favorites,
-  suggestions; toast with Undo, Ctrl+Z, history list (J8). Open: merge/split, corrections, thumbnail,
-  root settings; replacing confirm dialogs.* A journal stores the inverse of each action (tags,
+  suggestions; toast with Undo, Ctrl+Z, history list (J8). Done too: corrections
+  (merge, split, mark, detach, reset), with detection in between. Open: thumbnail, root settings;
+  replacing confirm dialogs.* A journal stores the inverse of each action (tags,
   fields, favorite, merge/split, corrections, thumbnail, root settings). Toast "… · Undo" after
   each action, Ctrl+Z, and a **History** page with the last ~500 actions, each undoable. Then
   replace confirm dialogs by undo wherever the action is reversible.

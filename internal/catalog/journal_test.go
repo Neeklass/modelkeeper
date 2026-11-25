@@ -23,7 +23,7 @@ func TestUndo(t *testing.T) {
 		return d
 	}
 
-	if _, err := Undo(ctx, conn); msg.From(err).Key != "history.nothingToUndo" {
+	if _, err := Undo(ctx, conn, nil); msg.From(err).Key != "history.nothingToUndo" {
 		t.Fatalf("undo on an empty journal: %v", err)
 	}
 
@@ -75,7 +75,7 @@ func TestUndo(t *testing.T) {
 
 	undo := func(want string) UndoResult {
 		t.Helper()
-		r, err := Undo(ctx, conn)
+		r, err := Undo(ctx, conn, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -117,7 +117,7 @@ func TestUndo(t *testing.T) {
 	if tags, _ := ListTags(ctx, conn); len(tags) != 1 { // the troll keeps "fantasy"
 		t.Errorf("tags left %+v", tags)
 	}
-	if _, err := Undo(ctx, conn); msg.From(err).Key != "history.nothingToUndo" {
+	if _, err := Undo(ctx, conn, nil); msg.From(err).Key != "history.nothingToUndo" {
 		t.Errorf("undo after everything: %v", err)
 	}
 	// Searchable state follows the undo.

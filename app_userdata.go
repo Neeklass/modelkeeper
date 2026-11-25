@@ -14,6 +14,7 @@ import (
 	"modelkeeper/internal/appdir"
 	"modelkeeper/internal/backup"
 	"modelkeeper/internal/catalog"
+	"modelkeeper/internal/detect"
 	"modelkeeper/internal/msg"
 	"modelkeeper/internal/settings"
 	"modelkeeper/internal/userexport"
@@ -273,12 +274,38 @@ func (a *App) RelocateRoot(id int64, path string) (catalog.Root, error) {
 	return r, nil
 }
 
-// Undo reverts the newest change of user data (tags, fields, favorites).
+// Undo reverts the newest change: of user data (tags, fields, favorites) or
+// a correction of the detection (merge, split, mark, detach, reset). A
+// correction needs the detection; a running scan is stopped for it and
+// continues afterwards.
 func (a *App) Undo() (catalog.UndoResult, error) {
 	if err := a.ready(); err != nil {
 		return catalog.UndoResult{}, err
 	}
-	r, err := catalog.Undo(a.ctx, a.db)
+	h, err := catalog.NextUndo(a.ctx, a.db)
+	if err != nil {
+		return catalog.UndoResult{}, wrapDB(err)
+	}
+	if !strings.HasPrefix(h.Action, catalog.CorrectionPrefix) {
+		r, err := catalog.Undo(a.ctx, a.db, nil)
+		return r, wrapDB(err)
+	}
+	var r catalog.UndoResult
+	err = a.scans.Interrupting(func(ctx context.Context) error {
+		var err error
+		r, err = catalog.Undo(ctx, a.db, func(ctx context.Context, roots []int64) error {
+			for _, id := range roots {
+				if _, err := detect.Apply(ctx, a.db, id, a.scans.DetectRules()); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return err
+	})
+	if err == nil {
+		runtime.EventsEmit(a.ctx, EventRootsChanged, nil)
+	}
 	return r, wrapDB(err)
 }
 

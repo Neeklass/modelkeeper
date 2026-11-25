@@ -313,7 +313,10 @@
     "invalidFolder": "This folder cannot be used for this correction.",
     "nothingToSplit": "This model has no subfolders to split into.",
     "nothingToDetach": "This model has only one location.",
-    "queued": "Saved. A scan is running – the correction is applied when it is done."
+    "queued": "Saved. A scan is running – the correction is applied when it is done.",
+    "done": "Correction applied.",
+    "merged_one": "{{count}} model merged into {{name}}.",
+    "merged_other": "{{count}} models merged into {{name}}."
   },
   "tags": {
     "title": "Tags",
@@ -646,6 +649,7 @@
         "title": "Undo, export and moving folders",
         "body": [
           "**Undo**: every change of tags, fields and favorites can be undone – click **Undo** in the message at the bottom, or press **Ctrl+Z** anywhere outside a text field. Settings → **Recent changes** lists the last changes. A model that was changed in another way since (e.g. merged) is left as it is.",
+          "Corrections of the detection – merge, split, \"is a model\", \"not a model\", detach, reset – can be undone the same way: the folders are detected again and every model gets its ID, tags and notes back.",
           "Notes are saved while you type; \"Saved\" below the field confirms it.",
           "**Export**: Settings → **Export and import** → **Export…** writes one JSON file with everything you entered: tags, notes, favorites, print status, edited names and creators, origin and license, corrections, the thumbnails you chose, your folders and detection settings. Every backup contains the same file as catalog-export.json – also every copy in the second backup folder.",
           "**Import**: **Import…** reads such a file. modelkeeper shows first what it contains and how its models are found here: by their ID, at the same place, or by their files (fingerprints) even if they were moved or renamed. Models not found yet keep their data and are linked up as soon as a scan finds their files. The import only adds – nothing you entered is removed – and a backup is made first.",
@@ -819,7 +823,17 @@
     "tagMerged_one": "tag {{from}} merged into {{to}} ({{count}} model)",
     "tagMerged_other": "tag {{from}} merged into {{to}} ({{count}} models)",
     "tagDeleted_one": "tag {{tags}} deleted ({{count}} model)",
-    "tagDeleted_other": "tag {{tags}} deleted ({{count}} models)"
+    "tagDeleted_other": "tag {{tags}} deleted ({{count}} models)",
+    "needsDetection": "This change can only be undone together with a detection run.",
+    "correction": {
+      "markModel": "{{path}} marked as one model",
+      "markNotModel": "{{path}} marked as not a model",
+      "split": "{{name}} split into its subfolders",
+      "detach": "{{path}} detached from {{name}}",
+      "merge_one": "{{count}} model merged into {{name}}",
+      "merge_other": "{{count}} models merged into {{name}}",
+      "reset": "corrections of {{name}} reset"
+    }
   },
   "tagManager": {
     "title": "Tags",

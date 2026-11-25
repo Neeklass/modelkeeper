@@ -505,7 +505,7 @@ function SelectionBar({selection, allTags, onChanged, onMerged, onClear}: {
         run(async () => {
             await MergeModels(target, ids.filter(id => id !== target))
             onMerged(target)
-        })
+        }, t('corrections.merged', {count: ids.length, name: selection.get(target)}))
     }
 
     return (

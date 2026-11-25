@@ -215,6 +215,12 @@ Override  (manual corrections of model detection, survive rescans)
   transaction. Undo (toast, Ctrl+Z, history list) restores the newest action for every model that still
   has the state from after; models changed otherwise since (merge, import) are left alone. Edits of one
   model within a minute are one action (notes saved while typing). The newest 500 actions are kept.
+  Corrections of the detection (F4d) are journaled too: the override rows they add and remove, and the
+  user data of the affected models before and after the detection. Undo restores the rows, runs the
+  detection (stopping a running scan for it), and gives each model its data back – by uid, or at its
+  place if the correction had removed it (that model gets its old uid back). Places a model has only
+  through a merge are marked (`model_anchor.merged`); once the merge is gone they no longer keep the model,
+  so a reset of the corrections separates merged folders again.
 
 ## L – Additional Fields
 

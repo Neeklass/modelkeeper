@@ -1030,10 +1030,11 @@ func (a *App) correct(op func(ctx context.Context) ([]int64, error)) error {
 		for _, r := range roots {
 			a.scans.EnqueueRedetect(r)
 		}
+		a.finishCorrection()
 		runtime.EventsEmit(a.ctx, EventCorrectionQueued, nil)
 		return nil
 	}
-	return wrapDB(a.scans.Exclusive(func(ctx context.Context) error {
+	err := a.scans.Exclusive(func(ctx context.Context) error {
 		roots, err := op(ctx)
 		if err != nil {
 			return err
@@ -1044,7 +1045,19 @@ func (a *App) correct(op func(ctx context.Context) ([]int64, error)) error {
 			}
 		}
 		return nil
-	}))
+	})
+	if err == nil {
+		a.finishCorrection()
+	}
+	return wrapDB(err)
+}
+
+// finishCorrection records the models after a correction for its undo (J8).
+// The correction itself is done; a failure here only weakens the undo.
+func (a *App) finishCorrection() {
+	if err := catalog.FinishCorrection(a.ctx, a.db); err != nil {
+		log.Printf("journal: %v", err)
+	}
 }
 
 // EventCorrectionQueued: a correction was stored while a scan runs; the
