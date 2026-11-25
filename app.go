@@ -69,6 +69,11 @@ type App struct {
 	startupErr *msg.Msg
 	// notice is shown once after start (e.g. a snapshot was restored).
 	notice *msg.Msg
+	// locationWarning: the data folder lies where it may get lost or damaged
+	// (Downloads, a synced folder); shown until the folder is moved.
+	locationWarning *msg.Msg
+	// imports holds the export file chosen for import until it is applied.
+	imports pendingImport
 	// stop is closed at shutdown; it ends the daily-snapshot ticker.
 	stop chan struct{}
 }
@@ -121,6 +126,13 @@ func (a *App) init() error {
 	if catalog.DetectKind(layout.Root) == "nas" {
 		return msg.Wrap(nil, "error.dataDirOnNetwork", "path", layout.Root)
 	}
+	// A temporary folder (started from inside a zip) would lose the catalog
+	// when it is cleaned up; Downloads and synced folders get a warning.
+	warn, err := dataDirWarning(layout.Root)
+	if err != nil {
+		return err
+	}
+	a.locationWarning = warn
 	if err := layout.Ensure(); err != nil {
 		return msg.Wrap(err, "error.dataDirNotWritable", "path", layout.Root)
 	}
@@ -292,6 +304,8 @@ type AppStatus struct {
 	// PendingRestore: snapshot to restore at the next start, "" if none.
 	PendingRestore string   `json:"pendingRestore"`
 	Notice         *msg.Msg `json:"notice,omitempty"`
+	// LocationWarning: the data folder is in a risky place (see appdir.Risk).
+	LocationWarning *msg.Msg `json:"locationWarning,omitempty"`
 	// SlicerPath: program for "Open in slicer", "" = system default (H5).
 	SlicerPath string `json:"slicerPath"`
 	// ExternalBackupDir: second backup folder, "" = off (J2).
@@ -399,7 +413,7 @@ func (a *App) GetStatus() AppStatus {
 	if !a.started() {
 		return AppStatus{Starting: true}
 	}
-	s := AppStatus{DataDir: a.layout.Root, StartupError: a.startupErr, Notice: a.notice}
+	s := AppStatus{DataDir: a.layout.Root, StartupError: a.startupErr, Notice: a.notice, LocationWarning: a.locationWarning}
 	if a.layout.Backups != "" {
 		s.PendingRestore, _ = backup.PendingRestore(a.restoreTarget())
 		if list, err := backup.List(a.layout.Backups); err == nil && len(list) > 0 {
@@ -1080,6 +1094,14 @@ func (a *App) RemoveTag(modelIDs []int64, name string) error {
 		return err
 	}
 	return wrapDB(catalog.RemoveTag(a.ctx, a.db, modelIDs, name))
+}
+
+// RemoveTags removes several tags from models as one undoable action (G2).
+func (a *App) RemoveTags(modelIDs []int64, names []string) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	return wrapDB(catalog.RemoveTags(a.ctx, a.db, modelIDs, names))
 }
 
 // DismissSuggestion hides a tag suggestion (F5).

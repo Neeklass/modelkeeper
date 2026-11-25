@@ -513,6 +513,7 @@ func Cleanup(ctx context.Context, tx *sql.Tx) error {
 		`DELETE FROM model WHERE NOT EXISTS (SELECT 1 FROM location l WHERE l.model_id = model.id)
 			AND notes = '' AND name_manual = 0 AND creator_manual = 0 AND supports_manual = 0
 			AND print_status = 'not_printed' AND coalesce(thumb_source, '') <> 'manual' AND favorite = 0
+			AND coalesce(origin, '') = '' AND coalesce(origin_url, '') = '' AND coalesce(license, '') = ''
 			AND NOT EXISTS (SELECT 1 FROM model_tag t WHERE t.model_id = model.id)
 			AND NOT EXISTS (SELECT 1 FROM override o WHERE o.model_id = model.id)`,
 		`DELETE FROM variant WHERE NOT EXISTS (SELECT 1 FROM location l WHERE l.variant_id = variant.id)`,

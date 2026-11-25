@@ -237,15 +237,21 @@ type ModelDetail struct {
 	PrintStatus string `json:"printStatus"`
 	Supports    string `json:"supports"`
 	// SupportsManual: the user set supports; detection no longer changes it.
-	SupportsManual bool          `json:"supportsManual"`
-	Favorite       bool          `json:"favorite"`
-	Thumb          string        `json:"thumb"`       // URL, "" if none
-	ThumbSource    string        `json:"thumbSource"` // manual | image | embedded | rendered | ""
-	Anchors        []ModelAnchor `json:"anchors"`
-	Variants       []string      `json:"variants"`
-	Tags           []string      `json:"tags"`
-	TagSuggested   []string      `json:"tagSuggestions"`
-	Files          []ModelFile   `json:"files"`
+	SupportsManual bool `json:"supportsManual"`
+	Favorite       bool `json:"favorite"`
+	// CreatorManual: the user set the creator; detection no longer changes it.
+	CreatorManual bool `json:"creatorManual"`
+	// Origin, purchase link and license (E6, D7).
+	Origin       string        `json:"origin"`
+	OriginURL    string        `json:"originUrl"`
+	License      string        `json:"license"`
+	Thumb        string        `json:"thumb"`       // URL, "" if none
+	ThumbSource  string        `json:"thumbSource"` // manual | image | embedded | rendered | ""
+	Anchors      []ModelAnchor `json:"anchors"`
+	Variants     []string      `json:"variants"`
+	Tags         []string      `json:"tags"`
+	TagSuggested []string      `json:"tagSuggestions"`
+	Files        []ModelFile   `json:"files"`
 	// HasCorrections: manual corrections exist at or below the model's folders.
 	HasCorrections bool `json:"hasCorrections"`
 	// Inactive: the model's files are only on deactivated roots (E9).
@@ -293,10 +299,12 @@ func GetModel(ctx context.Context, db *sql.DB, id int64) (ModelDetail, error) {
 	var updated int64
 	err := db.QueryRowContext(ctx, `SELECT m.id, m.uid, m.name, coalesce(c.name, ''), m.notes, m.print_status, m.supports,
 		m.supports_manual, coalesce(m.thumb_file, ''), coalesce(m.thumb_source, ''), m.updated_at, m.favorite,
+		m.creator_manual, coalesce(m.origin, ''), coalesce(m.origin_url, ''), coalesce(m.license, ''),
 		`+inactiveCond+`
 		FROM model m LEFT JOIN creator c ON c.id = m.creator_id WHERE m.id = ?`, id).
 		Scan(&d.ID, &d.UID, &d.Name, &d.Creator, &d.Notes, &d.PrintStatus, &supports, &d.SupportsManual,
-			&thumbFile, &d.ThumbSource, &updated, &d.Favorite, &d.Inactive)
+			&thumbFile, &d.ThumbSource, &updated, &d.Favorite, &d.CreatorManual, &d.Origin, &d.OriginURL, &d.License,
+			&d.Inactive)
 	if err != nil {
 		return d, err
 	}

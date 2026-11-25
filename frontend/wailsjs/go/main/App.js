@@ -10,12 +10,44 @@ export function AddTags(arg1, arg2) {
   return window['go']['main']['App']['AddTags'](arg1, arg2);
 }
 
+export function ApplyImport(arg1, arg2) {
+  return window['go']['main']['App']['ApplyImport'](arg1, arg2);
+}
+
+export function CancelImport() {
+  return window['go']['main']['App']['CancelImport']();
+}
+
 export function CancelRestore() {
   return window['go']['main']['App']['CancelRestore']();
 }
 
 export function CancelScan() {
   return window['go']['main']['App']['CancelScan']();
+}
+
+export function CheckRelocateRoot(arg1, arg2) {
+  return window['go']['main']['App']['CheckRelocateRoot'](arg1, arg2);
+}
+
+export function CheckRestoreNow() {
+  return window['go']['main']['App']['CheckRestoreNow']();
+}
+
+export function ChooseExternalBackupDir() {
+  return window['go']['main']['App']['ChooseExternalBackupDir']();
+}
+
+export function ChooseSlicer() {
+  return window['go']['main']['App']['ChooseSlicer']();
+}
+
+export function ClearExternalBackupDir() {
+  return window['go']['main']['App']['ClearExternalBackupDir']();
+}
+
+export function ClearSlicer() {
+  return window['go']['main']['App']['ClearSlicer']();
 }
 
 export function CreateBackup() {
@@ -40,6 +72,10 @@ export function DismissSuggestion(arg1, arg2) {
 
 export function ExportHashes(arg1) {
   return window['go']['main']['App']['ExportHashes'](arg1);
+}
+
+export function ExportUserData() {
+  return window['go']['main']['App']['ExportUserData']();
 }
 
 export function GetDetectionSettings() {
@@ -72,6 +108,10 @@ export function ImportHashes(arg1) {
 
 export function ListBackups() {
   return window['go']['main']['App']['ListBackups']();
+}
+
+export function ListHistory() {
+  return window['go']['main']['App']['ListHistory']();
 }
 
 export function ListLastScanIssues(arg1) {
@@ -110,12 +150,32 @@ export function OpenDataFolder() {
   return window['go']['main']['App']['OpenDataFolder']();
 }
 
+export function OpenExternalBackupDir() {
+  return window['go']['main']['App']['OpenExternalBackupDir']();
+}
+
+export function OpenInSlicer(arg1) {
+  return window['go']['main']['App']['OpenInSlicer'](arg1);
+}
+
+export function PauseScan(arg1) {
+  return window['go']['main']['App']['PauseScan'](arg1);
+}
+
 export function PickFolder() {
   return window['go']['main']['App']['PickFolder']();
 }
 
+export function PickImportFile() {
+  return window['go']['main']['App']['PickImportFile']();
+}
+
 export function PickThumbnailFile(arg1) {
   return window['go']['main']['App']['PickThumbnailFile'](arg1);
+}
+
+export function PreviewImport(arg1) {
+  return window['go']['main']['App']['PreviewImport'](arg1);
 }
 
 export function PurgeRoot(arg1, arg2) {
@@ -130,8 +190,16 @@ export function RedetectRoot(arg1) {
   return window['go']['main']['App']['RedetectRoot'](arg1);
 }
 
+export function RelocateRoot(arg1, arg2) {
+  return window['go']['main']['App']['RelocateRoot'](arg1, arg2);
+}
+
 export function RemoveTag(arg1, arg2) {
   return window['go']['main']['App']['RemoveTag'](arg1, arg2);
+}
+
+export function RemoveTags(arg1, arg2) {
+  return window['go']['main']['App']['RemoveTags'](arg1, arg2);
 }
 
 export function RequestRestore(arg1) {
@@ -202,38 +270,10 @@ export function StartWithEmptyCatalog() {
   return window['go']['main']['App']['StartWithEmptyCatalog']();
 }
 
+export function Undo() {
+  return window['go']['main']['App']['Undo']();
+}
+
 export function UpdateModel(arg1, arg2) {
   return window['go']['main']['App']['UpdateModel'](arg1, arg2);
-}
-
-export function PauseScan(arg1) {
-  return window['go']['main']['App']['PauseScan'](arg1);
-}
-
-export function OpenInSlicer(arg1) {
-  return window['go']['main']['App']['OpenInSlicer'](arg1);
-}
-
-export function ChooseSlicer() {
-  return window['go']['main']['App']['ChooseSlicer']();
-}
-
-export function ClearSlicer() {
-  return window['go']['main']['App']['ClearSlicer']();
-}
-
-export function ChooseExternalBackupDir() {
-  return window['go']['main']['App']['ChooseExternalBackupDir']();
-}
-
-export function ClearExternalBackupDir() {
-  return window['go']['main']['App']['ClearExternalBackupDir']();
-}
-
-export function CheckRestoreNow() {
-  return window['go']['main']['App']['CheckRestoreNow']();
-}
-
-export function OpenExternalBackupDir() {
-  return window['go']['main']['App']['OpenExternalBackupDir']();
 }
