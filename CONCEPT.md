@@ -79,6 +79,11 @@ Override  (manual corrections of model detection, survive rescans)
 - **E6** MyMiniFactory purchases are entered manually (link, designer, license). *(post-MVP)*
 - **E7** Automatic MyMiniFactory import later, depending on API capabilities. *(post-MVP)*
 - **E8** Show purchased models that have not been downloaded yet. *(post-MVP)*
+- **E10** **Changing a root folder's path** (new NAS, other drive letter, UNC path instead of a mapped
+  drive): a sample of up to 200 of the root's files is looked for at the new path (size, and date), the
+  result is shown, a `pre-relocate` snapshot is taken, the path is changed keeping the root's ID, and the
+  root is scanned. Everything below it (models, anchors, corrections, hashes) stays linked. Adding the new
+  place as a new root instead would leave tags and corrections on the old one.
 - **E9** Removing a root folder **deactivates** it: it is no longer scanned or watched and not listed with
   the root folders, but locations, detection anchors, corrections and hashes stay. Models whose files are only
   on deactivated roots stay visible and are marked. Adding the same path again (compared case-insensitively on
@@ -136,6 +141,8 @@ Override  (manual corrections of model detection, survive rescans)
 - **G1** Free-form, **flat** tags.
 - **G2** Bulk editing (tag multiple models at once).
 - **G4** "Untagged" view for working through the backlog.
+- **G5** Tag management: rename (into an existing name = merge) and delete a tag for all models at once,
+  undoable (J8).
 
 ## H – Search & Views
 
@@ -183,7 +190,37 @@ Override  (manual corrections of model detection, survive rescans)
   its external copy) is checked: content hash unchanged, a temporary copy of its catalog passes the full
   `integrity_check`, schema and the numbers of models and tags match the manifest, settings are valid,
   manual thumbnails complete. The result is shown in the settings and, if it failed, in the sidebar.
-- **J5** The data folder on a network share is refused at start (SQLite over SMB is unreliable).
+- **J5** The data folder on a network share is refused at start (SQLite over SMB is unreliable). A data
+  folder in a temporary folder (the `.exe` started from inside a zip) is refused too; one in Downloads or
+  in a synced folder (OneDrive, Dropbox …) gets a permanent warning.
+- **J6** **Readable export of all user data** (`catalog-export.json`, package `userexport`): models with
+  anything the user entered (tags, notes, favorite, print status, edited name/creator/supports, origin,
+  link, license, manual thumbnail, dismissed suggestions), corrections, root folders and detection
+  settings – as plain JSON, independent of the SQLite schema. Each model carries its uid, its anchors (root
+  key + relative path) and the SHA-256 of its content files. Written into **every snapshot** (and so into
+  every external copy, J3; checked by the restore test, J4) and on demand to any file ("Export…").
+- **J7** **Import** of such a file into any catalog (empty or not): a preview first; the user maps each
+  exported root to a root of this catalog, adds it as a new root, or skips it. Models are matched by uid,
+  then by place (mapped root + path), then by content (≥ `detect.MinOverlap`). Unmatched models are kept
+  with their data, their anchors and their content as `model_fingerprint`, so the next scan links them up
+  by place or by content (F6). The import **only adds**: tags are united, a field is taken over only where
+  the target has none, differing notes are both kept; a `pre-import` snapshot is taken first. Importing
+  the same file again changes nothing.
+- **J7a** Imported models that are not linked to files yet are a view of their own ("Waiting for files");
+  one whose files are gone for good can be removed (snapshot `pre-forget` first). Import and path changes
+  (E10) also work during a scan: the scan is stopped for it and continues right after; corrections made
+  during a scan are stored at once and applied by the detection at the end of the scan.
+- **J8** **Undo** (journal table): every change of user data made through the catalog package (tags,
+  fields, favorites, suggestions) is recorded with the model states before and after, in the same
+  transaction. Undo (toast, Ctrl+Z, history list) restores the newest action for every model that still
+  has the state from after; models changed otherwise since (merge, import) are left alone. Edits of one
+  model within a minute are one action (notes saved while typing). The newest 500 actions are kept.
+  Corrections of the detection (F4d) are journaled too: the override rows they add and remove, and the
+  user data of the affected models before and after the detection. Undo restores the rows, runs the
+  detection (stopping a running scan for it), and gives each model its data back – by uid, or at its
+  place if the correction had removed it (that model gets its old uid back). Places a model has only
+  through a merge are marked (`model_anchor.merged`); once the merge is gone they no longer keep the model,
+  so a reset of the corrections separates merged folders again.
 
 ## L – Additional Fields
 
@@ -230,6 +267,21 @@ modelkeeper\
 - The folder must be writable (i.e. **not** under `C:\Program Files`).
 - The folder must be on the **local PC**, not on the NAS (SQLite over network shares is unreliable, J5).
 - Settings include an "Open data folder" action.
+
+
+**Moving the installation.** The data folder is self-contained: nothing in it refers to its own absolute
+path (snapshots are found by name, thumbnails by file name, the restore request names a snapshot). So the
+whole `modelkeeper` folder can be moved or copied to another folder, disk or PC as it is. `settings.json`
+remembers the data folder of the last start (`dataDir`); a different one at start means the app was moved.
+Root folders hold absolute paths; for each that is gone at its old path, the path it would have if it moved
+along (`appdir.MovedRoot`: the common end of old and new data folder is cut off, e.g. `E:\` → `F:\` or
+`Desktop` → `Tools`) is checked, and existing ones are offered for "Change path" (E10) in one click.
+
+**Configuration file** (`modelkeeper-config`, JSON): the settings (without `dataDir`) and the list of root
+folders. Import shows what it contains; the user chooses: detection rules and file types (applied like the
+settings screen: snapshot before changed file types, catalog updated, detection again), language and NAS
+interval, PC-specific paths (slicer, second backup folder; only where they exist), and which root folders
+to add (scanned afterwards).
 
 ## N – Localization
 

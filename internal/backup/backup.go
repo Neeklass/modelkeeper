@@ -7,6 +7,8 @@
 //	settings.json  copy of the settings
 //	thumbnails/    only the manually set thumbnails; generated ones are reproducible
 //	manifest.json  app and schema version, time, reason, counts
+//	catalog-export.json  everything the user entered, as readable JSON (userexport):
+//	               restorable without the catalog.db and without this app's schema
 //
 // It is written into a temporary folder and renamed when complete, so a
 // half-written snapshot is never taken for a valid one. A folder counts as a
@@ -32,6 +34,8 @@ import (
 	"strings"
 	"time"
 
+	"modelkeeper/internal/userexport"
+
 	_ "modernc.org/sqlite"
 )
 
@@ -44,6 +48,9 @@ const (
 	ReasonManual       = "manual"
 	ReasonRemoveRoot   = "pre-remove-root"
 	ReasonFileTypes    = "pre-filetypes"
+	ReasonImport       = "pre-import"
+	ReasonRelocate     = "pre-relocate"
+	ReasonForget       = "pre-forget"
 	reasonPreMigration = "pre-migration"
 )
 
@@ -86,6 +93,10 @@ type Manifest struct {
 	// of the snapshot (VACUUM INTO writes identical copies of an unchanged
 	// catalog), to recognize unchanged days.
 	ContentHash string `json:"contentHash,omitempty"`
+	// Export: the snapshot holds catalog-export.json (userexport); false in
+	// older snapshots or if writing it failed (ExportError).
+	Export      bool   `json:"export,omitempty"`
+	ExportError string `json:"exportError,omitempty"`
 }
 
 // Snapshot is a valid snapshot folder.
@@ -220,6 +231,16 @@ func write(ctx context.Context, tmp string, src Source) (Manifest, error) {
 			m.Thumbnails++
 		}
 	}
+	// The readable export is made from the verified copy. It is derived from
+	// catalog.db, so it is not part of the content hash (it carries a time).
+	// A failure does not cost the snapshot; it is recorded in the manifest.
+	if _, err := userexport.WriteFile(ctx, snap, filepath.Join(tmp, userexport.FileName), userexport.Options{
+		AppVersion: src.AppVersion, SettingsFile: filepath.Join(tmp, "settings.json"),
+	}); err != nil {
+		m.ExportError = err.Error()
+	} else {
+		m.Export = true
+	}
 	snap.Close()
 	if m.ContentHash, err = contentHash(tmp); err != nil {
 		return m, err
@@ -228,14 +249,14 @@ func write(ctx context.Context, tmp string, src Source) (Manifest, error) {
 }
 
 // contentHash hashes the files of a snapshot folder (names and contents,
-// in a fixed order), except the manifest.
+// in a fixed order), except the manifest and the export (derived, with a time).
 func contentHash(dir string) (string, error) {
 	var files []string
 	err := filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if !d.IsDir() && p != filepath.Join(dir, manifestName) {
+		if !d.IsDir() && p != filepath.Join(dir, manifestName) && p != filepath.Join(dir, userexport.FileName) {
 			files = append(files, p)
 		}
 		return nil

@@ -11,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"modelkeeper/internal/userexport"
 )
 
 // ExternalSubdir is the folder Mirror writes into inside the external backup
@@ -171,6 +173,12 @@ func checkRestore(ctx context.Context, s Snapshot, work string, r *RestoreCheck)
 	}
 	if thumbs < m.Thumbnails {
 		return fmt.Errorf("%d of %d manual thumbnails are missing", m.Thumbnails-thumbs, m.Thumbnails)
+	}
+	// The readable export is the fallback when the catalog cannot be used.
+	if m.Export {
+		if _, err := userexport.Read(filepath.Join(s.Path, userexport.FileName)); err != nil {
+			return fmt.Errorf("%s cannot be read: %w", userexport.FileName, err)
+		}
 	}
 
 	if err := os.MkdirAll(work, 0o755); err != nil {

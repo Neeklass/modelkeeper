@@ -21,6 +21,8 @@ export interface Query {
     extractedAndArchive: boolean
     missing: boolean
     inactive: boolean
+    /** Models without files in the catalog yet (imported, J7). */
+    waiting: boolean
     orphanedBy: number
     /** "" = by name, "newest" = most recently added first. */
     sort: string
@@ -29,14 +31,14 @@ export interface Query {
 export const emptyQuery: Query = {
     text: '', untagged: false, favorites: false, tagId: 0, creatorId: 0, rootId: 0, ext: '', supports: '', printStatus: '',
     duplicates: false, singleLocation: false, offline: false, brokenArchives: false,
-    extractedAndArchive: false, missing: false, inactive: false, orphanedBy: 0, sort: '',
+    extractedAndArchive: false, missing: false, inactive: false, waiting: false, orphanedBy: 0, sort: '',
 }
 
 export const FLAGS = ['duplicates', 'singleLocation', 'offline', 'brokenArchives', 'extractedAndArchive',
     'missing', 'inactive'] as const
 
 /** Fields that choose the view (sidebar) rather than filter it. */
-const VIEW_FIELDS = new Set(['text', 'favorites', 'untagged', 'sort', 'orphanedBy'])
+const VIEW_FIELDS = new Set(['text', 'favorites', 'untagged', 'sort', 'orphanedBy', 'waiting'])
 
 /** Number of active filters, not counting the search text and the view (favorites, to catalog, sort). */
 export function activeFilters(q: Query): number {

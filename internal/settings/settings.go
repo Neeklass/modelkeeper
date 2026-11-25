@@ -39,6 +39,9 @@ type Settings struct {
 	// ExternalBackupDir is a second folder (another drive, a cloud folder)
 	// every snapshot is copied to; "" = off (J2).
 	ExternalBackupDir string `json:"externalBackupDir,omitempty"`
+	// DataDir is where the data folder was at the last start; a different
+	// place means the app folder was moved (M), see appdir.MovedRoot.
+	DataDir string `json:"dataDir,omitempty"`
 }
 
 // Defaults returns the built-in settings.

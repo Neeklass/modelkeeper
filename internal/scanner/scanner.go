@@ -164,6 +164,8 @@ type Manager struct {
 	last   *tracker
 	queue  []job // started one after another when no scan runs (Enqueue)
 	closed bool
+	// hold > 0: queued jobs wait (Interrupting runs something in between).
+	hold int
 }
 
 // job is a queued scan.
@@ -591,6 +593,38 @@ func (m *Manager) Exclusive(fn func(ctx context.Context) error) error {
 	return fn(context.Background())
 }
 
+// Interrupting runs fn like Exclusive, but does not fail when a scan or
+// detection runs: that one is stopped first (everything done so far is
+// kept: hashes, checkpoints inside large files) and queued again, ahead of
+// the other queued jobs, so it continues right after fn. For rare actions
+// that must not wait hours for a NAS scan (import, changing a root's path).
+func (m *Manager) Interrupting(fn func(ctx context.Context) error) error {
+	m.mu.Lock()
+	var again *job
+	if m.running() && m.last != nil {
+		if p := m.last.snapshot(); p.Running {
+			again = &job{p.RootID, p.Mode}
+		}
+	}
+	m.hold++
+	cancel := m.cancel
+	m.mu.Unlock()
+	defer func() {
+		m.mu.Lock()
+		m.hold--
+		if again != nil && !m.closed {
+			m.queue = append([]job{*again}, m.queue...)
+		}
+		m.mu.Unlock()
+		m.next()
+	}()
+	if again != nil && cancel != nil {
+		cancel()
+	}
+	m.Wait()
+	return m.Exclusive(fn)
+}
+
 // EnqueueScan queues an incremental scan of a root; it starts as soon as no
 // other scan runs (right away if none does).
 func (m *Manager) EnqueueScan(rootID int64) { m.enqueue(rootID, ModeIncremental) }
@@ -623,7 +657,7 @@ func (m *Manager) enqueue(rootID int64, mode string) {
 func (m *Manager) next() {
 	for {
 		m.mu.Lock()
-		if m.closed || len(m.queue) == 0 || m.running() {
+		if m.closed || len(m.queue) == 0 || m.running() || m.hold > 0 {
 			m.mu.Unlock()
 			return
 		}

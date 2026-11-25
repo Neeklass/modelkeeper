@@ -7,32 +7,65 @@ import {scanner} from '../models';
 import {thumbs} from '../models';
 import {backup} from '../models';
 import {settings} from '../models';
+import {userexport} from '../models';
 
 export function AddRoot(arg1:string):Promise<catalog.Root>;
 
 export function AddTags(arg1:Array<number>,arg2:Array<string>):Promise<void>;
 
+export function ApplyConfig(arg1:main.ConfigApply):Promise<main.ConfigOutcome>;
+
+export function ApplyImport(arg1:Array<userexport.RootChoice>,arg2:boolean):Promise<main.ImportOutcome>;
+
+export function ApplyMoveSuggestions(arg1:Array<number>):Promise<number>;
+
+export function CancelImport():Promise<void>;
+
 export function CancelRestore():Promise<void>;
 
 export function CancelScan():Promise<void>;
+
+export function CheckRelocateRoot(arg1:number,arg2:string):Promise<catalog.RelocateCheck>;
+
+export function CheckRestoreNow():Promise<backup.RestoreCheck>;
+
+export function ChooseExternalBackupDir():Promise<string>;
+
+export function ChooseSlicer():Promise<string>;
+
+export function ClearExternalBackupDir():Promise<void>;
+
+export function ClearSlicer():Promise<void>;
 
 export function CreateBackup():Promise<main.BackupInfo>;
 
 export function DeactivateRoot(arg1:number):Promise<void>;
 
+export function DeleteTag(arg1:string):Promise<number>;
+
 export function DetachAnchor(arg1:number,arg2:number,arg3:string):Promise<void>;
+
+export function DismissMoved():Promise<void>;
 
 export function DismissNotice():Promise<void>;
 
 export function DismissSuggestion(arg1:number,arg2:string):Promise<void>;
 
+export function ExportConfig():Promise<string>;
+
 export function ExportHashes(arg1:number):Promise<hashshare.ExportResult>;
+
+export function ExportUserData():Promise<main.ExportResult>;
+
+export function ForgetWaitingModels(arg1:Array<number>):Promise<number>;
 
 export function GetDetectionSettings():Promise<main.DetectionSettingsView>;
 
 export function GetFilterOptions():Promise<catalog.FilterOptions>;
 
 export function GetModel(arg1:number):Promise<catalog.ModelDetail>;
+
+export function GetMoveSuggestions():Promise<Array<main.RootMove>>;
 
 export function GetRootStats(arg1:number):Promise<catalog.RootStats>;
 
@@ -43,6 +76,8 @@ export function GetStatus():Promise<main.AppStatus>;
 export function ImportHashes(arg1:number):Promise<main.ImportResult>;
 
 export function ListBackups():Promise<Array<main.BackupInfo>>;
+
+export function ListHistory():Promise<Array<catalog.HistoryEntry>>;
 
 export function ListLastScanIssues(arg1:number):Promise<Array<catalog.Issue>>;
 
@@ -62,9 +97,21 @@ export function MergeModels(arg1:number,arg2:Array<number>):Promise<void>;
 
 export function OpenDataFolder():Promise<void>;
 
+export function OpenExternalBackupDir():Promise<void>;
+
+export function OpenInSlicer(arg1:number):Promise<void>;
+
+export function PauseScan(arg1:number):Promise<void>;
+
+export function PickConfigFile():Promise<main.ConfigPreview>;
+
 export function PickFolder():Promise<string>;
 
+export function PickImportFile():Promise<main.ImportPreview>;
+
 export function PickThumbnailFile(arg1:number):Promise<boolean>;
+
+export function PreviewImport(arg1:Array<userexport.RootChoice>):Promise<main.ImportPreview>;
 
 export function PurgeRoot(arg1:number,arg2:number):Promise<void>;
 
@@ -72,7 +119,13 @@ export function Quit():Promise<void>;
 
 export function RedetectRoot(arg1:number):Promise<void>;
 
+export function RelocateRoot(arg1:number,arg2:string):Promise<catalog.Root>;
+
 export function RemoveTag(arg1:Array<number>,arg2:string):Promise<void>;
+
+export function RemoveTags(arg1:Array<number>,arg2:Array<string>):Promise<void>;
+
+export function RenameTag(arg1:string,arg2:string):Promise<number>;
 
 export function RequestRestore(arg1:string):Promise<void>;
 
@@ -108,20 +161,6 @@ export function StartScan(arg1:number):Promise<void>;
 
 export function StartWithEmptyCatalog():Promise<void>;
 
+export function Undo():Promise<catalog.UndoResult>;
+
 export function UpdateModel(arg1:number,arg2:catalog.ModelUpdate):Promise<void>;
-
-export function PauseScan(arg1:number):Promise<void>;
-
-export function OpenInSlicer(arg1:number):Promise<void>;
-
-export function ChooseSlicer():Promise<string>;
-
-export function ClearSlicer():Promise<void>;
-
-export function ChooseExternalBackupDir():Promise<string>;
-
-export function ClearExternalBackupDir():Promise<void>;
-
-export function CheckRestoreNow():Promise<backup.RestoreCheck>;
-
-export function OpenExternalBackupDir():Promise<void>;

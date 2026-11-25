@@ -25,7 +25,13 @@ type ModelRow struct {
 	Favorite   bool     `json:"favorite"`
 	// Inactive: the model's files are only on deactivated roots (E9).
 	Inactive bool `json:"inactive"`
+	// Waiting: the model has no files in the catalog (yet): imported, or its
+	// root folder was deleted. A scan that finds its files links it up (J7).
+	Waiting bool `json:"waiting"`
 }
+
+// waitingCond is true for a model "m" without any location.
+const waitingCond = `NOT EXISTS (SELECT 1 FROM location l WHERE l.model_id = m.id)`
 
 // ThumbURL is the address under which the app serves a thumbnail file; the
 // version parameter changes whenever the model (and so its thumbnail) changes.
@@ -56,6 +62,7 @@ type ModelQuery struct {
 	ExtractedAndArchive bool `json:"extractedAndArchive"` // files exist extracted and inside an archive
 	Missing             bool `json:"missing"`             // files gone since the last scan
 	Inactive            bool `json:"inactive"`            // files only on deactivated roots (E9)
+	Waiting             bool `json:"waiting"`             // no files in the catalog yet (imported, J7)
 	// OrphanedBy: models that deleting this (deactivated) root permanently
 	// would leave without a location (PurgeImpact).
 	OrphanedBy int64 `json:"orphanedBy"`
@@ -157,6 +164,9 @@ func (q ModelQuery) where() (from, order string, args []any) {
 	if q.Inactive {
 		add(inactiveCond)
 	}
+	if q.Waiting {
+		add(waitingCond)
+	}
 	if q.OrphanedBy != 0 {
 		add(orphanedByCond, q.OrphanedBy, q.OrphanedBy, q.OrphanedBy)
 	}
@@ -206,7 +216,7 @@ func SearchModels(ctx context.Context, db *sql.DB, query ModelQuery, offset, lim
 			(SELECT count(*) FROM tag_suggestion s WHERE s.model_id = m.id AND s.state = 'open'),
 			coalesce((SELECT group_concat(name, char(31)) FROM (SELECT t.name FROM model_tag mt
 				JOIN tag t ON t.id = mt.tag_id WHERE mt.model_id = m.id ORDER BY t.name COLLATE NOCASE)), ''),
-			coalesce(m.thumb_file, ''), m.updated_at, m.favorite, `+inactiveCond+`
+			coalesce(m.thumb_file, ''), m.updated_at, m.favorite, `+inactiveCond+`, `+waitingCond+`
 		`+from+` `+order+` LIMIT ? OFFSET ?`, append(args, limit, offset)...)
 	if err != nil {
 		return page, err
@@ -217,7 +227,7 @@ func SearchModels(ctx context.Context, db *sql.DB, query ModelQuery, offset, lim
 		var variants, tags, thumb string
 		var updated int64
 		if err := rows.Scan(&r.ID, &r.Name, &r.Creator, &r.Supports, &variants, &r.Files, &r.Roots,
-			&r.Missing, &r.Suggestion, &tags, &thumb, &updated, &r.Favorite, &r.Inactive); err != nil {
+			&r.Missing, &r.Suggestion, &tags, &thumb, &updated, &r.Favorite, &r.Inactive, &r.Waiting); err != nil {
 			return page, err
 		}
 		r.Thumb = ThumbURL(thumb, updated)
@@ -237,19 +247,27 @@ type ModelDetail struct {
 	PrintStatus string `json:"printStatus"`
 	Supports    string `json:"supports"`
 	// SupportsManual: the user set supports; detection no longer changes it.
-	SupportsManual bool          `json:"supportsManual"`
-	Favorite       bool          `json:"favorite"`
-	Thumb          string        `json:"thumb"`       // URL, "" if none
-	ThumbSource    string        `json:"thumbSource"` // manual | image | embedded | rendered | ""
-	Anchors        []ModelAnchor `json:"anchors"`
-	Variants       []string      `json:"variants"`
-	Tags           []string      `json:"tags"`
-	TagSuggested   []string      `json:"tagSuggestions"`
-	Files          []ModelFile   `json:"files"`
+	SupportsManual bool `json:"supportsManual"`
+	Favorite       bool `json:"favorite"`
+	// CreatorManual: the user set the creator; detection no longer changes it.
+	CreatorManual bool `json:"creatorManual"`
+	// Origin, purchase link and license (E6, D7).
+	Origin       string        `json:"origin"`
+	OriginURL    string        `json:"originUrl"`
+	License      string        `json:"license"`
+	Thumb        string        `json:"thumb"`       // URL, "" if none
+	ThumbSource  string        `json:"thumbSource"` // manual | image | embedded | rendered | ""
+	Anchors      []ModelAnchor `json:"anchors"`
+	Variants     []string      `json:"variants"`
+	Tags         []string      `json:"tags"`
+	TagSuggested []string      `json:"tagSuggestions"`
+	Files        []ModelFile   `json:"files"`
 	// HasCorrections: manual corrections exist at or below the model's folders.
 	HasCorrections bool `json:"hasCorrections"`
 	// Inactive: the model's files are only on deactivated roots (E9).
 	Inactive bool `json:"inactive"`
+	// Waiting: no files in the catalog yet (see ModelRow.Waiting).
+	Waiting bool `json:"waiting"`
 }
 
 // ModelAnchor is a place where the model was detected.
@@ -293,10 +311,12 @@ func GetModel(ctx context.Context, db *sql.DB, id int64) (ModelDetail, error) {
 	var updated int64
 	err := db.QueryRowContext(ctx, `SELECT m.id, m.uid, m.name, coalesce(c.name, ''), m.notes, m.print_status, m.supports,
 		m.supports_manual, coalesce(m.thumb_file, ''), coalesce(m.thumb_source, ''), m.updated_at, m.favorite,
-		`+inactiveCond+`
+		m.creator_manual, coalesce(m.origin, ''), coalesce(m.origin_url, ''), coalesce(m.license, ''),
+		`+inactiveCond+`, `+waitingCond+`
 		FROM model m LEFT JOIN creator c ON c.id = m.creator_id WHERE m.id = ?`, id).
 		Scan(&d.ID, &d.UID, &d.Name, &d.Creator, &d.Notes, &d.PrintStatus, &supports, &d.SupportsManual,
-			&thumbFile, &d.ThumbSource, &updated, &d.Favorite, &d.Inactive)
+			&thumbFile, &d.ThumbSource, &updated, &d.Favorite, &d.CreatorManual, &d.Origin, &d.OriginURL, &d.License,
+			&d.Inactive, &d.Waiting)
 	if err != nil {
 		return d, err
 	}

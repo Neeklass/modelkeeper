@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
-    AddRoot, ExportHashes, GetRootStats, ImportHashes, GetScanProgress, ListLastScanIssues, ListRemovedRoots, ListRoots, PickFolder, PurgeRoot, RedetectRoot, DeactivateRoot,
+    AddRoot, CheckRelocateRoot, ExportHashes, RelocateRoot, GetRootStats, ImportHashes, GetScanProgress, ListLastScanIssues, ListRemovedRoots, ListRoots, PickFolder, PurgeRoot, RedetectRoot, DeactivateRoot,
     PauseScan, SetRootCreatorLevel, StartFullCheck, StartScan,
 } from '../../wailsjs/go/main/App'
 import {catalog, scanner} from '../../wailsjs/go/models'
@@ -82,6 +82,25 @@ export function RootsPanel({onShowModels}: { onShowModels?: (q: Partial<Query>, 
         reload()
     })
 
+    // The files moved as a whole (new NAS, other drive letter): the root keeps
+    // its ID and everything below it (E2). Looked up first, then confirmed.
+    const relocateRoot = (r: catalog.Root) => run(async () => {
+        const path = await PickFolder()
+        if (!path) return
+        const c = await CheckRelocateRoot(r.id, path)
+        const lines = [t('roots.relocateConfirm', {from: r.path, to: c.path})]
+        if (c.total === 0) lines.push(t('roots.relocateNoFiles'))
+        else lines.push(t('roots.relocateFound', {found: formatNumber(c.found), sampled: formatNumber(c.sampled)}))
+        if (c.missing.length > 0) lines.push(t('roots.relocateMissing', {files: c.missing.join('\n')}))
+        if (c.found > 0 && c.sameTime < c.found) lines.push(t('roots.relocateTimes'))
+        lines.push(t('roots.relocateSafe'))
+        const bad = c.sampled > 0 && c.found < c.sampled / 2
+        if (!await confirm({message: lines.join('\n\n'), confirmLabel: t('roots.relocate'), danger: bad})) return
+        await RelocateRoot(r.id, c.path)
+        setNotice({rootId: r.id, text: t('roots.relocated', {path: c.path})})
+        reload()
+    })
+
     const scanning = progress?.running ?? false
 
     return (
@@ -107,6 +126,7 @@ export function RootsPanel({onShowModels}: { onShowModels?: (q: Partial<Query>, 
                          })}
                          onPause={() => run(() => PauseScan(r.id))}
                          onRemove={() => deactivateRoot(r)}
+                         onRelocate={() => relocateRoot(r)}
                          onExport={() => exportHashes(r)}
                          onImport={() => importHashes(r)}
                          notice={notice?.rootId === r.id ? notice.text : null}/>
@@ -233,6 +253,7 @@ function RootRow(props: {
     onCreatorLevel: (on: boolean) => void
     onPause: () => void
     onRemove: () => void
+    onRelocate: () => void
     onExport: () => void
     onImport: () => void
     notice: string | null
@@ -294,8 +315,12 @@ function RootRow(props: {
                     <button className="link small" onClick={props.onImport} disabled={props.scanning}
                             title={t('share.importHint')}>{t('share.import')}</button>
                 </span>
-                <button className="subtle small" onClick={props.onRemove} disabled={running}
-                        title={t('roots.deactivateHint')}>{t('roots.deactivate')}…</button>
+                <span className="row">
+                    <button className="subtle small" onClick={props.onRelocate} disabled={props.scanning}
+                            title={t('roots.relocateHint')}>{t('roots.relocate')}…</button>
+                    <button className="subtle small" onClick={props.onRemove} disabled={running}
+                            title={t('roots.deactivateHint')}>{t('roots.deactivate')}…</button>
+                </span>
             </div>
             {props.notice && <p className="small">{props.notice}</p>}
 

@@ -10,10 +10,11 @@ import {useEta} from './RootsPanel'
 
 export type View = 'library' | 'folders' | 'settings' | 'help'
 
-type LibraryView = 'all' | 'untagged' | 'favorites' | 'newest'
+type LibraryView = 'all' | 'untagged' | 'favorites' | 'newest' | 'waiting'
 
 /** The view of the library a query shows (sidebar entries). */
 export function libraryView(q: Query): LibraryView {
+    if (q.waiting) return 'waiting'
     if (q.untagged) return 'untagged'
     if (q.favorites) return 'favorites'
     if (q.sort === 'newest') return 'newest'
@@ -25,6 +26,7 @@ const VIEW_QUERY: Record<LibraryView, Partial<Query>> = {
     untagged: {untagged: true},
     favorites: {favorites: true},
     newest: {sort: 'newest'},
+    waiting: {waiting: true},
 }
 
 /** Navigation: library views, creators, tags, locations, and the app's state at the bottom. */
@@ -55,6 +57,11 @@ export function Sidebar({view, onView, query, onQuery, library, status}: {
                           active={current === 'favorites'} onClick={() => pick('favorites')}/>
                 <SideItem icon="◷" label={t('nav.newest')}
                           active={current === 'newest'} onClick={() => pick('newest')}/>
+                {library.counts.waiting > 0 && (
+                    <SideItem icon="⧗" label={t('nav.waiting')} count={library.counts.waiting}
+                              title={t('nav.waitingHint')}
+                              active={current === 'waiting'} onClick={() => pick('waiting')}/>
+                )}
             </div>
 
             <SideList title={t('nav.creators')} items={library.creators.map(c => ({id: c.id, name: c.name, count: c.models}))}

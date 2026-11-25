@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react'
 import {useTranslation} from 'react-i18next'
-import {AddTags, MergeModels, RemoveTag, SearchModels, SetFavorite} from '../../wailsjs/go/main/App'
+import {AddTags, MergeModels, RemoveTags, SearchModels, SetFavorite} from '../../wailsjs/go/main/App'
 import {catalog} from '../../wailsjs/go/models'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
 import {formatNumber} from '../format'
@@ -11,6 +11,7 @@ import {Thumb} from './Thumb'
 import {activeFilters, clearFilters, FilterPanel, FLAGS, Query} from './FilterPanel'
 import {FavoriteStar} from './FavoriteStar'
 import {useConfirm} from './ConfirmDialog'
+import {useToast} from './Toast'
 import {libraryView} from './Sidebar'
 
 const ROW_HEIGHT = 64
@@ -445,6 +446,8 @@ function EmptyState({query, library, onQuery}: { query: Query; library: Library;
             text = t('empty.cataloged')
         } else if (lv === 'favorites') {
             title = t('favorites.empty')
+        } else if (lv === 'waiting') {
+            title = t('empty.waitingTitle')
         }
     }
     return (
@@ -478,13 +481,18 @@ function SelectionBar({selection, allTags, onChanged, onMerged, onClear}: {
         if (!selection.has(target)) setTarget(ids[0])
     }, [selection]) // eslint-disable-line react-hooks/exhaustive-deps
 
+    const toast = useToast()
+    // Bulk changes are undoable: the toast offers it (TODO 2.1).
     const run = async (fn: () => Promise<void>, doneText?: string) => {
         setBusy(true)
         setError(null)
         setDone(null)
         try {
             await fn()
-            if (doneText) setDone(doneText)
+            if (doneText) {
+                setDone(doneText)
+                toast.show({text: doneText, undo: true})
+            }
         } catch (e) {
             setError(toMsg(e))
         } finally {
@@ -497,7 +505,7 @@ function SelectionBar({selection, allTags, onChanged, onMerged, onClear}: {
         run(async () => {
             await MergeModels(target, ids.filter(id => id !== target))
             onMerged(target)
-        })
+        }, t('corrections.merged', {count: ids.length, name: selection.get(target)}))
     }
 
     return (
@@ -515,7 +523,7 @@ function SelectionBar({selection, allTags, onChanged, onMerged, onClear}: {
                 }, t('tags.added', {count: ids.length, tags: names.join(', ')}))}/>
                 <TagInput allTags={allTags} placeholder={t('tags.removePlaceholder')} buttonLabel={t('tags.removeButton')}
                           disabled={busy} onSubmit={names => run(async () => {
-                    for (const n of names) await RemoveTag(ids, n)
+                    await RemoveTags(ids, names)
                     onChanged()
                 }, t('tags.removed', {count: ids.length, tags: names.join(', ')}))}/>
             </div>

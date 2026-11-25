@@ -1,7 +1,7 @@
-import {useEffect, useState} from 'react'
+import {useCallback, useEffect, useRef, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
-    AddTags, DetachAnchor, DismissSuggestion, GetModel, ListThumbnailCandidates, MarkFolderModel, MarkFolderNotModel,
+    AddTags, DetachAnchor, DismissSuggestion, ForgetWaitingModels, GetModel, ListThumbnailCandidates, MarkFolderModel, MarkFolderNotModel,
     OpenInSlicer, PickThumbnailFile, RemoveTag, ResetCorrections, ResetThumbnail, SetThumbnail, SetThumbnailFromView,
     ShowInExplorer, SplitModel, UpdateModel,
 } from '../../wailsjs/go/main/App'
@@ -15,6 +15,7 @@ import {canPreview, defaultPreviewFile, Preview3D} from './Preview3D'
 import {useConfirm} from './ConfirmDialog'
 import {PathText} from './PathText'
 import {Lightbox, LightboxImage} from './Lightbox'
+import {useToast} from './Toast'
 
 const PRINT_STATUSES = ['not_printed', 'printed', 'failed']
 const SUPPORTS = ['presupported', 'unsupported', 'both', 'none']
@@ -91,13 +92,15 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
     }, [id, version]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const confirm = useConfirm()
-    const act = async (fn: () => Promise<void>, confirmText?: string) => {
+    const toast = useToast()
+    const act = async (fn: () => Promise<void>, confirmText?: string, undoText?: string) => {
         if (confirmText && !await confirm({message: confirmText})) return
         setBusy(true)
         setError(null)
         try {
             await fn()
             onChanged()
+            if (undoText) toast.show({text: undoText, undo: true})
         } catch (e) {
             setError(toMsg(e))
         } finally {
@@ -145,15 +148,23 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
                     <FavoriteStar id={d.id} on={d.favorite} onChanged={onChanged} className="big"/>
                 </div>
                 <div className="row small muted">
-                    {d.creator
-                        ? <button className="link" onClick={() => onShowCreator?.(d.creator)}
-                                  title={t('models.showCreator', {name: d.creator})}>{d.creator}</button>
-                        : <span>{t('models.noCreator')}</span>}
+                    <EditableCreator creator={d.creator} manual={d.creatorManual} disabled={busy}
+                                     onShow={onShowCreator} onSave={creator => update({creator})}/>
                     {d.variants.length > 0 && <span>· {d.variants.join(', ')}</span>}
                     {d.inactive && <span className="warn-text">· {t('models.inactive')}</span>}
                 </div>
             </div>
             {error && <p className="error">{translateMsg(error)}</p>}
+            {d.waiting && (
+                <div className="notice-inactive small">
+                    <p>{t('models.waitingNotice')}</p>
+                    <button className="subtle small" disabled={busy}
+                            onClick={() => act(async () => {
+                                await ForgetWaitingModels([d.id])
+                                onClose()
+                            }, t('models.confirmForget', {name: d.name}))}>{t('models.forget')}…</button>
+                </div>
+            )}
 
             <div className="media">
                 {media.kind === '3d' ? (
@@ -216,7 +227,8 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
                         <span key={tag} className="chip tag">
                             {tag}
                             <button className="chip-x" aria-label={t('tags.remove', {name: tag})} disabled={busy}
-                                    onClick={() => act(() => RemoveTag([d.id], tag))}>✕</button>
+                                    onClick={() => act(() => RemoveTag([d.id], tag), undefined,
+                                        t('tags.removed', {count: 1, tags: tag}))}>✕</button>
                         </span>
                     ))}
                     {d.tags.length === 0 && <span className="muted small">{t('tags.none')}</span>}
@@ -229,7 +241,8 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
                                 <button className="link" disabled={busy} title={t('tags.accept')}
                                         onClick={() => act(() => AddTags([d.id], [s]))}>+ {s}</button>
                                 <button className="chip-x" disabled={busy} aria-label={t('tags.dismiss', {name: s})}
-                                        onClick={() => act(() => DismissSuggestion(d.id, s))}>✕</button>
+                                        onClick={() => act(() => DismissSuggestion(d.id, s), undefined,
+                                            t('tags.dismissed', {name: s}))}>✕</button>
                             </span>
                         ))}
                         {d.tagSuggestions.length > 1 && (
@@ -266,12 +279,21 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
                             {SUPPORTS.map(s => <option key={s} value={s}>{t(`supports.${s}`)}</option>)}
                         </select>
                     </dd>
+                    <dt>{t('models.origin')}</dt>
+                    <dd><InlineText value={d.origin} disabled={busy} placeholder={t('models.originPlaceholder')}
+                                    onSave={origin => update({origin})}/></dd>
+                    <dt>{t('models.originUrl')}</dt>
+                    <dd><InlineText value={d.originUrl} disabled={busy} placeholder="https://…"
+                                    onSave={originUrl => update({originUrl})}/></dd>
+                    <dt>{t('models.license')}</dt>
+                    <dd><InlineText value={d.license} disabled={busy} placeholder={t('models.licensePlaceholder')}
+                                    onSave={license => update({license})}/></dd>
                 </dl>
             </section>
 
             <section className="detail-section">
                 <h3>{t('models.notes')}</h3>
-                <Notes notes={d.notes} disabled={busy} onSave={notes => update({notes})}/>
+                <Notes key={d.id} modelId={d.id} notes={d.notes} onSaved={onChanged}/>
             </section>
 
             <details className="detail-section">
@@ -489,14 +511,139 @@ function EditableName({name, disabled, onSave}: { name: string; disabled: boolea
     )
 }
 
-function Notes({notes, disabled, onSave}: { notes: string; disabled: boolean; onSave: (n: string) => void }) {
+/**
+ * Notes are saved while typing (shortly after the last key), when leaving the
+ * field, when another model is opened and when the window closes, so nothing
+ * typed is lost. The field never locks while it saves.
+ */
+function Notes({modelId, notes, onSaved}: { modelId: number; notes: string; onSaved: () => void }) {
     const {t} = useTranslation()
     const [value, setValue] = useState(notes)
-    useEffect(() => setValue(notes), [notes])
+    const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+    const saved = useRef(notes)   // the text the catalog has
+    const latest = useRef(notes)  // the text in the field
+    const focused = useRef(false)
+    const savedCb = useRef(onSaved)
+    savedCb.current = onSaved
+
+    // Changed elsewhere (undo, import) while not being edited: show it.
+    useEffect(() => {
+        if (!focused.current && latest.current === saved.current && notes !== saved.current) {
+            saved.current = notes
+            latest.current = notes
+            setValue(notes)
+        }
+    }, [notes])
+
+    const save = useCallback(() => {
+        const v = latest.current
+        if (v === saved.current) return
+        setState('saving')
+        UpdateModel(modelId, catalog.ModelUpdate.createFrom({notes: v})).then(() => {
+            saved.current = v
+            setState(latest.current === v ? 'saved' : 'saving')
+            savedCb.current()
+        }).catch(() => setState('error'))
+    }, [modelId])
+
+    useEffect(() => {
+        if (value === saved.current) return
+        const h = window.setTimeout(save, 800)
+        return () => window.clearTimeout(h)
+    }, [value, save])
+
+    // Another model, the panel closed, or the window closes: save now.
+    useEffect(() => {
+        window.addEventListener('beforeunload', save)
+        return () => {
+            window.removeEventListener('beforeunload', save)
+            save()
+        }
+    }, [save])
+
     return (
-        <textarea className="notes" rows={3} value={value} disabled={disabled} placeholder={t('models.notesPlaceholder')}
-                  onChange={e => setValue(e.target.value)}
-                  onBlur={() => value !== notes && onSave(value)}/>
+        <>
+            <textarea className="notes" rows={3} value={value} placeholder={t('models.notesPlaceholder')}
+                      onFocus={() => {
+                          focused.current = true
+                      }}
+                      onChange={e => {
+                          latest.current = e.target.value
+                          setValue(e.target.value)
+                      }}
+                      onBlur={() => {
+                          focused.current = false
+                          save()
+                      }}/>
+            <span className={`small ${state === 'error' ? 'error' : 'muted'}`} aria-live="polite">
+                {state === 'saving' ? t('models.notesSaving') : state === 'saved' ? t('models.notesSaved')
+                    : state === 'error' ? t('models.notesError') : '\u00a0'}
+            </span>
+        </>
+    )
+}
+
+/** The creator: a link to the creator's models, editable (detection then keeps it). */
+function EditableCreator({creator, manual, disabled, onShow, onSave}: {
+    creator: string
+    manual: boolean
+    disabled: boolean
+    onShow?: (name: string) => void
+    onSave: (creator: string) => void
+}) {
+    const {t} = useTranslation()
+    const [editing, setEditing] = useState(false)
+    const [value, setValue] = useState(creator)
+    useEffect(() => setValue(creator), [creator])
+    if (!editing) {
+        return (
+            <span className="row">
+                {creator
+                    ? <button className="link" onClick={() => onShow?.(creator)}
+                              title={t('models.showCreator', {name: creator})}>{creator}</button>
+                    : <span>{t('models.noCreator')}</span>}
+                {manual && <span className="small muted" title={t('models.creatorManualHint')}>({t('models.edited')})</span>}
+                <button className="link small" disabled={disabled} onClick={() => setEditing(true)}
+                        aria-label={t('models.editCreator')} title={t('models.editCreator')}>✎</button>
+            </span>
+        )
+    }
+    const save = () => {
+        setEditing(false)
+        if (value.trim() !== creator) onSave(value.trim())
+    }
+    return (
+        <input className="name-input small" autoFocus value={value} disabled={disabled} placeholder={t('models.creator')}
+               onChange={e => setValue(e.target.value)} onBlur={save}
+               onKeyDown={e => {
+                   if (e.key === 'Enter') save()
+                   if (e.key === 'Escape') {
+                       setValue(creator)
+                       setEditing(false)
+                   }
+               }}/>
+    )
+}
+
+/** A one-line text field that saves on Enter or when leaving it. */
+function InlineText({value, disabled, placeholder, onSave}: {
+    value: string
+    disabled: boolean
+    placeholder?: string
+    onSave: (v: string) => void
+}) {
+    const [v, setV] = useState(value)
+    useEffect(() => setV(value), [value])
+    const save = () => {
+        if (v.trim() !== value) onSave(v.trim())
+    }
+    return (
+        <input className="inline-text" value={v} disabled={disabled} placeholder={placeholder}
+               onChange={e => setV(e.target.value)} onBlur={save}
+               onKeyDown={e => {
+                   if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                   if (e.key === 'Escape') setV(value)
+               }}/>
     )
 }
 
@@ -504,10 +651,11 @@ function Notes({notes, disabled, onSave}: { notes: string; disabled: boolean; on
 function Corrections({d, busy, act}: {
     d: catalog.ModelDetail
     busy: boolean
-    act: (fn: () => Promise<void>, confirmText?: string) => void
+    act: (fn: () => Promise<void>, confirmText?: string, undoText?: string) => void
 }) {
     const {t} = useTranslation()
     const [open, setOpen] = useState(false)
+    const done = t('corrections.done')
 
     return (
         <>
@@ -529,18 +677,18 @@ function Corrections({d, busy, act}: {
                                 <code className="small">{a.path}</code>
                                 <div className="row wrap">
                                     {a.kind === 'folder' && segs.length - 1 >= minModelDepth && (
-                                        <button disabled={busy} onClick={() => act(() => MarkFolderModel(a.rootId, parent))}
+                                        <button disabled={busy} onClick={() => act(() => MarkFolderModel(a.rootId, parent), undefined, done)}
                                                 title={t('corrections.parentIsModelHint', {name: segs[segs.length - 2]})}>
                                             {t('corrections.parentIsModel')}
                                         </button>
                                     )}
                                     {a.kind === 'folder' && segs.length > minModelDepth && (
-                                        <button disabled={busy} onClick={() => act(() => MarkFolderNotModel(a.rootId, a.path))}>
+                                        <button disabled={busy} onClick={() => act(() => MarkFolderNotModel(a.rootId, a.path), undefined, done)}>
                                             {t('corrections.notModel')}
                                         </button>
                                     )}
                                     {d.anchors.length > 1 && (
-                                        <button disabled={busy} onClick={() => act(() => DetachAnchor(d.id, a.rootId, a.path))}>
+                                        <button disabled={busy} onClick={() => act(() => DetachAnchor(d.id, a.rootId, a.path), undefined, done)}>
                                             {t('corrections.detach')}
                                         </button>
                                     )}
@@ -551,7 +699,7 @@ function Corrections({d, busy, act}: {
                                             <li key={s.path} className="row spread">
                                                 <span className="ellipsis">{s.name} <span className="muted">({s.files})</span></span>
                                                 <button className="link" disabled={busy}
-                                                        onClick={() => act(() => MarkFolderModel(a.rootId, s.path))}>
+                                                        onClick={() => act(() => MarkFolderModel(a.rootId, s.path), undefined, done)}>
                                                     {t('corrections.ownModel')}
                                                 </button>
                                             </li>
@@ -564,13 +712,13 @@ function Corrections({d, busy, act}: {
                     <div className="row wrap">
                         {d.anchors.some(a => a.kind === 'folder' && subfolders(d.files, a).length > 1) && (
                             <button disabled={busy}
-                                    onClick={() => act(() => SplitModel(d.id), t('corrections.confirmSplit'))}>
+                                    onClick={() => act(() => SplitModel(d.id), t('corrections.confirmSplit'), done)}>
                                 {t('corrections.split')}
                             </button>
                         )}
                         {d.hasCorrections && (
                             <button disabled={busy}
-                                    onClick={() => act(() => ResetCorrections(d.id), t('corrections.confirmReset'))}>
+                                    onClick={() => act(() => ResetCorrections(d.id), t('corrections.confirmReset'), done)}>
                                 {t('corrections.reset')}
                             </button>
                         )}

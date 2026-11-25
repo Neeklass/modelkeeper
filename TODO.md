@@ -13,7 +13,7 @@ Status: `[ ]` open · `[~]` in progress · `[x]` done.
 
 - [ ] **0.1 Look at PR #3 in the running app** (new library UI, pause, slicer copy, external
   backups). It was only built by CI (tsc + vite), never looked at. Fix what is off, then merge.
-- [ ] **0.2 Build artifact in CI**: every PR attaches a ready `modelkeeper.exe`, so every state
+- [x] **0.2 Build artifact in CI**: every PR attaches a ready `modelkeeper.exe`, so every state
   can be tried without a local build.
 - [ ] **0.3 Real folder structures as test data**: names only (no file contents) of the top
   3–4 levels of the NAS and the local folders, anonymized where wanted. They become the test
@@ -60,13 +60,16 @@ known until the user confirms it** (once per folder pattern, not once per model)
 
 ## 2. Recoverability of catalog work (J2, G1, G2, F4d)
 
-- [ ] **2.1 Undo for every catalog change.** A journal stores the inverse of each action (tags,
+- [~] **2.1 Undo for every catalog change.** *Done: journal for tags, fields, favorites,
+  suggestions; toast with Undo, Ctrl+Z, history list (J8). Done too: corrections
+  (merge, split, mark, detach, reset), with detection in between. Open: thumbnail, root settings;
+  replacing confirm dialogs.* A journal stores the inverse of each action (tags,
   fields, favorite, merge/split, corrections, thumbnail, root settings). Toast "… · Undo" after
   each action, Ctrl+Z, and a **History** page with the last ~500 actions, each undoable. Then
   replace confirm dialogs by undo wherever the action is reversible.
-- [ ] **2.2 Tag management with undo**: page **Tags** with counts; rename, merge, delete for
+- [x] **2.2 Tag management with undo** (Settings → Tags; rename = merge when the name exists): page **Tags** with counts; rename, merge, delete for
   all models at once, with preview ("affects 412 models").
-- [ ] **2.3 Readable export of user data with every snapshot**: `catalog-export.json` (models,
+- [x] **2.3 Readable export of user data with every snapshot** (J6, J7): `catalog-export.json` (models,
   paths, hashes, tags, notes, favorites, corrections). Plus an import that applies it to a new
   catalog by hash – the plan for "everything is gone".
 - [ ] **2.4 Restore single models or tags from a snapshot**: "Earlier states" in the detail view
@@ -84,6 +87,18 @@ known until the user confirms it** (once per folder pattern, not once per model)
 - [ ] **3.3 Activity view**: click on the status at the bottom left → everything running in the
   background (scans per folder, thumbnails, snapshot, external copy, restore test) with state,
   last run and errors; a simple log viewer.
+- [x] **3.5 Change a root folder's path** after a move to a new NAS or drive letter (E10), keeping its
+  ID, tags and corrections; with a sample check before.
+- [x] **3.7 Import and path change during a scan**: the scan pauses for it and continues
+  (`Manager.Interrupting`); corrections during a scan are stored and applied by the scan's detection.
+- [x] **3.8 "Waiting for files" view**: imported models not linked yet are visible as such and can be
+  removed (with a snapshot) when their files are gone for good.
+- [x] **3.9 Linux in CI**: tests and a Linux build on Ubuntu next to Windows (A2).
+- [x] **3.10 Moving the installation**: detected at start, root folders that moved along are offered
+  for a path update (M).
+- [x] **3.11 Configuration as JSON**: export/import of settings and folder list (M).
+- [x] **3.6 Data folder in a bad place**: refused in a temporary folder (exe started from a zip), warning
+  in Downloads and synced folders (J5).
 - [ ] **3.4 Large-catalog test**: generator for ~200,000 models; grid, search and sidebar must
   stay smooth (C1, C2).
 
@@ -98,7 +113,7 @@ known until the user confirms it** (once per folder pattern, not once per model)
 - [ ] **4.4 Every error offers the next step** ("NAS unreachable · Try again", "No program for
   .stl · Choose slicer").
 - [ ] **4.5 Thumbnails**: view/filter "without thumbnail", "generate again" for failed ones.
-- [ ] **4.6 Origin, purchase link, license in the UI** (fields exist, E6).
+- [x] **4.6 Origin, purchase link, license in the UI** (also the creator is editable) (fields exist, E6).
 
 ## Not planned
 
