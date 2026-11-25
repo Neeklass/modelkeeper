@@ -23,6 +23,10 @@ import {DataTransferPanel, HistoryPanel} from './components/DataTransfer'
 import {TagManagerPanel} from './components/TagManager'
 import {ConfigTransferPanel, MovedBanner} from './components/ConfigTransfer'
 
+/** Sections of the settings page. */
+const SETTINGS_SECTIONS = ['general', 'transfer', 'tags', 'detection'] as const
+type SettingsSection = typeof SETTINGS_SECTIONS[number]
+
 /** Typing in a field: Ctrl+Z belongs to the field then. */
 function inField(e: KeyboardEvent): boolean {
     const el = e.target as HTMLElement | null
@@ -41,6 +45,7 @@ function App() {
     const [scopeLabel, setScopeLabel] = useState<string | undefined>()
     const library = useLibrary()
     const toast = useToast()
+    const [settingsSection, setSettingsSection] = useState<SettingsSection>('general')
     // Opening the library from elsewhere with a query (e.g. the folders view).
     const showModels = (q: Partial<Query>, label?: string) => {
         setQuery({...emptyQuery, ...q})
@@ -137,15 +142,26 @@ function App() {
                 </main>}
                 {view === 'settings' && <main className="page">
                     <h1>{t('tabs.settings')}</h1>
-                    <SettingsPanel status={status} onChange={setStatus}/>
-                    <DataTransferPanel/>
-                    <ConfigTransferPanel onApplied={() => GetStatus().then(s => {
-                        i18n.changeLanguage(resolveLanguage(s.language))
-                        setStatus(s)
-                    }).catch(() => undefined)}/>
-                    <HistoryPanel/>
-                    <TagManagerPanel/>
-                    <DetectionSettingsPanel/>
+                    <div className="segmented" role="tablist" aria-label={t('tabs.settings')}>
+                        {SETTINGS_SECTIONS.map(sec => (
+                            <button key={sec} role="tab" aria-selected={settingsSection === sec}
+                                    className={settingsSection === sec ? 'active' : ''}
+                                    onClick={() => setSettingsSection(sec)}>{t(`settingsNav.${sec}`)}</button>
+                        ))}
+                    </div>
+                    {settingsSection === 'general' && <SettingsPanel status={status} onChange={setStatus}/>}
+                    {settingsSection === 'transfer' && <>
+                        <DataTransferPanel/>
+                        <ConfigTransferPanel onApplied={() => GetStatus().then(s => {
+                            i18n.changeLanguage(resolveLanguage(s.language))
+                            setStatus(s)
+                        }).catch(() => undefined)}/>
+                    </>}
+                    {settingsSection === 'tags' && <>
+                        <TagManagerPanel/>
+                        <HistoryPanel/>
+                    </>}
+                    {settingsSection === 'detection' && <DetectionSettingsPanel/>}
                 </main>}
                 {view === 'help' && <HelpView/>}
             </div>

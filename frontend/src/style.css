@@ -638,3 +638,4 @@ details.detail-section[open] summary h3::before { content: '▾ '; }
     border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .notice-moved p { margin: 0 0 6px; }
+.page > .segmented { margin: 0 0 12px; flex-wrap: wrap; }

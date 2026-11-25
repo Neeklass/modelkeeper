@@ -892,5 +892,11 @@
     "roots_other": "Diese {{count}} Ordner scheinen mitgewandert zu sein – Pfade anpassen?",
     "apply": "Pfade anpassen",
     "dismiss": "OK"
+  },
+  "settingsNav": {
+    "general": "Allgemein & Sicherung",
+    "transfer": "Export & Konfiguration",
+    "tags": "Tags & Verlauf",
+    "detection": "Erkennung"
   }
 }

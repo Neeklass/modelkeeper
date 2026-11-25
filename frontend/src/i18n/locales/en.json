@@ -892,5 +892,11 @@
     "roots_other": "These {{count}} folders seem to have moved along – update their paths?",
     "apply": "Update paths",
     "dismiss": "OK"
+  },
+  "settingsNav": {
+    "general": "General & backups",
+    "transfer": "Export & configuration",
+    "tags": "Tags & history",
+    "detection": "Detection"
   }
 }
