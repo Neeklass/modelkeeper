@@ -39,3 +39,17 @@ jobs:
         run: |
           out=$(gofmt -l $(git ls-files '*.go'))
           if [ -n "$out" ]; then echo "not gofmt-ed:"; echo "$out"; exit 1; fi
+
+      # A ready modelkeeper.exe for every PR and push (TODO 0.2): download it
+      # from the run's "Artifacts" and try it without a local build.
+      - name: Build modelkeeper.exe
+        shell: bash
+        run: |
+          go run github.com/wailsapp/wails/v2/cmd/wails@v2.17.1 build -platform windows/amd64 -trimpath \
+            -ldflags "-X main.version=$(git describe --tags --always --dirty)-ci"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: modelkeeper-${{ github.sha }}
+          path: build/bin/modelkeeper.exe
+          retention-days: 30

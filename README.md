@@ -47,7 +47,7 @@ modelkeeper\
     catalog.db        catalog
     thumbnails\       thumbnails (incl. manually set ones)
     settings.json     settings
-    backups\          automatic snapshots of the above
+    backups\          automatic snapshots of the above (each with catalog-export.json)
     modelkeeper.log   log
 ```
 
@@ -55,6 +55,35 @@ It must be on the local PC, not on the NAS (the app refuses to start from a
 network share). Requires WebView2 (included in
 Windows 11). The `.exe` is not code-signed, so Windows SmartScreen asks once
 on first start.
+
+### Export, import, undo
+
+**Settings → Export and import → Export…** writes one JSON file with
+everything you entered: tags, notes, favorites, print status, edited names,
+creators, origin and license, corrections of the detection, manually set
+thumbnails, the root folders and the detection settings. Every snapshot also
+contains it as `catalog-export.json`. It is plain JSON and does not depend on
+`catalog.db`: if the catalog and all snapshots were lost, this one file
+restores the cataloging work.
+
+**Import…** shows a preview first: which root folder of the file belongs to
+which folder here (or add it, or skip it), and how many models are found by
+their ID, by their place or by their files' fingerprints (moved or renamed
+models too). Models not found yet keep their data and are linked up when a
+scan finds their files. The import only adds – nothing in the catalog is
+removed or overwritten – and takes a `pre-import` snapshot first. The same
+way, a catalog prepared on one PC can be handed to someone else.
+
+Changes of tags, fields and favorites can be undone: **Undo** in the message
+at the bottom, **Ctrl+Z**, or Settings → Recent changes.
+
+### Moving the model folders
+
+If the models move as a whole (a new NAS, another drive letter), use
+**Folders → Change path…** at the folder instead of adding the new place as
+a new folder. modelkeeper looks for a sample of the files at the new place,
+takes a snapshot, changes the path and scans; the folder keeps its tags,
+notes and corrections.
 
 ### Backup
 
@@ -133,6 +162,7 @@ resumed) and, if 7-Zip is installed, 7z fixtures. Opt-in performance tests:
 - `internal/thumbs`, `internal/preview` – thumbnails, files for the 3D preview
 - `internal/hashshare` – hash export/import
 - `internal/backup` – snapshots in data\backups, rotation, external copies, restore tests
+- `internal/userexport` – readable export (catalog-export.json) and import of all user data
 - `internal/opencopy` – read-only copies for "Open in slicer"
 - `internal/db/migrations` – SQLite schema
 - `frontend/` – React UI, translations in `src/i18n/locales`
