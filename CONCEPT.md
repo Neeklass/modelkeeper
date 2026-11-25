@@ -268,6 +268,21 @@ modelkeeper\
 - The folder must be on the **local PC**, not on the NAS (SQLite over network shares is unreliable, J5).
 - Settings include an "Open data folder" action.
 
+
+**Moving the installation.** The data folder is self-contained: nothing in it refers to its own absolute
+path (snapshots are found by name, thumbnails by file name, the restore request names a snapshot). So the
+whole `modelkeeper` folder can be moved or copied to another folder, disk or PC as it is. `settings.json`
+remembers the data folder of the last start (`dataDir`); a different one at start means the app was moved.
+Root folders hold absolute paths; for each that is gone at its old path, the path it would have if it moved
+along (`appdir.MovedRoot`: the common end of old and new data folder is cut off, e.g. `E:\` → `F:\` or
+`Desktop` → `Tools`) is checked, and existing ones are offered for "Change path" (E10) in one click.
+
+**Configuration file** (`modelkeeper-config`, JSON): the settings (without `dataDir`) and the list of root
+folders. Import shows what it contains; the user chooses: detection rules and file types (applied like the
+settings screen: snapshot before changed file types, catalog updated, detection again), language and NAS
+interval, PC-specific paths (slicer, second backup folder; only where they exist), and which root folders
+to add (scanned afterwards).
+
 ## N – Localization
 
 - **N1** The app UI is **multi-language**; German and English are included from the MVP onwards.

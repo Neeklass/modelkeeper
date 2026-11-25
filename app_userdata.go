@@ -212,25 +212,15 @@ func (a *App) ApplyImport(choices []userexport.RootChoice, importSettings bool) 
 }
 
 // importSettings takes over file types and detection rules from an export
-// (the rest is specific to the PC: language, slicer, backup folder).
+// (the rest is specific to the PC: language, slicer, backup folder), the
+// same way the settings screen saves them.
 func (a *App) importSettings(raw json.RawMessage) (bool, error) {
 	var in settings.Settings
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return false, nil // unusable: the rest of the import stands
 	}
-	ft, err := settings.NormalizeFileTypes(in.FileTypes)
-	if err != nil {
-		return false, nil
-	}
-	parts, err1 := settings.NormalizeList(in.PartNames)
-	sizes, err2 := settings.NormalizeList(in.SizeTokens)
-	if err1 != nil || err2 != nil {
-		return false, nil
-	}
-	if err := a.settings.Update(func(s *settings.Settings) {
-		s.FileTypes, s.PartNames, s.SizeTokens = ft, parts, sizes
-	}); err != nil {
-		return false, msg.Wrap(err, "error.settingsSave")
+	if err := a.applyDetection(in.FileTypes, in.PartNames, in.SizeTokens); err != nil {
+		return false, err
 	}
 	return true, nil
 }

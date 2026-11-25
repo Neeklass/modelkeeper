@@ -621,6 +621,100 @@ export namespace hashshare {
 
 export namespace main {
 	
+	export class ConfigApply {
+	    detection: boolean;
+	    program: boolean;
+	    machine: boolean;
+	    roots: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigApply(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.detection = source["detection"];
+	        this.program = source["program"];
+	        this.machine = source["machine"];
+	        this.roots = source["roots"];
+	    }
+	}
+	
+	export class ConfigOutcome {
+	    rootsAdded: number;
+	    skipped: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigOutcome(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rootsAdded = source["rootsAdded"];
+	        this.skipped = source["skipped"];
+	    }
+	}
+	
+	export class ConfigRootPreview {
+	    path: string;
+	    kind?: string;
+	    creatorLevel: boolean;
+	    exists: boolean;
+	    added: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigRootPreview(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.kind = source["kind"];
+	        this.creatorLevel = source["creatorLevel"];
+	        this.exists = source["exists"];
+	        this.added = source["added"];
+	    }
+	}
+	
+	export class ConfigPreview {
+	    file: string;
+	    settings: settings.Settings;
+	    roots: ConfigRootPreview[];
+	    exported: string;
+	    version: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigPreview(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.file = source["file"];
+	        this.settings = this.convertValues(source["settings"], settings.Settings);
+	        this.roots = this.convertValues(source["roots"], ConfigRootPreview);
+	        this.exported = source["exported"];
+	        this.version = source["version"];
+	    }
+
+	convertValues(a: any, classs: any, asMap: boolean = false): any {
+	    if (!a) {
+	        return a;
+	    }
+	    if (a.slice && a.map) {
+	        return (a as any[]).map(elem => this.convertValues(elem, classs));
+	    } else if ("object" === typeof a) {
+	        if (asMap) {
+	            for (const key of Object.keys(a)) {
+	                a[key] = new classs(a[key]);
+	            }
+	            return a;
+	        }
+	        return new classs(a);
+	    }
+	    return a;
+	}
+	}
+	
 	export class BackupInfo {
 	    name: string;
 	    path: string;
@@ -658,6 +752,7 @@ export namespace main {
 	    pendingRestore: string;
 	    notice?: msg.Msg;
 	    locationWarning?: msg.Msg;
+	    movedFrom?: string;
 	    slicerPath: string;
 	    externalBackupDir: string;
 	    lastRestoreTest?: backup.RestoreCheck;
@@ -679,6 +774,7 @@ export namespace main {
 	        this.pendingRestore = source["pendingRestore"];
 	        this.notice = this.convertValues(source["notice"], msg.Msg);
 	        this.locationWarning = this.convertValues(source["locationWarning"], msg.Msg);
+	        this.movedFrom = source["movedFrom"];
 	        this.slicerPath = source["slicerPath"];
 	        this.externalBackupDir = source["externalBackupDir"];
 	        this.lastRestoreTest = this.convertValues(source["lastRestoreTest"], backup.RestoreCheck);
@@ -898,6 +994,23 @@ export namespace main {
 	    }
 	}
 
+	export class RootMove {
+	    rootId: number;
+	    from: string;
+	    to: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RootMove(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rootId = source["rootId"];
+	        this.from = source["from"];
+	        this.to = source["to"];
+	    }
+	}
+
 }
 
 export namespace msg {
@@ -1029,6 +1142,53 @@ export namespace settings {
 	        this.archive = source["archive"];
 	        this.supplementary = source["supplementary"];
 	    }
+	}
+
+	export class Settings {
+	    version: number;
+	    language: string;
+	    fileTypes: FileTypes;
+	    partNames: string[];
+	    sizeTokens: string[];
+	    nasRescanHours: number;
+	    slicerPath?: string;
+	    externalBackupDir?: string;
+	    dataDir?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Settings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.version = source["version"];
+	        this.language = source["language"];
+	        this.fileTypes = this.convertValues(source["fileTypes"], FileTypes);
+	        this.partNames = source["partNames"];
+	        this.sizeTokens = source["sizeTokens"];
+	        this.nasRescanHours = source["nasRescanHours"];
+	        this.slicerPath = source["slicerPath"];
+	        this.externalBackupDir = source["externalBackupDir"];
+	        this.dataDir = source["dataDir"];
+	    }
+
+	convertValues(a: any, classs: any, asMap: boolean = false): any {
+	    if (!a) {
+	        return a;
+	    }
+	    if (a.slice && a.map) {
+	        return (a as any[]).map(elem => this.convertValues(elem, classs));
+	    } else if ("object" === typeof a) {
+	        if (asMap) {
+	            for (const key of Object.keys(a)) {
+	                a[key] = new classs(a[key]);
+	            }
+	            return a;
+	        }
+	        return new classs(a);
+	    }
+	    return a;
+	}
 	}
 
 }

@@ -85,6 +85,19 @@ a new folder. modelkeeper looks for a sample of the files at the new place,
 takes a snapshot, changes the path and scans; the folder keeps its tags,
 notes and corrections.
 
+### Installing and moving modelkeeper
+
+Unzip the release into a permanent folder (e.g. `C:\Users\<you>\modelkeeper`)
+and start `modelkeeper.exe` there. modelkeeper refuses to start from inside a
+zip file (Windows' temporary folder) and warns in Downloads or in a OneDrive /
+Dropbox folder. Program and `data\` belong together: move or copy the whole
+folder and everything goes along. At the next start modelkeeper notices the
+move and offers to update the paths of model folders that moved along (a
+portable disk with another drive letter, model folders next to the app).
+
+**Settings → Configuration** exports the settings and the folder list as a JSON
+file and imports it on another PC (choose which parts to take over).
+
 ### Backup
 
 The app takes snapshots of the catalog, the settings and the manually set

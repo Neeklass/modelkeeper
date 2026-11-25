@@ -13,7 +13,11 @@ export function AddRoot(arg1:string):Promise<catalog.Root>;
 
 export function AddTags(arg1:Array<number>,arg2:Array<string>):Promise<void>;
 
+export function ApplyConfig(arg1:main.ConfigApply):Promise<main.ConfigOutcome>;
+
 export function ApplyImport(arg1:Array<userexport.RootChoice>,arg2:boolean):Promise<main.ImportOutcome>;
+
+export function ApplyMoveSuggestions(arg1:Array<number>):Promise<number>;
 
 export function CancelImport():Promise<void>;
 
@@ -41,9 +45,13 @@ export function DeleteTag(arg1:string):Promise<number>;
 
 export function DetachAnchor(arg1:number,arg2:number,arg3:string):Promise<void>;
 
+export function DismissMoved():Promise<void>;
+
 export function DismissNotice():Promise<void>;
 
 export function DismissSuggestion(arg1:number,arg2:string):Promise<void>;
+
+export function ExportConfig():Promise<string>;
 
 export function ExportHashes(arg1:number):Promise<hashshare.ExportResult>;
 
@@ -56,6 +64,8 @@ export function GetDetectionSettings():Promise<main.DetectionSettingsView>;
 export function GetFilterOptions():Promise<catalog.FilterOptions>;
 
 export function GetModel(arg1:number):Promise<catalog.ModelDetail>;
+
+export function GetMoveSuggestions():Promise<Array<main.RootMove>>;
 
 export function GetRootStats(arg1:number):Promise<catalog.RootStats>;
 
@@ -92,6 +102,8 @@ export function OpenExternalBackupDir():Promise<void>;
 export function OpenInSlicer(arg1:number):Promise<void>;
 
 export function PauseScan(arg1:number):Promise<void>;
+
+export function PickConfigFile():Promise<main.ConfigPreview>;
 
 export function PickFolder():Promise<string>;
 

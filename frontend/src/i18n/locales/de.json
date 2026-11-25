@@ -60,7 +60,8 @@
       "noModelTypes": "Mindestens ein 3D-Modell-Typ wird benötigt.",
       "tooMany": "Zu viele Einträge.",
       "tooLong": "„{{value}}“ ist zu lang."
-    }
+    },
+    "dataFolderHint": "Programm und Daten gehören zusammen: Um modelkeeper in einen anderen Ordner, auf eine andere Platte oder einen anderen PC zu bringen, schließe es und verschiebe oder kopiere den ganzen modelkeeper-Ordner (modelkeeper.exe und den Ordner data). Alles kommt mit – Katalog, Vorschaubilder, Sicherungen und Einstellungen. Sind Modellordner mitgewandert (z. B. eine mobile Platte mit neuem Laufwerksbuchstaben), bietet modelkeeper beim nächsten Start an, ihre Pfade anzupassen."
   },
   "error": {
     "unknown": "Unerwarteter Fehler: {{detail}}",
@@ -660,6 +661,16 @@
         ]
       },
       {
+        "id": "install",
+        "title": "Installieren und umziehen",
+        "body": [
+          "modelkeeper ist portabel: modelkeeper.exe und sein Datenordner daneben (data) gehören zusammen. Lege den Ordner an einen dauerhaften Ort, z. B. C:\\Users\\<Name>\\modelkeeper – nicht in Downloads, nicht in einen OneDrive- oder Dropbox-Ordner (modelkeeper warnt) und nicht in die ZIP-Datei (dort startet modelkeeper nicht, der Katalog ginge verloren).",
+          "Zum Umziehen in einen anderen Ordner, auf eine andere Platte oder einen anderen PC: modelkeeper schließen und den ganzen Ordner verschieben oder kopieren. Alles kommt mit. Beim nächsten Start bemerkt modelkeeper den Umzug; sind Modellordner mitgewandert (mobile Platte mit neuem Laufwerksbuchstaben, Modellordner neben der App), bietet es an, ihre Pfade anzupassen.",
+          "Ziehen die Modelldateien allein um (neues NAS), nutze Ordner → **Pfad ändern…**.",
+          "Einstellungen → **Konfiguration** exportiert die Einstellungen und die Ordnerliste als JSON, um einen anderen PC genauso einzurichten; **Export und Import** überträgt die Katalogisierung."
+        ]
+      },
+      {
         "id": "settings",
         "title": "Einstellungen",
         "body": [
@@ -852,5 +863,34 @@
     "deleted_one": "Tag {{name}} von {{count}} Modell entfernt.",
     "deleted_other": "Tag {{name}} von {{count}} Modellen entfernt.",
     "more": "{{n}} weitere – grenze den Filter ein."
+  },
+  "config": {
+    "title": "Konfiguration",
+    "intro": "Einstellungen und die Ordnerliste als JSON-Datei – um einen anderen PC oder eine neue Installation genauso einzurichten. Deine Katalogisierung (Tags, Notizen …) steckt im Export oben.",
+    "export": "Konfiguration exportieren",
+    "import": "Konfiguration importieren",
+    "exported": "Konfiguration gespeichert in {{path}}.",
+    "importTitle": "Konfiguration importieren",
+    "langSystem": "Systemsprache",
+    "detection": "Dateitypen und Erkennungsregeln ({{types}} Dateitypen, {{parts}} Teilnamen, {{sizes}} Größenkennungen)",
+    "program": "Sprache ({{lang}}) und NAS-Scanintervall ({{hours}} h)",
+    "machine": "Pfade auf jenem PC: Slicer-Programm und zweiter Sicherungsordner (nur übernommen, wo sie hier existieren)",
+    "rootsTitle": "Ordner",
+    "rootAdded": "schon hinzugefügt",
+    "rootMissing": "auf diesem PC nicht gefunden",
+    "rootsHint": "Hier nicht gefundene Ordner lassen sich später hinzufügen oder per Import des Katalog-Exports einem anderen Pfad zuordnen.",
+    "safeHint": "Geänderte Dateitypen machen vorher eine Sicherung und aktualisieren den Katalog; hinzugefügte Ordner werden gescannt.",
+    "apply": "Übernehmen",
+    "applied_one": "Konfiguration übernommen; {{n}} Ordner hinzugefügt.",
+    "applied_other": "Konfiguration übernommen; {{n}} Ordner hinzugefügt.",
+    "skipped": "Hier nicht gefunden, ausgelassen: {{paths}}",
+    "notAConfig": "{{path}} ist keine modelkeeper-Konfiguration."
+  },
+  "moved": {
+    "text": "modelkeeper wurde verschoben (sein Datenordner lag vorher unter {{from}}). Katalog, Vorschaubilder, Sicherungen und Einstellungen sind mitgekommen.",
+    "roots_one": "Dieser Ordner scheint mitgewandert zu sein – Pfad anpassen?",
+    "roots_other": "Diese {{count}} Ordner scheinen mitgewandert zu sein – Pfade anpassen?",
+    "apply": "Pfade anpassen",
+    "dismiss": "OK"
   }
 }

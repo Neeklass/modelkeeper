@@ -94,6 +94,9 @@ known until the user confirms it** (once per folder pattern, not once per model)
 - [x] **3.8 "Waiting for files" view**: imported models not linked yet are visible as such and can be
   removed (with a snapshot) when their files are gone for good.
 - [x] **3.9 Linux in CI**: tests and a Linux build on Ubuntu next to Windows (A2).
+- [x] **3.10 Moving the installation**: detected at start, root folders that moved along are offered
+  for a path update (M).
+- [x] **3.11 Configuration as JSON**: export/import of settings and folder list (M).
 - [x] **3.6 Data folder in a bad place**: refused in a temporary folder (exe started from a zip), warning
   in Downloads and synced folders (J5).
 - [ ] **3.4 Large-catalog test**: generator for ~200,000 models; grid, search and sidebar must

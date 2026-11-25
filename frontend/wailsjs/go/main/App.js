@@ -10,8 +10,16 @@ export function AddTags(arg1, arg2) {
   return window['go']['main']['App']['AddTags'](arg1, arg2);
 }
 
+export function ApplyConfig(arg1) {
+  return window['go']['main']['App']['ApplyConfig'](arg1);
+}
+
 export function ApplyImport(arg1, arg2) {
   return window['go']['main']['App']['ApplyImport'](arg1, arg2);
+}
+
+export function ApplyMoveSuggestions(arg1) {
+  return window['go']['main']['App']['ApplyMoveSuggestions'](arg1);
 }
 
 export function CancelImport() {
@@ -66,12 +74,20 @@ export function DetachAnchor(arg1, arg2, arg3) {
   return window['go']['main']['App']['DetachAnchor'](arg1, arg2, arg3);
 }
 
+export function DismissMoved() {
+  return window['go']['main']['App']['DismissMoved']();
+}
+
 export function DismissNotice() {
   return window['go']['main']['App']['DismissNotice']();
 }
 
 export function DismissSuggestion(arg1, arg2) {
   return window['go']['main']['App']['DismissSuggestion'](arg1, arg2);
+}
+
+export function ExportConfig() {
+  return window['go']['main']['App']['ExportConfig']();
 }
 
 export function ExportHashes(arg1) {
@@ -96,6 +112,10 @@ export function GetFilterOptions() {
 
 export function GetModel(arg1) {
   return window['go']['main']['App']['GetModel'](arg1);
+}
+
+export function GetMoveSuggestions() {
+  return window['go']['main']['App']['GetMoveSuggestions']();
 }
 
 export function GetRootStats(arg1) {
@@ -168,6 +188,10 @@ export function OpenInSlicer(arg1) {
 
 export function PauseScan(arg1) {
   return window['go']['main']['App']['PauseScan'](arg1);
+}
+
+export function PickConfigFile() {
+  return window['go']['main']['App']['PickConfigFile']();
 }
 
 export function PickFolder() {

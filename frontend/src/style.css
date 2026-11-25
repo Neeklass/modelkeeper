@@ -633,3 +633,8 @@ details.detail-section[open] summary h3::before { content: '▾ '; }
 .history li { padding: 3px 0; border-bottom: 1px solid var(--border); }
 .tag-manager li { padding: 4px 0; border-bottom: 1px solid var(--border); }
 .danger-text { color: var(--danger); }
+.notice-moved {
+    margin: 8px 16px 0; padding: 8px 12px; border-radius: 6px;
+    border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.notice-moved p { margin: 0 0 6px; }

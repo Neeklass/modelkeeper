@@ -74,6 +74,11 @@ type App struct {
 	locationWarning *msg.Msg
 	// imports holds the export file chosen for import until it is applied.
 	imports pendingImport
+	// configs holds the configuration file chosen for import.
+	configs pendingConfig
+	// movedFrom: the data folder was there at the last start (the app folder
+	// was moved, M); "" if not moved or the note was dismissed.
+	movedFrom string
 	// stop is closed at shutdown; it ends the daily-snapshot ticker.
 	stop chan struct{}
 }
@@ -148,6 +153,7 @@ func (a *App) init() error {
 		return msg.Wrap(err, "error.settingsLoad", "path", layout.Settings)
 	}
 	a.settings = st
+	a.checkMoved()
 	if err := a.openCatalog(false); err != nil {
 		return err
 	}
@@ -306,6 +312,8 @@ type AppStatus struct {
 	Notice         *msg.Msg `json:"notice,omitempty"`
 	// LocationWarning: the data folder is in a risky place (see appdir.Risk).
 	LocationWarning *msg.Msg `json:"locationWarning,omitempty"`
+	// MovedFrom: the app folder was moved; its data folder was here before.
+	MovedFrom string `json:"movedFrom,omitempty"`
 	// SlicerPath: program for "Open in slicer", "" = system default (H5).
 	SlicerPath string `json:"slicerPath"`
 	// ExternalBackupDir: second backup folder, "" = off (J2).
@@ -413,7 +421,7 @@ func (a *App) GetStatus() AppStatus {
 	if !a.started() {
 		return AppStatus{Starting: true}
 	}
-	s := AppStatus{DataDir: a.layout.Root, StartupError: a.startupErr, Notice: a.notice, LocationWarning: a.locationWarning}
+	s := AppStatus{DataDir: a.layout.Root, StartupError: a.startupErr, Notice: a.notice, LocationWarning: a.locationWarning, MovedFrom: a.movedFrom}
 	if a.layout.Backups != "" {
 		s.PendingRestore, _ = backup.PendingRestore(a.restoreTarget())
 		if list, err := backup.List(a.layout.Backups); err == nil && len(list) > 0 {
@@ -517,7 +525,7 @@ func (a *App) SaveFileTypes(ft settings.FileTypes) (catalog.FileTypesChange, err
 			return ch, msg.Wrap(err, "error.backupFailed", "path", a.layout.Backups)
 		}
 	}
-	err = a.scans.Exclusive(func(ctx context.Context) error {
+	err = a.scans.Interrupting(func(ctx context.Context) error {
 		if err := a.settings.Update(func(s *settings.Settings) { s.FileTypes = ft }); err != nil {
 			return msg.Wrap(err, "error.settingsSave")
 		}

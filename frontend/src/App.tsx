@@ -21,6 +21,7 @@ import {useLibrary} from './library'
 import {CATALOG_CHANGED, useToast} from './components/Toast'
 import {DataTransferPanel, HistoryPanel} from './components/DataTransfer'
 import {TagManagerPanel} from './components/TagManager'
+import {ConfigTransferPanel, MovedBanner} from './components/ConfigTransfer'
 
 /** Typing in a field: Ctrl+Z belongs to the field then. */
 function inField(e: KeyboardEvent): boolean {
@@ -111,6 +112,10 @@ function App() {
                          setView('library')
                      }}/>
             <div className="content">
+                {status.movedFrom && (
+                    <MovedBanner from={status.movedFrom}
+                                 onDone={() => setStatus(main.AppStatus.createFrom({...status, movedFrom: undefined}))}/>
+                )}
                 {status.locationWarning && (
                     <div className="row notice-warn" role="alert">
                         <span className="small">{translateMsg(status.locationWarning as Msg)}</span>
@@ -134,6 +139,10 @@ function App() {
                     <h1>{t('tabs.settings')}</h1>
                     <SettingsPanel status={status} onChange={setStatus}/>
                     <DataTransferPanel/>
+                    <ConfigTransferPanel onApplied={() => GetStatus().then(s => {
+                        i18n.changeLanguage(resolveLanguage(s.language))
+                        setStatus(s)
+                    }).catch(() => undefined)}/>
                     <HistoryPanel/>
                     <TagManagerPanel/>
                     <DetectionSettingsPanel/>
@@ -260,6 +269,7 @@ function SettingsPanel({status, onChange}: { status: main.AppStatus; onChange: (
             <div className="row">
                 <span className="muted">{t('settings.dataFolder')}:</span> <code>{status.dataDir}</code>
             </div>
+            <p className="small muted">{t('settings.dataFolderHint')}</p>
             <div className="row">
                 <button className="primary" onClick={createBackup} disabled={backupBusy}>
                     {backupBusy ? t('backup.creating') : t('backup.create')}

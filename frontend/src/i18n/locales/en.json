@@ -60,7 +60,8 @@
       "noModelTypes": "At least one 3D model type is needed.",
       "tooMany": "Too many entries.",
       "tooLong": "\"{{value}}\" is too long."
-    }
+    },
+    "dataFolderHint": "Program and data belong together: to move modelkeeper to another folder, disk or PC, close it and move or copy the whole modelkeeper folder (modelkeeper.exe and the data folder). Everything goes along – catalog, thumbnails, backups and settings. If model folders moved along (e.g. a portable disk got another drive letter), modelkeeper offers to update their paths at the next start."
   },
   "error": {
     "unknown": "Unexpected error: {{detail}}",
@@ -660,6 +661,16 @@
         ]
       },
       {
+        "id": "install",
+        "title": "Installing and moving",
+        "body": [
+          "modelkeeper is portable: modelkeeper.exe and its data folder (next to it, called data) belong together. Put the folder somewhere permanent, e.g. C:\\Users\\<you>\\modelkeeper – not in Downloads, not in a OneDrive or Dropbox folder (modelkeeper warns), and not inside the zip file (modelkeeper refuses to start there, the catalog would be lost).",
+          "To move it to another folder, disk or PC: close modelkeeper and move or copy the whole folder. Everything goes along. At the next start modelkeeper notices the move; if model folders moved along (a portable disk with another drive letter, model folders next to the app), it offers to update their paths.",
+          "If the model files move on their own (new NAS), use Folders → **Change path…**.",
+          "Settings → **Configuration** exports the settings and the folder list as JSON, to set up another PC the same way; **Export and import** carries the cataloging work."
+        ]
+      },
+      {
         "id": "settings",
         "title": "Settings",
         "body": [
@@ -852,5 +863,34 @@
     "deleted_one": "Tag {{name}} removed from {{count}} model.",
     "deleted_other": "Tag {{name}} removed from {{count}} models.",
     "more": "{{n}} more – narrow the filter."
+  },
+  "config": {
+    "title": "Configuration",
+    "intro": "Settings and the list of folders as a JSON file – to set up another PC or a fresh installation the same way. Your cataloging work (tags, notes …) is in the export above.",
+    "export": "Export configuration",
+    "import": "Import configuration",
+    "exported": "Configuration saved to {{path}}.",
+    "importTitle": "Import configuration",
+    "langSystem": "system default",
+    "detection": "File types and detection rules ({{types}} file types, {{parts}} part names, {{sizes}} size marks)",
+    "program": "Language ({{lang}}) and NAS rescan interval ({{hours}} h)",
+    "machine": "Paths on that PC: slicer program and second backup folder (only taken over where they exist here)",
+    "rootsTitle": "Folders",
+    "rootAdded": "already added",
+    "rootMissing": "not found on this PC",
+    "rootsHint": "Folders not found here can be added later, or mapped to another path with an import of the catalog export.",
+    "safeHint": "Changed file types make a backup first and update the catalog; added folders are scanned.",
+    "apply": "Apply",
+    "applied_one": "Configuration applied; {{n}} folder added.",
+    "applied_other": "Configuration applied; {{n}} folders added.",
+    "skipped": "Not found here, left out: {{paths}}",
+    "notAConfig": "{{path}} is not a modelkeeper configuration."
+  },
+  "moved": {
+    "text": "modelkeeper was moved (its data folder was at {{from}} before). Catalog, thumbnails, backups and settings came along.",
+    "roots_one": "This folder seems to have moved along – update its path?",
+    "roots_other": "These {{count}} folders seem to have moved along – update their paths?",
+    "apply": "Update paths",
+    "dismiss": "OK"
   }
 }
