@@ -19,6 +19,7 @@ type Layout struct {
 	Thumbnails string // .../data/thumbnails
 	Backups    string // .../data/backups (snapshots, J2)
 	Log        string // .../data/modelkeeper.log
+	Open       string // .../data/open (copies opened in a slicer, H5)
 }
 
 // Resolve returns the data folder layout: <dir of exe>/data, unless
@@ -51,6 +52,7 @@ func NewLayout(root string) Layout {
 		Thumbnails: filepath.Join(root, "thumbnails"),
 		Backups:    filepath.Join(root, "backups"),
 		Log:        filepath.Join(root, "modelkeeper.log"),
+		Open:       filepath.Join(root, "open"),
 	}
 }
 

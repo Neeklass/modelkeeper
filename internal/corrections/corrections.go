@@ -11,8 +11,28 @@ import (
 	"strings"
 	"time"
 
+	"modelkeeper/internal/catalog"
 	"modelkeeper/internal/msg"
 )
+
+// Every correction is one undoable action (catalog.JournalCorrection): the
+// override rows it changes and the user data of the models it affects.
+
+func modelName(ctx context.Context, tx *sql.Tx, id int64) string {
+	var name string
+	tx.QueryRowContext(ctx, `SELECT name FROM model WHERE id = ?`, id).Scan(&name)
+	return name
+}
+
+// atPath journals a correction at one folder.
+func atPath(ctx context.Context, tx *sql.Tx, action string, rootID int64, path string, change func() error) error {
+	models, err := catalog.ModelsAt(ctx, tx, rootID, path)
+	if err != nil {
+		return err
+	}
+	return catalog.JournalCorrection(ctx, tx, catalog.CorrectionPrefix+action,
+		map[string]any{"path": path}, []int64{rootID}, models, change)
+}
 
 // conflicting lists override kinds that cancel each other on the same path.
 var conflicting = map[string][]string{
@@ -52,7 +72,9 @@ func MarkModel(ctx context.Context, db *sql.DB, rootID int64, path string) ([]in
 		return nil, msg.Wrap(nil, "corrections.invalidFolder")
 	}
 	return []int64{rootID}, inTx(ctx, db, func(tx *sql.Tx) error {
-		return setOverride(ctx, tx, "is_model", rootID, path, nil)
+		return atPath(ctx, tx, "markModel", rootID, path, func() error {
+			return setOverride(ctx, tx, "is_model", rootID, path, nil)
+		})
 	})
 }
 
@@ -62,7 +84,9 @@ func MarkNotModel(ctx context.Context, db *sql.DB, rootID int64, path string) ([
 		return nil, msg.Wrap(nil, "corrections.invalidFolder")
 	}
 	return []int64{rootID}, inTx(ctx, db, func(tx *sql.Tx) error {
-		return setOverride(ctx, tx, "not_model", rootID, path, nil)
+		return atPath(ctx, tx, "markNotModel", rootID, path, func() error {
+			return setOverride(ctx, tx, "not_model", rootID, path, nil)
+		})
 	})
 }
 
@@ -138,18 +162,33 @@ func Split(ctx context.Context, db *sql.DB, modelID int64) ([]int64, error) {
 		return nil, err
 	}
 	var roots []int64
+	for a := range subs {
+		roots = appendUnique(roots, a.rootID)
+	}
 	n := 0
 	err = inTx(ctx, db, func(tx *sql.Tx) error {
+		models := []int64{modelID}
 		for a, list := range subs {
 			for _, p := range list {
-				if err := setOverride(ctx, tx, "is_model", a.rootID, p, nil); err != nil {
+				ids, err := catalog.ModelsAt(ctx, tx, a.rootID, p)
+				if err != nil {
 					return err
 				}
-				n++
+				models = append(models, ids...)
 			}
-			roots = appendUnique(roots, a.rootID)
 		}
-		return nil
+		params := map[string]any{"name": modelName(ctx, tx, modelID)}
+		return catalog.JournalCorrection(ctx, tx, catalog.CorrectionPrefix+"split", params, roots, models, func() error {
+			for a, list := range subs {
+				for _, p := range list {
+					if err := setOverride(ctx, tx, "is_model", a.rootID, p, nil); err != nil {
+						return err
+					}
+					n++
+				}
+			}
+			return nil
+		})
 	})
 	if err == nil && n == 0 {
 		return nil, msg.Wrap(nil, "corrections.nothingToSplit")
@@ -167,7 +206,11 @@ func Detach(ctx context.Context, db *sql.DB, modelID, rootID int64, path string)
 		return nil, msg.Wrap(nil, "corrections.nothingToDetach")
 	}
 	return []int64{rootID}, inTx(ctx, db, func(tx *sql.Tx) error {
-		return setOverride(ctx, tx, "split", rootID, path, modelID)
+		params := map[string]any{"name": modelName(ctx, tx, modelID), "path": path}
+		return catalog.JournalCorrection(ctx, tx, catalog.CorrectionPrefix+"detach", params, []int64{rootID},
+			[]int64{modelID}, func() error {
+				return setOverride(ctx, tx, "split", rootID, path, modelID)
+			})
 	})
 }
 
@@ -190,6 +233,8 @@ func Merge(ctx context.Context, db *sql.DB, targetID int64, sourceIDs []int64) (
 		for _, a := range targetAnchors {
 			roots = appendUnique(roots, a.rootID)
 		}
+		sourceAnchors := map[int64][]anchor{}
+		models := []int64{targetID}
 		for _, src := range sourceIDs {
 			if src == targetID {
 				continue
@@ -198,17 +243,26 @@ func Merge(ctx context.Context, db *sql.DB, targetID int64, sourceIDs []int64) (
 			if err != nil {
 				return err
 			}
+			sourceAnchors[src] = anchors
+			models = append(models, src)
 			for _, a := range anchors {
-				if err := setOverride(ctx, tx, "merge", a.rootID, a.path, targetID); err != nil {
-					return err
-				}
 				roots = appendUnique(roots, a.rootID)
 			}
-			if err := moveUserData(ctx, tx, src, targetID); err != nil {
-				return err
-			}
 		}
-		return nil
+		params := map[string]any{"name": modelName(ctx, tx, targetID), "count": len(sourceAnchors)}
+		return catalog.JournalCorrection(ctx, tx, catalog.CorrectionPrefix+"merge", params, roots, models, func() error {
+			for _, src := range models[1:] {
+				for _, a := range sourceAnchors[src] {
+					if err := setOverride(ctx, tx, "merge", a.rootID, a.path, targetID); err != nil {
+						return err
+					}
+				}
+				if err := moveUserData(ctx, tx, src, targetID); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
 	})
 	return roots, err
 }
@@ -224,7 +278,10 @@ func moveUserData(ctx context.Context, tx *sql.Tx, src, dst int64) error {
 				ELSE notes || char(10) || char(10) || (SELECT notes FROM model WHERE id = ?1) END,
 			print_status = CASE WHEN print_status = 'not_printed'
 				THEN (SELECT print_status FROM model WHERE id = ?1) ELSE print_status END,
-			favorite = max(favorite, (SELECT favorite FROM model WHERE id = ?1))
+			favorite = max(favorite, (SELECT favorite FROM model WHERE id = ?1)),
+			origin = coalesce(nullif(origin, ''), (SELECT origin FROM model WHERE id = ?1)),
+			origin_url = coalesce(nullif(origin_url, ''), (SELECT origin_url FROM model WHERE id = ?1)),
+			license = coalesce(nullif(license, ''), (SELECT license FROM model WHERE id = ?1))
 			WHERE id = ?2`,
 		// Corrections that pointed at the source now point at the target.
 		`UPDATE override SET model_id = ?2 WHERE model_id = ?1 AND kind = 'merge'`,
@@ -232,7 +289,8 @@ func moveUserData(ctx context.Context, tx *sql.Tx, src, dst int64) error {
 		// The emptied source is removed by detection's cleanup.
 		`DELETE FROM model_tag WHERE model_id = ?1`,
 		`UPDATE model SET notes = '', print_status = 'not_printed', name_manual = 0, creator_manual = 0,
-			supports_manual = 0, thumb_source = NULL, favorite = 0 WHERE id = ?1`,
+			supports_manual = 0, thumb_source = NULL, favorite = 0, origin = NULL, origin_url = NULL, license = NULL
+			WHERE id = ?1`,
 	} {
 		if _, err := tx.ExecContext(ctx, q, src, dst); err != nil {
 			return err
@@ -248,17 +306,44 @@ func Reset(ctx context.Context, db *sql.DB, modelID int64) ([]int64, error) {
 		return nil, err
 	}
 	var roots []int64
+	for _, a := range anchors {
+		roots = appendUnique(roots, a.rootID)
+	}
 	err = inTx(ctx, db, func(tx *sql.Tx) error {
-		for _, a := range anchors {
-			// The anchor itself and everything below it.
-			if _, err := tx.ExecContext(ctx, `DELETE FROM override WHERE root_id = ?
-				AND (path = ? OR substr(path, 1, ?) = ?)`, a.rootID, a.path, len(a.path)+1, a.path+"/"); err != nil {
+		// Roots of corrections that point at the model elsewhere, too.
+		rows, err := tx.QueryContext(ctx, `SELECT DISTINCT root_id FROM override WHERE model_id = ?`, modelID)
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			var r int64
+			if err := rows.Scan(&r); err != nil {
+				rows.Close()
 				return err
 			}
-			roots = appendUnique(roots, a.rootID)
+			roots = appendUnique(roots, r)
 		}
-		_, err := tx.ExecContext(ctx, `DELETE FROM override WHERE model_id = ?`, modelID)
-		return err
+		rows.Close()
+		models := []int64{modelID}
+		for _, a := range anchors {
+			ids, err := catalog.ModelsAt(ctx, tx, a.rootID, a.path)
+			if err != nil {
+				return err
+			}
+			models = append(models, ids...)
+		}
+		params := map[string]any{"name": modelName(ctx, tx, modelID)}
+		return catalog.JournalCorrection(ctx, tx, catalog.CorrectionPrefix+"reset", params, roots, models, func() error {
+			for _, a := range anchors {
+				// The anchor itself and everything below it.
+				if _, err := tx.ExecContext(ctx, `DELETE FROM override WHERE root_id = ?
+					AND (path = ? OR substr(path, 1, ?) = ?)`, a.rootID, a.path, len(a.path)+1, a.path+"/"); err != nil {
+					return err
+				}
+			}
+			_, err := tx.ExecContext(ctx, `DELETE FROM override WHERE model_id = ?`, modelID)
+			return err
+		})
 	})
 	return roots, err
 }

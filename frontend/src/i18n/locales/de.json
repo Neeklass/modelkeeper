@@ -60,7 +60,8 @@
       "noModelTypes": "Mindestens ein 3D-Modell-Typ wird benötigt.",
       "tooMany": "Zu viele Einträge.",
       "tooLong": "„{{value}}“ ist zu lang."
-    }
+    },
+    "dataFolderHint": "Programm und Daten gehören zusammen: Um modelkeeper in einen anderen Ordner, auf eine andere Platte oder einen anderen PC zu bringen, schließe es und verschiebe oder kopiere den ganzen modelkeeper-Ordner (modelkeeper.exe und den Ordner data). Alles kommt mit – Katalog, Vorschaubilder, Sicherungen und Einstellungen. Sind Modellordner mitgewandert (z. B. eine mobile Platte mit neuem Laufwerksbuchstaben), bietet modelkeeper beim nächsten Start an, ihre Pfade anzupassen."
   },
   "error": {
     "unknown": "Unerwarteter Fehler: {{detail}}",
@@ -88,7 +89,16 @@
     "rootRemoved": "Der Ordner {{path}} ist deaktiviert. Füge ihn wieder hinzu, um ihn zu nutzen.",
     "rootNotRemoved": "{{path}} ist nicht deaktiviert. Nur deaktivierte Ordner können endgültig gelöscht werden.",
     "purgeCountChanged": "Die Zahl der betroffenen Modelle hat sich geändert (jetzt {{count}}). Bitte prüfe sie erneut.",
-    "rootOverlapRemoved": "{{path}} überschneidet sich mit dem deaktivierten Ordner {{other}}. Reaktiviere {{other}} oder lösche ihn endgültig aus dem Katalog, bevor du diesen Ordner hinzufügst."
+    "rootOverlapRemoved": "{{path}} überschneidet sich mit dem deaktivierten Ordner {{other}}. Reaktiviere {{other}} oder lösche ihn endgültig aus dem Katalog, bevor du diesen Ordner hinzufügst.",
+    "dataDirOnNetwork": "Der modelkeeper-Ordner liegt auf einem Netzlaufwerk ({{path}}). Dort kann der Katalog beschädigt werden, weil SQLite über Netzwerkfreigaben nicht zuverlässig sperrt. Kopiere den ganzen modelkeeper-Ordner auf den PC, z. B. nach C:\\modelkeeper, und starte ihn von dort. Die Modelle selbst dürfen auf dem NAS bleiben.",
+    "openCopy": "{{name}} konnte nicht für den Slicer kopiert werden: {{detail}}",
+    "openProgram": "Das Programm für {{name}} konnte nicht gestartet werden. Ist für diesen Dateityp kein Programm eingerichtet, wähle unter Einstellungen → Slicer eines aus. ({{detail}})",
+    "fileOffline": "{{name}} liegt in einem Ordner, der gerade nicht erreichbar ist.",
+    "fileNotFound": "{{name}} wurde nicht gefunden. Vielleicht wurde die Datei verschoben; ein Scan bringt den Katalog auf den neuesten Stand.",
+    "fileTooLargeToCopy": "{{name}} ist zu groß, um es aus dem Archiv zu kopieren. Entpacke das Archiv selbst und öffne die Datei direkt.",
+    "fileEncrypted": "{{name}} liegt in einem passwortgeschützten Archiv.",
+    "dataDirTemp": "modelkeeper wurde aus einem temporären Ordner gestartet ({{path}}) – vermutlich direkt aus der ZIP-Datei heraus. Alles, was du katalogisierst, ginge verloren, sobald Windows temporäre Dateien aufräumt.\n\nEntpacke die ZIP-Datei zuerst (Rechtsklick → Alle extrahieren…) in einen dauerhaften Ordner, z. B. C:\\Users\\<Name>\\modelkeeper, und starte modelkeeper.exe dort.",
+    "relocateOverlap": "{{path}} überschneidet sich mit dem Stammordner {{other}}. Wenn du den neuen Ort schon als eigenen Ordner hinzugefügt hast, deaktiviere ihn zuerst (seine Tags und Notizen bleiben im Katalog)."
   },
   "roots": {
     "title": "Stammordner",
@@ -131,7 +141,16 @@
     "purgeConfirm": "Endgültig löschen",
     "purging": "Backup und Löschen…",
     "purgeShowModels": "Diese Modelle ansehen",
-    "deactivateHint": "Nicht mehr scannen und überwachen. Tags und Notizen bleiben erhalten."
+    "deactivateHint": "Nicht mehr scannen und überwachen. Tags und Notizen bleiben erhalten.",
+    "relocate": "Pfad ändern",
+    "relocateHint": "Die Dateien sind als Ganzes umgezogen (neues NAS, anderer Laufwerksbuchstabe): Gib dem Ordner seinen neuen Pfad. Tags, Notizen und Korrekturen bleiben; nichts muss von vorn gescannt werden.",
+    "relocateConfirm": "Pfad dieses Ordners ändern?\n\nVon: {{from}}\nNach: {{to}}",
+    "relocateFound": "{{found}} von {{sampled}} Stichproben-Dateien wurden am neuen Ort gefunden.",
+    "relocateNoFiles": "Der Katalog kennt noch keine Dateien dieses Ordners.",
+    "relocateMissing": "Nicht gefunden, zum Beispiel:\n{{files}}",
+    "relocateTimes": "Einige Dateien haben am neuen Ort ein anderes Datum; der nächste Scan liest sie erneut und bestätigt sie über ihren Fingerabdruck.",
+    "relocateSafe": "Tags, Notizen, Favoriten und Korrekturen bleiben bei den Modellen. Vorher wird eine Sicherung gemacht, danach wird der Ordner am neuen Ort gescannt. Dateien werden nicht angefasst.",
+    "relocated": "Der Ordner zeigt jetzt auf {{path}}. Er wird gescannt."
   },
   "scan": {
     "start": "Scannen",
@@ -151,7 +170,7 @@
     "issues_other": "{{count}} Probleme beim letzten Scan",
     "result": {
       "done": "Scan abgeschlossen: {{new}} neu, {{changed}} geändert, {{missing}} fehlen, {{hashed}} gehasht.",
-      "cancelled": "Scan abgebrochen. Der bisherige Fortschritt ist gespeichert: {{new}} neu, {{hashed}} gehasht.",
+      "cancelled": "Scan pausiert. Der bisherige Fortschritt ist gespeichert: {{new}} neu, {{hashed}} gehasht. „Fortsetzen“ macht dort weiter.",
       "offline": "Scan nicht möglich.",
       "failed": "Scan fehlgeschlagen.",
       "fullDone": "Vollprüfung abgeschlossen: {{hashed}} Dateien und {{archives}} Archive geprüft."
@@ -179,7 +198,14 @@
     "fullCheckConfirm": "Alle Dateien dieses Ordners erneut lesen? Das findet beschädigte oder unbemerkt veränderte Dateien und kann eine Weile dauern.",
     "fullCheckConfirmNas": "Alle Dateien dieses NAS-Ordners erneut lesen? Über das Netzwerk kann das Stunden dauern. Abbrechen ist jederzeit möglich, es geht nichts verloren.",
     "hashChanged_one": "{{n}} Datei hat sich verändert, obwohl Größe und Datum gleich sind: möglicherweise beschädigt, siehe Problemliste.",
-    "hashChanged_other": "{{n}} Dateien haben sich verändert, obwohl Größe und Datum gleich sind: möglicherweise beschädigt, siehe Problemliste."
+    "hashChanged_other": "{{n}} Dateien haben sich verändert, obwohl Größe und Datum gleich sind: möglicherweise beschädigt, siehe Problemliste.",
+    "pause": "Pausieren",
+    "pauseHint": "Hält den Scan an. Alles bisher Gehashte bleibt gespeichert, auch mitten in großen Dateien. Bis du fortsetzt, wird der Ordner nicht automatisch gescannt, auch nicht nach einem Neustart.",
+    "resume": "Fortsetzen",
+    "resumeHint": "Setzt den pausierten Scan dort fort, wo er angehalten wurde.",
+    "paused": "Pausiert",
+    "pausedHint": "Der Scan ist pausiert. Dieser Ordner wird nicht automatisch gescannt, bis du ihn fortsetzt.",
+    "eta": "noch etwa {{time}}"
   },
   "stats": {
     "files": "Dateien",
@@ -230,7 +256,27 @@
     "inactiveNotice": "Die Dateien dieses Modells liegen nur in deaktivierten Ordnern. Sie werden nicht mehr gescannt; füge den Ordner wieder hinzu, um sie zu prüfen.",
     "rootRemoved": "deaktiviert",
     "orphanedScope": "Nur Modelle, die beim endgültigen Löschen von {{path}} ihren letzten Ort verlieren.",
-    "orphanedScopeClear": "Alle Modelle zeigen"
+    "orphanedScopeClear": "Alle Modelle zeigen",
+    "untaggedBadge": "neu",
+    "showCreator": "Alle Modelle von {{name}}",
+    "prev": "Vorheriges Modell",
+    "next": "Nächstes Modell",
+    "position": "{{i}} von {{n}}",
+    "showInExplorerShort": "Explorer",
+    "editCreator": "Ersteller ändern",
+    "edited": "von dir gesetzt",
+    "creatorManualHint": "Du hast den Ersteller gesetzt; die Erkennung ändert ihn nicht mehr.",
+    "origin": "Herkunft",
+    "originPlaceholder": "z. B. MyMiniFactory, Patreon",
+    "originUrl": "Link",
+    "license": "Lizenz",
+    "licensePlaceholder": "z. B. privater Gebrauch",
+    "notesSaving": "Wird gespeichert…",
+    "notesSaved": "Gespeichert",
+    "notesError": "Nicht gespeichert – die Notizen bleiben im Feld; versuche es noch einmal.",
+    "waitingNotice": "Dieses Modell hat noch keine Dateien im Katalog – es stammt aus einem Import. Ein Scan, der seine Dateien findet (am alten Ort oder irgendwo über ihre Fingerabdrücke), verknüpft es mit seinen Tags und Notizen. Sind die Dateien endgültig weg, entferne es.",
+    "forget": "Aus dem Katalog entfernen",
+    "confirmForget": "{{name}} aus dem Katalog entfernen?\n\nSeine Tags, Notizen und übrigen Daten werden entfernt (vorher wird eine Sicherung gemacht). Dateien werden nicht angefasst."
   },
   "supports": {
     "presupported": "Vorgestützt",
@@ -267,7 +313,11 @@
     "confirmMerge": "{{count}} Modelle in „{{name}}“ zusammenführen? Tags und Notizen bleiben erhalten.",
     "invalidFolder": "Dieser Ordner kann für diese Korrektur nicht verwendet werden.",
     "nothingToSplit": "Dieses Modell hat keine Unterordner zum Aufteilen.",
-    "nothingToDetach": "Dieses Modell hat nur einen Ort."
+    "nothingToDetach": "Dieses Modell hat nur einen Ort.",
+    "queued": "Gespeichert. Ein Scan läuft – die Korrektur wird angewendet, sobald er fertig ist.",
+    "done": "Korrektur angewendet.",
+    "merged_one": "{{count}} Modell mit {{name}} zusammengeführt.",
+    "merged_other": "{{count}} Modelle mit {{name}} zusammengeführt."
   },
   "tags": {
     "title": "Tags",
@@ -284,7 +334,10 @@
     "added_other": "{{count}} Modelle mit {{tags}} getaggt.",
     "removed_one": "{{tags}} von {{count}} Modell entfernt.",
     "removed_other": "{{tags}} von {{count}} Modellen entfernt.",
-    "invalid": "Tags dürfen nicht leer sein und höchstens {{max}} Zeichen haben."
+    "invalid": "Tags dürfen nicht leer sein und höchstens {{max}} Zeichen haben.",
+    "acceptAll": "Alle übernehmen",
+    "dismissed": "Vorschlag {{name}} verworfen.",
+    "notFound": "Es gibt keinen Tag {{name}}."
   },
   "printStatus": {
     "not_printed": "Nicht gedruckt",
@@ -314,12 +367,17 @@
     "missing": "Fehlende Dateien",
     "missingHint": "Dateien sind seit dem letzten Scan verschwunden",
     "inactive": "Nur in deaktivierten Ordnern",
-    "inactiveHint": "Alle Dateien liegen in deaktivierten Ordnern, die nicht mehr gescannt werden"
+    "inactiveHint": "Alle Dateien liegen in deaktivierten Ordnern, die nicht mehr gescannt werden",
+    "remove": "Filter {{name}} entfernen"
   },
   "views": {
     "label": "Ansicht",
     "list": "Liste",
-    "grid": "Raster"
+    "grid": "Raster",
+    "size": "Kachelgröße",
+    "size_s": "Klein",
+    "size_m": "Mittel",
+    "size_l": "Groß"
   },
   "thumbs": {
     "none": "Noch kein Vorschaubild",
@@ -334,7 +392,9 @@
       "image": "Bild aus dem Modellordner",
       "embedded": "Vorschau aus der 3MF-Datei",
       "rendered": "Aus der STL gerendert"
-    }
+    },
+    "current": "Vorschaubild",
+    "fromViewHint": "Tipp: In der 3D-Vorschau kannst du auch die aktuelle Ansicht als Vorschaubild verwenden."
   },
   "preview": {
     "show": "3D-Vorschau",
@@ -409,7 +469,10 @@
       "preRemoveRoot": "vor dem Löschen eines Ordners",
       "preFileTypes": "vor dem Ändern von Dateitypen",
       "other": "sonstiges",
-      "preRestore": "Stand vor einer Wiederherstellung"
+      "preRestore": "Stand vor einer Wiederherstellung",
+      "preImport": "vor einem Import",
+      "preRelocate": "vor einer Pfadänderung",
+      "preForget": "vor dem Entfernen von Modellen"
     },
     "total_one": "{{n}} Backup, zusammen {{size}}.",
     "total_other": "{{n}} Backups, zusammen {{size}}.",
@@ -429,7 +492,27 @@
     "restoreConfirm": "Beim nächsten Start wiederherstellen",
     "title": "Daten & Backups",
     "restoreTitle": "Backup wiederherstellen",
-    "restoreByHand": "Von Hand wiederherstellen"
+    "restoreByHand": "Von Hand wiederherstellen",
+    "externalInDataDir": "{{path}} liegt im modelkeeper-Ordner oder enthält ihn. Wähle einen Ordner auf einem anderen Laufwerk oder in der Cloud.",
+    "externalInRoot": "{{path}} liegt in einem Modellordner ({{root}}). modelkeeper schreibt nie in die Modellordner. Wähle einen anderen Ordner.",
+    "nothingToCheck": "Es gibt noch keine Sicherung, die geprüft werden kann.",
+    "checkFailedShort": "Der letzte Wiederherstellungstest ist fehlgeschlagen.",
+    "externalTitle": "Sicherung außerhalb des PCs",
+    "externalIntro": "Die Sicherungen oben liegen auf demselben Laufwerk wie die App. Wenn der PC kaputtgeht, sind sie mit weg. Wähle deshalb einen zweiten Ordner, z. B. eine externe Festplatte, den Dropbox-Ordner oder eine eigene Freigabe auf dem NAS. Jede Sicherung wird automatisch dorthin kopiert, zusammen mit modelkeeper.exe und einer Anleitung zum Wiederherstellen.",
+    "externalFolder": "Zweiter Sicherungsordner",
+    "externalNone": "nicht eingerichtet",
+    "externalChoose": "Ordner wählen…",
+    "externalChange": "Anderen Ordner wählen…",
+    "externalOpen": "Ordner öffnen",
+    "externalOff": "Nicht mehr kopieren",
+    "checkTitle": "Wiederherstellungstest",
+    "checkOk": "Zuletzt geprüft {{when}}: Sicherung {{name}} lässt sich wiederherstellen ({{models}} Modelle, {{tags}} Tags).",
+    "checkOkExternal": "Zuletzt geprüft {{when}}: Die Kopie {{name}} im zweiten Sicherungsordner lässt sich wiederherstellen ({{models}} Modelle, {{tags}} Tags).",
+    "checkFailed": "Test vom {{when}} fehlgeschlagen: {{problem}}",
+    "checkNone": "Noch kein Test gelaufen.",
+    "checkNow": "Jetzt testen",
+    "checking": "Wird getestet…",
+    "checkHint": "Einmal am Tag und nach jeder neuen Sicherung prüft modelkeeper die neueste Sicherung (bevorzugt die Kopie im zweiten Ordner): Die Dateien müssen unverändert sein, eine Kopie des Katalogs muss die vollständige Integritätsprüfung bestehen, und die Zahl der Modelle und Tags muss stimmen. Die Sicherung selbst wird dabei nur gelesen."
   },
   "confirm": {
     "cancel": "Abbrechen",
@@ -446,22 +529,36 @@
         "id": "start",
         "title": "Erste Schritte",
         "body": [
-          "1. Öffne den Tab **Ordner** und klicke auf **Ordner hinzufügen…**. Wähle einen lokalen Ordner oder einen NAS-Pfad wie \\\\fritz.nas\\…",
+          "1. Klicke links unten auf **Ordner** und dann auf **Ordner hinzufügen…**. Wähle deinen Modellordner auf dem NAS (am besten über den Netzwerkpfad wie \\\\fritz.nas\\…, nicht über einen Laufwerksbuchstaben) und bei Bedarf weitere Ordner auf dem PC.",
           "2. Klicke auf **Scannen**. modelkeeper listet alle Modelldateien auf, berechnet für jede einen Fingerabdruck (Hash) – auch für Dateien in ZIP-, RAR- und 7z-Archiven – und erkennt daraus die Modelle.",
-          "3. Wechsle zum Tab **Modelle**. Dort findest du alles, was erkannt wurde.",
-          "Der erste Scan kann über das NAS Stunden dauern. Du kannst die App währenddessen benutzen. Der Fortschritt wird laufend gespeichert: Brichst du ab oder schließt die App, macht der nächste Scan an derselben Stelle weiter. Danach werden nur noch neue und geänderte Dateien gelesen.",
-          "Die erste Ordnerebene unter einem Stammordner gilt als Ersteller (z. B. „Atlas Miniatures“). Ist dein Ordner anders aufgebaut, schalte **Erste Ordnerebene ist der Ersteller** für diesen Ordner aus."
+          "3. Wenn der Scan durch ist, klicke links auf **Alle Modelle**. Dort findest du alles, was erkannt wurde.",
+          "Der erste Scan einer großen Sammlung auf dem NAS dauert lange, oft einen Tag oder mehr. Die geschätzte Restzeit steht unter dem Fortschrittsbalken. Du kannst die App währenddessen benutzen, mit **Pausieren** anhalten oder die App einfach schließen: Alles bisher Gehashte bleibt gespeichert, auch mitten in einer großen Datei. Nach dem Schließen geht es beim nächsten Start von selbst weiter; nach **Pausieren** erst, wenn du **Fortsetzen** klickst. Danach werden nur noch neue und geänderte Dateien gelesen.",
+          "Die erste Ordnerebene unter einem Stammordner gilt als Ersteller (z. B. „Atlas Miniatures“). Ist dein Ordner anders aufgebaut, schalte **Erste Ordnerebene ist der Ersteller** für diesen Ordner aus.",
+          "Den modelkeeper-Ordner selbst (mit modelkeeper.exe und data) legst du auf den PC, nicht aufs NAS: Auf einer Netzwerkfreigabe kann der Katalog beschädigt werden. Liegt er doch dort, startet die App nicht und sagt dir, was zu tun ist."
         ]
       },
       {
         "id": "find",
         "title": "Modelle finden",
         "body": [
+          "Links findest du die Ansichten deiner Sammlung: **Alle Modelle**, **Zu katalogisieren** (Modelle ohne Tags), **Favoriten** und **Neu hinzugefügt**. Darunter stehen deine **Creator**, die häufigsten **Tags** und die **Speicherorte**. Ein Klick filtert die Liste, ein zweiter Klick hebt den Filter wieder auf. Filter lassen sich kombinieren, z. B. „Zu katalogisieren“ von einem bestimmten Creator.",
           "Das Suchfeld durchsucht Name, Ersteller, Tags, Notizen und Pfade. Die Ergebnisse erscheinen beim Tippen; Wortanfänge genügen („orc war“ findet „Orc Warlord“).",
-          "- **Favoriten** zeigt nur deine Favoriten. Ein Modell machst du mit dem Stern zum Favoriten – in der Liste oder in der Detailansicht.",
-          "- **Filter** öffnet weitere Kriterien: Tag, Ersteller, Ordner, Dateityp, Supports und Druckstatus sowie Häkchen wie **Ohne Tags**, **Duplikate**, **Nur an einem Ort** (keine Sicherung auf NAS oder PC), **Offline**, **Beschädigte Archive**, **Entpackt und als Archiv** (Kandidaten zum Platzsparen), **Fehlende Dateien** und **Nur in deaktivierten Ordnern**.",
-          "- **Liste** und **Raster** schalten zwischen kompakter Liste und Vorschaubildern um.",
-          "Hinweise in der Liste: **an 2 Orten** heißt, das Modell liegt z. B. auf PC und NAS. **fehlen** heißt, Dateien sind seit dem letzten Scan verschwunden. **nur in deaktiviertem Ordner** heißt, die Dateien liegen in einem Ordner, der nicht mehr gescannt wird."
+          "- **Filter** öffnet weitere Kriterien: Tag, Ersteller, Ordner, Dateityp, Supports und Druckstatus sowie Häkchen wie **Duplikate**, **Nur an einem Ort**, **Offline** oder **Beschädigte Archive**. Aktive Filter stehen als Chips unter dem Suchfeld; ✕ entfernt einen.",
+          "- **Sortieren**: nach Name (beim Suchen nach Relevanz) oder **Neu hinzugefügt**.",
+          "- Rechts oben schaltest du zwischen **Raster** und **Liste** um und wählst die **Kachelgröße**.",
+          "- Mit den **Pfeiltasten** bewegst du dich durch die Kacheln, **Pos1**/**Ende** springen an den Anfang und das Ende, **F** macht das gewählte Modell zum Favoriten, **Esc** schließt die Detailansicht. Im Suchfeld führt **Pfeil runter** in die Liste.",
+          "Hinweise auf den Kacheln: **neu** heißt, das Modell hat noch keine Tags. **!** heißt, Dateien sind seit dem letzten Scan verschwunden. In der Listenansicht steht zusätzlich, an wie vielen Orten ein Modell liegt."
+        ]
+      },
+      {
+        "id": "catalog",
+        "title": "Katalogisieren",
+        "body": [
+          "In **Zu katalogisieren** stehen alle Modelle ohne Tags – so arbeitest du die Sammlung nach und nach ab:",
+          "1. Klicke auf das erste Modell. Rechts öffnet sich die Detailansicht, das Tag-Feld hat schon den Cursor.",
+          "2. Tippe Tags ein, mehrere mit Komma getrennt, und drücke **Enter**. Gestrichelte Vorschläge aus den Ordnernamen übernimmst du mit +, alle auf einmal mit **Alle übernehmen**.",
+          "3. Sobald das Modell Tags hat, verschwindet es aus der Liste und das nächste ist ausgewählt. Mit **←**/**→** oder **Überspringen** gehst du weiter, ohne zu taggen.",
+          "Bilder im Modellordner erscheinen in der Detailansicht als Galerie unter dem großen Bild; ein Klick vergrößert sie, **←**/**→** blättert, **Esc** schließt. **Als Vorschaubild verwenden** macht das gezeigte Bild zur Kachel."
         ]
       },
       {
@@ -476,7 +573,8 @@
           "- **Notizen**: werden gespeichert, sobald du das Feld verlässt.",
           "- **Gefunden in** zeigt alle Orte des Modells, **Dateien** alle Dateien mit Variante und identischen Kopien. **Im Explorer zeigen** öffnet den Ordner (bei Dateien in Archiven das Archiv).",
           "Vorschaubilder erzeugt modelkeeper selbst: aus einem Bild im Modellordner, der Vorschau einer 3MF-Datei oder gerendert aus der STL. Über **Vorschaubild ändern** wählst du ein anderes Bild aus dem Modell, ein eigenes Bild (**Bild auswählen…**) oder kehrst mit **Wieder automatisch** zurück.",
-          "**3D-Vorschau** zeigt das Modell drehbar: Ziehen dreht, rechte Maustaste verschiebt, das Mausrad zoomt. **Ansicht als Vorschaubild** speichert die aktuelle Ansicht als Vorschaubild."
+          "**3D-Vorschau** zeigt das Modell drehbar: Ziehen dreht, rechte Maustaste verschiebt, das Mausrad zoomt. **Ansicht als Vorschaubild** speichert die aktuelle Ansicht als Vorschaubild.",
+          "**Im Slicer öffnen** öffnet die wahrscheinlich richtige Datei (zuerst ein Slicer-Projekt, sonst die Hauptdatei); über ▾ wählst du eine andere. Der Slicer bekommt immer eine schreibgeschützte Kopie, nie das Original – er kann in deiner Sammlung nichts überschreiben. Welches Programm verwendet wird, stellst du unter Einstellungen → **Slicer** ein. Speichere Slicer-Projekte an einem eigenen Ort; die Kopien werden nach 7 Tagen entfernt."
         ]
       },
       {
@@ -513,6 +611,7 @@
           "- **Scannen** liest nur neue und geänderte Dateien.",
           "- **Vollprüfung** liest alle Dateien erneut. Sie findet beschädigte oder unbemerkt veränderte Dateien und kann – besonders über das NAS – lange dauern.",
           "- **Modelle erkennen** wendet die Erkennung neu an, ohne Dateien zu lesen.",
+          "- **Pausieren** hält einen laufenden Scan an. Der Ordner wird dann nicht automatisch gescannt (weder live noch nach Zeitplan noch beim Start), bis du **Fortsetzen** klickst. Das bleibt auch nach einem Neustart so. Den laufenden Scan siehst und pausierst du auch links unten in der Seitenleiste.",
           "Unter jedem Ordner stehen Zahlen zu Dateien, Größe, Duplikaten, Archiven und Problemen. **Probleme beim letzten Scan** listet z. B. beschädigte oder passwortgeschützte Archive.",
           "**Hashes teilen**: Scannt jemand anderes denselben Ordner (z. B. dasselbe NAS), kann er deine Hashes **importieren**, statt alles selbst zu lesen. Tags, Notizen und Favoriten sind darin nicht enthalten."
         ]
@@ -533,15 +632,42 @@
         "id": "backup",
         "title": "Backups und Wiederherstellen",
         "body": [
-          "modelkeeper sichert Katalog, Einstellungen und deine selbst gewählten Vorschaubilder automatisch in den Ordner data\\backups:",
-          "- einmal täglich beim Start, wenn sich seit dem letzten Backup etwas geändert hat,",
+          "modelkeeper sichert Katalog, Einstellungen und deine selbst gewählten Vorschaubilder automatisch in den Ordner data\\backups im modelkeeper-Ordner:",
+          "- einmal am Tag, wenn sich seit dem letzten Backup etwas geändert hat – beim Start und auch, wenn die App tagelang offen bleibt,",
           "- vor jedem Update des Katalogs auf eine neue Version,",
           "- vor dem endgültigen Löschen eines Ordners und vor Änderungen an den Dateitypen,",
           "- jederzeit über **Backup jetzt erstellen** (Einstellungen → **Daten & Backups**).",
           "Aufbewahrt werden die 14 neuesten täglichen Backups und alle anderen der letzten 90 Tage, mindestens aber die 3 neuesten. Jedes Backup wird nach dem Schreiben geprüft.",
+          "**Sicherung außerhalb des PCs**: Wähle unter Einstellungen einen zweiten Sicherungsordner, z. B. eine externe Festplatte, deinen Dropbox-Ordner oder eine eigene Freigabe auf dem NAS (nicht den Modellordner). Jedes Backup wird dorthin kopiert, zusammen mit modelkeeper.exe und einer Anleitung (README.txt).",
+          "**Wiederherstellungstest**: Einmal am Tag und nach jedem neuen Backup prüft modelkeeper, ob sich das neueste Backup wirklich wiederherstellen lässt – bevorzugt die Kopie im zweiten Ordner. Das Ergebnis steht in den Einstellungen; schlägt der Test fehl, zeigt die Seitenleiste ein Warnzeichen an **Einstellungen**. Mit **Jetzt testen** prüfst du sofort.",
           "**Wiederherstellen**: Unter **Backups anzeigen und wiederherstellen** ein Backup wählen und **Wiederherstellen…** klicken. Beim nächsten Start ersetzt modelkeeper Katalog, Einstellungen und Vorschaubilder durch den Stand des Backups. Der bisherige Stand wird vorher selbst als Backup abgelegt – so kannst du die Wiederherstellung genauso rückgängig machen.",
-          "Ist der Katalog beim Start beschädigt, hält modelkeeper an, bevor etwas geschrieben wird, und zeigt dir die Backups zum Wiederherstellen.",
-          "Die Backups liegen auf demselben Laufwerk wie die App. Kopiere den ganzen modelkeeper-Ordner deshalb ab und zu auf ein anderes Laufwerk oder in einen Cloud-Ordner – am besten bei geschlossener App. Betreibe modelkeeper auf dem PC, nicht auf dem NAS."
+          "**Neuer PC**: modelkeeper.exe aus dem zweiten Sicherungsordner in einen neuen Ordner kopieren, darin data\\backups anlegen, den gewünschten Backup-Ordner hineinkopieren und modelkeeper starten. Die App bietet das Backup zum Wiederherstellen an.",
+          "Ist der Katalog beim Start beschädigt, hält modelkeeper an, bevor etwas geschrieben wird, und zeigt dir die Backups zum Wiederherstellen."
+        ]
+      },
+      {
+        "id": "safety",
+        "title": "Rückgängig, Export und Ordner umziehen",
+        "body": [
+          "**Rückgängig**: Jede Änderung an Tags, Feldern und Favoriten lässt sich rückgängig machen – klicke in der Meldung unten auf **Rückgängig** oder drücke **Strg+Z** überall außerhalb eines Textfelds. Einstellungen → **Letzte Änderungen** listet die letzten Änderungen. Ein Modell, das inzwischen anders geändert wurde (z. B. zusammengeführt), bleibt, wie es ist.",
+          "Korrekturen der Erkennung – Zusammenführen, Aufteilen, „ist ein Modell“, „kein Modell“, Trennen, Zurücksetzen – lassen sich genauso rückgängig machen: Die Ordner werden neu erkannt, und jedes Modell bekommt seine ID, Tags und Notizen zurück.",
+          "Notizen werden beim Tippen gespeichert; „Gespeichert“ unter dem Feld bestätigt es.",
+          "**Export**: Einstellungen → **Export und Import** → **Exportieren…** schreibt eine JSON-Datei mit allem, was du eingegeben hast: Tags, Notizen, Favoriten, Druckstatus, geänderte Namen und Ersteller, Herkunft und Lizenz, Korrekturen, gewählte Vorschaubilder, deine Ordner und Erkennungseinstellungen. Jede Sicherung enthält dieselbe Datei als catalog-export.json – auch jede Kopie im zweiten Sicherungsordner.",
+          "**Import**: **Importieren…** liest eine solche Datei. modelkeeper zeigt zuerst, was sie enthält und wie ihre Modelle hier gefunden werden: über ihre ID, am selben Ort oder über ihre Dateien (Fingerabdrücke), auch wenn sie verschoben oder umbenannt wurden. Noch nicht gefundene Modelle behalten ihre Daten und werden verknüpft, sobald ein Scan ihre Dateien findet. Der Import fügt nur hinzu – nichts, was du eingegeben hast, wird entfernt – und vorher wird eine Sicherung gemacht.",
+          "**Für jemand anderen**: Exportiere auf deinem PC und gib die Datei weiter; die andere Person importiert sie, wählt, wo die Ordner auf ihrem PC liegen (oder fügt sie hinzu), und scannt.",
+          "**Ordner umgezogen** (neues NAS, anderer Laufwerksbuchstabe): Ordner → **Pfad ändern…** am Ordner. modelkeeper prüft eine Stichprobe der Dateien am neuen Ort, macht eine Sicherung, ändert den Pfad und scannt. Der Ordner behält alle Tags, Notizen und Korrekturen. Füge den neuen Ort nicht als zweiten Ordner hinzu – die Tags blieben beim alten.",
+          "**Warten auf Dateien**: Modelle aus einem Import, deren Dateien noch nicht gefunden wurden, stehen links unter dieser Ansicht (nur solange es welche gibt). Entferne ein Modell dort, wenn seine Dateien endgültig weg sind. Import und **Pfad ändern…** funktionieren auch während eines Scans: Der Scan pausiert dafür und läuft danach weiter. Korrekturen der Erkennung während eines Scans werden sofort gespeichert und angewendet, wenn der Scan fertig ist.",
+          "**Tags**: Einstellungen → **Tags** benennt einen Tag für alle seine Modelle auf einmal um oder löscht ihn; Umbenennen in einen vorhandenen Tag führt beide zusammen (Tippfehler). Rückgängig machbar."
+        ]
+      },
+      {
+        "id": "install",
+        "title": "Installieren und umziehen",
+        "body": [
+          "modelkeeper ist portabel: modelkeeper.exe und sein Datenordner daneben (data) gehören zusammen. Lege den Ordner an einen dauerhaften Ort, z. B. C:\\Users\\<Name>\\modelkeeper – nicht in Downloads, nicht in einen OneDrive- oder Dropbox-Ordner (modelkeeper warnt) und nicht in die ZIP-Datei (dort startet modelkeeper nicht, der Katalog ginge verloren).",
+          "Zum Umziehen in einen anderen Ordner, auf eine andere Platte oder einen anderen PC: modelkeeper schließen und den ganzen Ordner verschieben oder kopieren. Alles kommt mit. Beim nächsten Start bemerkt modelkeeper den Umzug; sind Modellordner mitgewandert (mobile Platte mit neuem Laufwerksbuchstaben, Modellordner neben der App), bietet es an, ihre Pfade anzupassen.",
+          "Ziehen die Modelldateien allein um (neues NAS), nutze Ordner → **Pfad ändern…**.",
+          "Einstellungen → **Konfiguration** exportiert die Einstellungen und die Ordnerliste als JSON, um einen anderen PC genauso einzurichten; **Export und Import** überträgt die Katalogisierung."
         ]
       },
       {
@@ -551,6 +677,8 @@
           "- **Sprache**: Deutsch, Englisch oder wie das System.",
           "- **NAS-Ordner automatisch neu scannen**: wie oft NAS-Ordner geprüft werden. Ein manueller Scan setzt die Zeit zurück.",
           "- **Daten & Backups**: wo die Daten liegen, Backups erstellen und wiederherstellen.",
+          "- **Slicer**: welches Programm **Im Slicer öffnen** verwendet. Ohne Auswahl nimmt Windows das Programm, das zum Dateityp gehört.",
+          "- **Sicherung außerhalb des PCs**: zweiter Sicherungsordner und Wiederherstellungstest.",
           "- **Dateitypen**: welche Dateien katalogisiert werden. Entfernst du einen Typ, verschwinden dessen Einträge aus dem Katalog – die Dateien selbst bleiben unberührt; vorher entsteht ein Backup.",
           "- **Modellerkennung**: **Teile-Ordner** werden dem Modell darüber zugeordnet, **Größenvarianten** (z. B. S_Orc, Orc_XL) als Varianten erkannt. Deine Korrekturen bleiben erhalten."
         ]
@@ -560,6 +688,8 @@
         "title": "Häufige Fragen",
         "body": [
           "**Verändert modelkeeper meine Dateien?** Nein. Die App liest Modelldateien nur. Geschrieben wird ausschließlich im eigenen Ordner data neben der modelkeeper.exe.",
+          "**Kann der Slicer meine Dateien verändern?** Nein. **Im Slicer öffnen** übergibt immer eine schreibgeschützte Kopie aus data\\open, nie die Datei aus deiner Sammlung.",
+          "**Ist Hashen gefährlich für meine Dateien?** Nein. Beim Hashen werden Dateien nur gelesen. Pausieren, Schließen der App oder ein Absturz können keine Datei beschädigen; der Scan macht danach an derselben Stelle weiter.",
           "**Ich habe einen Ordner verschoben – sind meine Tags weg?** Nein. Verschobene Dateien werden am Hash wiedererkannt; Tags, Notizen und Status bleiben am Modell, sobald der neue Ort gescannt ist.",
           "**Was bedeutet „2 fehlen“?** Diese Dateien waren beim letzten Scan nicht mehr da. Hast du sie verschoben, ist der Hinweis nach dem Scan des neuen Orts weg. Der Filter **Fehlende Dateien** zeigt alle betroffenen Modelle.",
           "**Wo liegen meine Daten?** Im Ordner data neben der modelkeeper.exe: Katalog, Einstellungen, Vorschaubilder, Backups und ein Protokoll (modelkeeper.log). **Datenordner öffnen** in den Einstellungen zeigt ihn.",
@@ -567,5 +697,206 @@
         ]
       }
     ]
+  },
+  "duration": {
+    "lessThanMinute": "< 1 Min.",
+    "minutes": "{{m}} Min.",
+    "hours": "{{h}} Std. {{m}} Min.",
+    "days": "{{d}} Tage {{h}} Std."
+  },
+  "slicer": {
+    "title": "Slicer",
+    "program": "Programm",
+    "systemDefault": "Standardprogramm von Windows für den Dateityp",
+    "choose": "Slicer wählen…",
+    "useDefault": "Standardprogramm verwenden",
+    "hint": "„Im Slicer öffnen“ übergibt dem Slicer immer eine schreibgeschützte Kopie (im modelkeeper-Ordner unter data\\open), nie die Originaldatei. So kann der Slicer nichts in deiner Sammlung überschreiben. Kopien werden nach 7 Tagen entfernt; was du selbst daneben speicherst, bleibt.",
+    "open": "Im Slicer öffnen",
+    "openShort": "Slicer",
+    "openHint": "Öffnet eine schreibgeschützte Kopie im Slicer. Das Original bleibt unberührt.",
+    "chooseFile": "Andere Datei wählen",
+    "opened": "{{name}} wurde als Kopie im Slicer geöffnet. Speichere Slicer-Projekte an einem eigenen Ort.",
+    "copying": "{{name}} wird für den Slicer kopiert…"
+  },
+  "nav": {
+    "label": "Navigation",
+    "all": "Alle Modelle",
+    "untagged": "Zu katalogisieren",
+    "untaggedHint": "Modelle ohne Tags",
+    "favorites": "Favoriten",
+    "newest": "Neu hinzugefügt",
+    "creators": "Creator",
+    "tags": "Tags",
+    "locations": "Speicherorte",
+    "filterList": "Filtern…",
+    "showAll": "Alle {{n}} anzeigen",
+    "showLess": "Weniger anzeigen",
+    "waiting": "Warten auf Dateien",
+    "waitingHint": "Modelle aus einem Import, deren Dateien noch nicht gefunden wurden. Ein Scan, der sie findet, verknüpft sie."
+  },
+  "sort": {
+    "label": "Sortieren",
+    "name": "Name",
+    "relevance": "Relevanz",
+    "newest": "Neu hinzugefügt"
+  },
+  "catalogMode": {
+    "hint": "Katalogisieren: Modell wählen, Tags eintippen und mit Enter bestätigen. Sobald ein Modell Tags hat, verschwindet es aus dieser Liste und das nächste ist dran. Mit ← und → wechselst du ohne Taggen.",
+    "detailHint": "Enter übernimmt die Tags, danach geht es mit dem nächsten Modell weiter.",
+    "skip": "Überspringen"
+  },
+  "empty": {
+    "libraryTitle": "Noch keine Modelle",
+    "noFolders": "Füge unter „Ordner“ deine Modellordner hinzu, lokal oder auf dem NAS, und starte einen Scan.",
+    "notScanned": "Starte unter „Ordner“ einen Scan. Die Modelle erscheinen, sobald der Scan eines Ordners durchgelaufen ist – beim ersten Scan einer großen Sammlung auf dem NAS kann das dauern.",
+    "catalogedTitle": "Alles katalogisiert",
+    "cataloged": "Jedes Modell hat mindestens einen Tag.",
+    "clearSearch": "Suche und Filter zurücksetzen",
+    "waitingTitle": "Kein Modell wartet auf seine Dateien."
+  },
+  "gallery": {
+    "enlarge": "Vergrößern",
+    "useAsThumbnail": "Als Vorschaubild verwenden",
+    "prev": "Vorheriges Bild",
+    "next": "Nächstes Bild"
+  },
+  "warning": {
+    "dataDir": {
+      "downloads": "Der modelkeeper-Ordner liegt in „Downloads“ ({{path}}). Downloads wird oft aufgeräumt – verschiebe den ganzen modelkeeper-Ordner bei geschlossener App an einen dauerhaften Ort (z. B. Dokumente).",
+      "synced": "Der modelkeeper-Ordner liegt in einem synchronisierten Ordner ({{path}}, z. B. OneDrive oder Dropbox). Sync-Programme können den Katalog beschädigen, während modelkeeper läuft. Verschiebe den modelkeeper-Ordner woandershin und nutze für die Cloud-Kopie Einstellungen → Zweiter Sicherungsordner."
+    }
+  },
+  "export": {
+    "title": "Export und Import",
+    "intro": "Eine Datei mit allem, was du eingegeben hast: Tags, Notizen, Favoriten, Druckstatus, geänderte Namen und Ersteller, Korrekturen der Erkennung, gewählte Vorschaubilder, deine Ordner und Erkennungseinstellungen. Sie reicht, um deine Arbeit in einen leeren Katalog zurückzuholen – auf diesem oder einem anderen PC – auch ohne die Sicherungen.",
+    "button": "Exportieren…",
+    "exporting": "Wird exportiert…",
+    "done": "{{models}} Modelle, {{tags}} Tags, {{overrides}} Korrekturen und {{thumbnails}} Vorschaubilder nach {{path}} exportiert.",
+    "hint": "Jede Sicherung enthält ebenfalls eine solche Datei (catalog-export.json), ebenso jede Kopie im zweiten Sicherungsordner. Die Datei ist einfaches JSON und mit jedem Texteditor lesbar.",
+    "failed": "Der Export konnte nicht nach {{path}} geschrieben werden."
+  },
+  "import": {
+    "button": "Importieren",
+    "title": "Katalogisierung importieren",
+    "contains": "Die Datei enthält {{models}} Modelle, {{tags}} Tags, {{overrides}} Korrekturen und {{thumbnails}} Vorschaubilder.",
+    "exportedAt": "Exportiert am {{when}} (modelkeeper {{version}}).",
+    "rootsTitle": "Ordner",
+    "rootsHint": "Wo liegen diese Ordner auf diesem PC? Wähle den passenden Ordner dieses Katalogs, füge ihn als neuen Ordner hinzu oder überspringe ihn.",
+    "rootModels_one": "{{n}} Modell",
+    "rootModels_other": "{{n}} Modelle",
+    "mapTo": "{{path}} verwenden",
+    "addRoot": "Als neuen Ordner hinzufügen (wird danach gescannt)",
+    "skipRoot": "Überspringen (Modelle werden später über ihre Dateien gefunden)",
+    "relocateHint": "Liegen die Dateien jetzt an einem neuen Ort (neues NAS, anderer Laufwerksbuchstabe), wähle den Ordner mit seinem neuen Pfad – oder füge ihn als neuen Ordner hinzu.",
+    "matchTitle": "Modelle",
+    "byId": "{{n}} schon in diesem Katalog",
+    "byPath": "{{n}} am selben Ort gefunden",
+    "byContent": "{{n}} über ihre Dateien gefunden (verschoben oder umbenannt)",
+    "new": "{{n}} noch nicht gefunden – bleiben mit ihren Daten erhalten und werden verknüpft, sobald ein Scan ihre Dateien findet",
+    "notesKept_one": "{{n}} Modell hat hier andere Notizen – beide Texte bleiben erhalten.",
+    "notesKept_other": "{{n}} Modelle haben hier andere Notizen – beide Texte bleiben erhalten.",
+    "safeHint": "Der Import fügt nur hinzu: Nichts, was du in diesem Katalog eingegeben hast, wird entfernt oder überschrieben, und vorher wird eine Sicherung gemacht. Dieselbe Datei kann gefahrlos erneut importiert werden.",
+    "settings": "Auch Dateitypen und Erkennungsregeln übernehmen",
+    "apply": "Importieren",
+    "importing": "Wird importiert…",
+    "done": "Importiert: {{models}} Modelle ({{waiting}} warten auf einen Scan), {{tags}} Tags hinzugefügt, {{overrides}} Korrekturen, {{thumbnails}} Vorschaubilder.",
+    "backupHint": "Sicherung vor dem Import: {{path}}",
+    "notAnExport": "{{path}} ist kein modelkeeper-Export.",
+    "tooNew": "{{path}} wurde von einem neueren modelkeeper exportiert. Aktualisiere modelkeeper zuerst.",
+    "readFailed": "{{path}} konnte nicht gelesen werden.",
+    "noFile": "Wähle die Exportdatei erneut.",
+    "unknownRoot": "Unbekannter Ordner im Import ({{key}})."
+  },
+  "history": {
+    "title": "Letzte Änderungen",
+    "intro": "Tags, Felder und Favoriten, die du geändert hast. Die neueste Änderung lässt sich rückgängig machen – auch mit Strg+Z überall außerhalb eines Textfelds.",
+    "show": "Letzte Änderungen anzeigen",
+    "empty": "Noch keine Änderungen.",
+    "undo": "Rückgängig",
+    "dismiss": "Schließen",
+    "wasUndone": "rückgängig gemacht",
+    "undone": "Rückgängig gemacht: {{what}}",
+    "undoneSkipped_one": "Rückgängig gemacht: {{what}} – {{n}} Modell wurde inzwischen anders geändert und bleibt, wie es ist.",
+    "undoneSkipped_other": "Rückgängig gemacht: {{what}} – {{n}} Modelle wurden inzwischen anders geändert und bleiben, wie sie sind.",
+    "nothingToUndo": "Nichts rückgängig zu machen.",
+    "tagsAdded_one": "Tags {{tags}} zu {{count}} Modell hinzugefügt",
+    "tagsAdded_other": "Tags {{tags}} zu {{count}} Modellen hinzugefügt",
+    "tagsRemoved_one": "Tags {{tags}} von {{count}} Modell entfernt",
+    "tagsRemoved_other": "Tags {{tags}} von {{count}} Modellen entfernt",
+    "suggestionDismissed": "Vorschlag {{tags}} verworfen",
+    "favoritesAdded_one": "{{count}} Modell zu den Favoriten hinzugefügt",
+    "favoritesAdded_other": "{{count}} Modelle zu den Favoriten hinzugefügt",
+    "favoritesRemoved_one": "{{count}} Modell aus den Favoriten entfernt",
+    "favoritesRemoved_other": "{{count}} Modelle aus den Favoriten entfernt",
+    "modelEdited": "{{name}} bearbeitet",
+    "tagRenamed_one": "Tag {{from}} in {{to}} umbenannt ({{count}} Modell)",
+    "tagRenamed_other": "Tag {{from}} in {{to}} umbenannt ({{count}} Modelle)",
+    "tagMerged_one": "Tag {{from}} mit {{to}} zusammengeführt ({{count}} Modell)",
+    "tagMerged_other": "Tag {{from}} mit {{to}} zusammengeführt ({{count}} Modelle)",
+    "tagDeleted_one": "Tag {{tags}} gelöscht ({{count}} Modell)",
+    "tagDeleted_other": "Tag {{tags}} gelöscht ({{count}} Modelle)",
+    "needsDetection": "Diese Änderung lässt sich nur zusammen mit einem Erkennungslauf rückgängig machen.",
+    "correction": {
+      "markModel": "{{path}} als ein Modell markiert",
+      "markNotModel": "{{path}} als kein Modell markiert",
+      "split": "{{name}} in seine Unterordner aufgeteilt",
+      "detach": "{{path}} von {{name}} getrennt",
+      "merge_one": "{{count}} Modell mit {{name}} zusammengeführt",
+      "merge_other": "{{count}} Modelle mit {{name}} zusammengeführt",
+      "reset": "Korrekturen von {{name}} zurückgesetzt"
+    }
+  },
+  "tagManager": {
+    "title": "Tags",
+    "intro": "Einen Tag für alle seine Modelle auf einmal umbenennen oder löschen. Umbenennen in einen vorhandenen Tag führt beide zusammen – praktisch bei Tippfehlern. Jede Änderung lässt sich rückgängig machen.",
+    "filter": "Tags filtern…",
+    "rename": "Umbenennen",
+    "delete": "Löschen",
+    "merge": "Zusammenführen",
+    "confirmMerge": "{{from}} mit {{to}} zusammenführen?\n\n{{to}} hat schon {{n}} Modelle; danach tragen alle Modelle von {{from}} den Tag {{to}}.",
+    "confirmDelete_one": "Den Tag {{name}} löschen?\n\nEr wird von {{n}} Modell entfernt. Das lässt sich rückgängig machen.",
+    "confirmDelete_other": "Den Tag {{name}} löschen?\n\nEr wird von {{n}} Modellen entfernt. Das lässt sich rückgängig machen.",
+    "renamed_one": "{{from}} in {{to}} umbenannt ({{count}} Modell).",
+    "renamed_other": "{{from}} in {{to}} umbenannt ({{count}} Modelle).",
+    "merged_one": "{{from}} mit {{to}} zusammengeführt ({{count}} Modell).",
+    "merged_other": "{{from}} mit {{to}} zusammengeführt ({{count}} Modelle).",
+    "deleted_one": "Tag {{name}} von {{count}} Modell entfernt.",
+    "deleted_other": "Tag {{name}} von {{count}} Modellen entfernt.",
+    "more": "{{n}} weitere – grenze den Filter ein."
+  },
+  "config": {
+    "title": "Konfiguration",
+    "intro": "Einstellungen und die Ordnerliste als JSON-Datei – um einen anderen PC oder eine neue Installation genauso einzurichten. Deine Katalogisierung (Tags, Notizen …) steckt im Export oben.",
+    "export": "Konfiguration exportieren",
+    "import": "Konfiguration importieren",
+    "exported": "Konfiguration gespeichert in {{path}}.",
+    "importTitle": "Konfiguration importieren",
+    "langSystem": "Systemsprache",
+    "detection": "Dateitypen und Erkennungsregeln ({{types}} Dateitypen, {{parts}} Teilnamen, {{sizes}} Größenkennungen)",
+    "program": "Sprache ({{lang}}) und NAS-Scanintervall ({{hours}} h)",
+    "machine": "Pfade auf jenem PC: Slicer-Programm und zweiter Sicherungsordner (nur übernommen, wo sie hier existieren)",
+    "rootsTitle": "Ordner",
+    "rootAdded": "schon hinzugefügt",
+    "rootMissing": "auf diesem PC nicht gefunden",
+    "rootsHint": "Hier nicht gefundene Ordner lassen sich später hinzufügen oder per Import des Katalog-Exports einem anderen Pfad zuordnen.",
+    "safeHint": "Geänderte Dateitypen machen vorher eine Sicherung und aktualisieren den Katalog; hinzugefügte Ordner werden gescannt.",
+    "apply": "Übernehmen",
+    "applied_one": "Konfiguration übernommen; {{n}} Ordner hinzugefügt.",
+    "applied_other": "Konfiguration übernommen; {{n}} Ordner hinzugefügt.",
+    "skipped": "Hier nicht gefunden, ausgelassen: {{paths}}",
+    "notAConfig": "{{path}} ist keine modelkeeper-Konfiguration."
+  },
+  "moved": {
+    "text": "modelkeeper wurde verschoben (sein Datenordner lag vorher unter {{from}}). Katalog, Vorschaubilder, Sicherungen und Einstellungen sind mitgekommen.",
+    "roots_one": "Dieser Ordner scheint mitgewandert zu sein – Pfad anpassen?",
+    "roots_other": "Diese {{count}} Ordner scheinen mitgewandert zu sein – Pfade anpassen?",
+    "apply": "Pfade anpassen",
+    "dismiss": "OK"
+  },
+  "settingsNav": {
+    "general": "Allgemein & Sicherung",
+    "transfer": "Export & Konfiguration",
+    "tags": "Tags & Verlauf",
+    "detection": "Erkennung"
   }
 }

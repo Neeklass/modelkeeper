@@ -1,13 +1,13 @@
-import {useCallback, useEffect, useState} from 'react'
+import {useCallback, useEffect, useRef, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
-    AddRoot, CancelScan, ExportHashes, GetRootStats, ImportHashes, GetScanProgress, ListLastScanIssues, ListRemovedRoots, ListRoots, PickFolder, PurgeRoot, RedetectRoot, DeactivateRoot,
-    SetRootCreatorLevel, StartFullCheck, StartScan,
+    AddRoot, CheckRelocateRoot, ExportHashes, RelocateRoot, GetRootStats, ImportHashes, GetScanProgress, ListLastScanIssues, ListRemovedRoots, ListRoots, PickFolder, PurgeRoot, RedetectRoot, DeactivateRoot,
+    PauseScan, SetRootCreatorLevel, StartFullCheck, StartScan,
 } from '../../wailsjs/go/main/App'
 import {catalog, scanner} from '../../wailsjs/go/models'
 import {EventsOn} from '../../wailsjs/runtime/runtime'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
-import {formatBytes, formatDateTime, formatNumber} from '../format'
+import {formatBytes, formatDateTime, formatDuration, formatNumber} from '../format'
 import {Query} from './FilterPanel'
 import {useConfirm} from './ConfirmDialog'
 import {PathText} from './PathText'
@@ -82,6 +82,25 @@ export function RootsPanel({onShowModels}: { onShowModels?: (q: Partial<Query>, 
         reload()
     })
 
+    // The files moved as a whole (new NAS, other drive letter): the root keeps
+    // its ID and everything below it (E2). Looked up first, then confirmed.
+    const relocateRoot = (r: catalog.Root) => run(async () => {
+        const path = await PickFolder()
+        if (!path) return
+        const c = await CheckRelocateRoot(r.id, path)
+        const lines = [t('roots.relocateConfirm', {from: r.path, to: c.path})]
+        if (c.total === 0) lines.push(t('roots.relocateNoFiles'))
+        else lines.push(t('roots.relocateFound', {found: formatNumber(c.found), sampled: formatNumber(c.sampled)}))
+        if (c.missing.length > 0) lines.push(t('roots.relocateMissing', {files: c.missing.join('\n')}))
+        if (c.found > 0 && c.sameTime < c.found) lines.push(t('roots.relocateTimes'))
+        lines.push(t('roots.relocateSafe'))
+        const bad = c.sampled > 0 && c.found < c.sampled / 2
+        if (!await confirm({message: lines.join('\n\n'), confirmLabel: t('roots.relocate'), danger: bad})) return
+        await RelocateRoot(r.id, c.path)
+        setNotice({rootId: r.id, text: t('roots.relocated', {path: c.path})})
+        reload()
+    })
+
     const scanning = progress?.running ?? false
 
     return (
@@ -105,8 +124,9 @@ export function RootsPanel({onShowModels}: { onShowModels?: (q: Partial<Query>, 
                              await SetRootCreatorLevel(r.id, on)
                              reload()
                          })}
-                         onCancel={() => CancelScan()}
+                         onPause={() => run(() => PauseScan(r.id))}
                          onRemove={() => deactivateRoot(r)}
+                         onRelocate={() => relocateRoot(r)}
                          onExport={() => exportHashes(r)}
                          onImport={() => importHashes(r)}
                          notice={notice?.rootId === r.id ? notice.text : null}/>
@@ -231,8 +251,9 @@ function RootRow(props: {
     onFullCheck: () => void
     onRedetect: () => void
     onCreatorLevel: (on: boolean) => void
-    onCancel: () => void
+    onPause: () => void
     onRemove: () => void
+    onRelocate: () => void
     onExport: () => void
     onImport: () => void
     notice: string | null
@@ -258,7 +279,8 @@ function RootRow(props: {
                     <div className="row small muted">
                         <span className="badge">{t(`roots.kind.${root.kind}`)}</span>
                         <span className={`badge status-${root.status}`}>{t(`roots.status.${root.status}`)}</span>
-                        {root.live && <span className="badge status-online" title={t('roots.liveHint')}>{t('roots.live')}</span>}
+                        {root.live && !root.scanPaused && <span className="badge status-online" title={t('roots.liveHint')}>{t('roots.live')}</span>}
+                        {root.scanPaused && <span className="badge status-warn" title={t('scan.pausedHint')}>{t('scan.paused')}</span>}
                         <span>{root.lastScanAt
                             ? t('roots.lastScan', {when: formatDateTime(root.lastScanAt)})
                             : t('roots.neverScanned')}</span>
@@ -266,9 +288,12 @@ function RootRow(props: {
                 </div>
                 <div className="row">
                     {running
-                        ? <button onClick={props.onCancel}>{t('scan.cancel')}</button>
+                        ? <button onClick={props.onPause} title={t('scan.pauseHint')}>❚❚ {t('scan.pause')}</button>
                         : <>
-                            <button className="primary" onClick={props.onScan} disabled={props.scanning}>{t('scan.start')}</button>
+                            <button className="primary" onClick={props.onScan} disabled={props.scanning}
+                                    title={root.scanPaused ? t('scan.resumeHint') : undefined}>
+                                {root.scanPaused ? <>▶ {t('scan.resume')}</> : t('scan.start')}
+                            </button>
                             <button onClick={props.onFullCheck} disabled={props.scanning || !root.lastScanAt}
                                     title={t('scan.fullCheckHint')}>{t('scan.fullCheck')}</button>
                             <button onClick={props.onRedetect} disabled={props.scanning}>{t('scan.redetect')}</button>
@@ -290,8 +315,12 @@ function RootRow(props: {
                     <button className="link small" onClick={props.onImport} disabled={props.scanning}
                             title={t('share.importHint')}>{t('share.import')}</button>
                 </span>
-                <button className="subtle small" onClick={props.onRemove} disabled={running}
-                        title={t('roots.deactivateHint')}>{t('roots.deactivate')}…</button>
+                <span className="row">
+                    <button className="subtle small" onClick={props.onRelocate} disabled={props.scanning}
+                            title={t('roots.relocateHint')}>{t('roots.relocate')}…</button>
+                    <button className="subtle small" onClick={props.onRemove} disabled={running}
+                            title={t('roots.deactivateHint')}>{t('roots.deactivate')}…</button>
+                </span>
             </div>
             {props.notice && <p className="small">{props.notice}</p>}
 
@@ -340,6 +369,7 @@ function Stat({label, value, warn}: { label: string; value: string; warn?: boole
 
 function ScanProgressView({p}: { p: scanner.Progress }) {
     const {t} = useTranslation()
+    const eta = useEta(p) // before any return: hooks run in the same order every render
     if (!p.running) {
         return (
             <p className={`small ${p.status === 'done' && !p.hashChanged ? 'muted' : 'error'}`}>
@@ -375,7 +405,30 @@ function ScanProgressView({p}: { p: scanner.Progress }) {
             {p.phase === 'thumbnails' && p.thumbsTotal > 0 && (
                 <div className="bar"><div style={{width: `${(100 * p.thumbsDone / p.thumbsTotal).toFixed(1)}%`}}/></div>
             )}
+            {eta !== null && <span className="small muted">{t('scan.eta', {time: formatDuration(eta)})}</span>}
             <code className="small muted current">{p.current}</code>
         </div>
     )
+}
+
+/**
+ * Estimated seconds left in the hashing or archive phase, from the reading
+ * speed since the phase began; null while there is too little to go by.
+ */
+export function useEta(p: scanner.Progress): number | null {
+    const start = useRef<{ phase: string; run: number; at: number; bytes: number } | null>(null)
+    const reading = p.running && (p.phase === 'hashing' || p.phase === 'archives')
+    if (!reading) {
+        start.current = null
+        return null
+    }
+    const now = Date.now()
+    if (!start.current || start.current.phase !== p.phase || start.current.run !== p.runId) {
+        start.current = {phase: p.phase, run: p.runId, at: now, bytes: p.bytesDone}
+        return null
+    }
+    const secs = (now - start.current.at) / 1000
+    const read = p.bytesDone - start.current.bytes
+    if (secs < 10 || read <= 0) return null
+    return Math.max(0, (p.bytesTotal - p.bytesDone) / (read / secs))
 }

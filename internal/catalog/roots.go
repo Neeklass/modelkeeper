@@ -30,6 +30,8 @@ type Root struct {
 	LastScanAt   *int64 `json:"lastScanAt,omitempty"`
 	RemovedAt    *int64 `json:"removedAt,omitempty"` // deactivated at (unix ms); nil = active
 	Live         bool   `json:"live"`                // changes are picked up automatically (E4); set by the app
+	// ScanPaused: the user paused scanning; no automatic scans until resumed.
+	ScanPaused bool `json:"scanPaused"`
 	// Reactivated is set by AddRoot when it reactivated a deactivated root
 	// instead of adding a new one.
 	Reactivated bool `json:"reactivated,omitempty"`
@@ -39,12 +41,12 @@ type Root struct {
 // conditions (evaluated once per query, the root table is tiny).
 const inactiveRoots = `(SELECT id FROM root WHERE removed_at IS NOT NULL)`
 
-const rootCols = `id, path, kind, creator_level, status, last_scan_at, removed_at`
+const rootCols = `id, path, kind, creator_level, status, last_scan_at, removed_at, scan_paused`
 
 func scanRoot(row interface{ Scan(...any) error }) (Root, error) {
 	var r Root
 	var last, removed sql.NullInt64
-	if err := row.Scan(&r.ID, &r.Path, &r.Kind, &r.CreatorLevel, &r.Status, &last, &removed); err != nil {
+	if err := row.Scan(&r.ID, &r.Path, &r.Kind, &r.CreatorLevel, &r.Status, &last, &removed, &r.ScanPaused); err != nil {
 		return Root{}, err
 	}
 	if last.Valid {
@@ -90,6 +92,21 @@ func GetRoot(ctx context.Context, db *sql.DB, id int64) (Root, error) {
 		return Root{}, msg.Wrap(nil, "error.rootNotFound")
 	}
 	return r, err
+}
+
+// SetScanPaused pauses or resumes automatic scanning of a root.
+func SetScanPaused(ctx context.Context, db *sql.DB, id int64, paused bool) error {
+	_, err := db.ExecContext(ctx, `UPDATE root SET scan_paused = ? WHERE id = ?`, paused, id)
+	return err
+}
+
+// ScanPaused reports whether scanning of a root is paused (false if unknown).
+func ScanPaused(ctx context.Context, db *sql.DB, id int64) bool {
+	var p bool
+	if err := db.QueryRowContext(ctx, `SELECT scan_paused FROM root WHERE id = ?`, id).Scan(&p); err != nil {
+		return false
+	}
+	return p
 }
 
 // GetActiveRoot returns one root, or error.rootRemoved if it is deactivated.

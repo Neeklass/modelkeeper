@@ -60,7 +60,8 @@
       "noModelTypes": "At least one 3D model type is needed.",
       "tooMany": "Too many entries.",
       "tooLong": "\"{{value}}\" is too long."
-    }
+    },
+    "dataFolderHint": "Program and data belong together: to move modelkeeper to another folder, disk or PC, close it and move or copy the whole modelkeeper folder (modelkeeper.exe and the data folder). Everything goes along – catalog, thumbnails, backups and settings. If model folders moved along (e.g. a portable disk got another drive letter), modelkeeper offers to update their paths at the next start."
   },
   "error": {
     "unknown": "Unexpected error: {{detail}}",
@@ -88,7 +89,16 @@
     "rootRemoved": "The folder {{path}} is deactivated. Add it again to use it.",
     "rootNotRemoved": "{{path}} is not deactivated. Only deactivated folders can be deleted permanently.",
     "purgeCountChanged": "The number of affected models has changed (now {{count}}). Please check it again.",
-    "rootOverlapRemoved": "{{path}} overlaps with the deactivated folder {{other}}. Reactivate {{other}} or delete it permanently from the catalog before adding this folder."
+    "rootOverlapRemoved": "{{path}} overlaps with the deactivated folder {{other}}. Reactivate {{other}} or delete it permanently from the catalog before adding this folder.",
+    "dataDirOnNetwork": "The modelkeeper folder is on a network drive ({{path}}). The catalog can be damaged there, because SQLite cannot lock reliably over network shares. Copy the whole modelkeeper folder to the PC, e.g. to C:\\modelkeeper, and start it from there. The models themselves may stay on the NAS.",
+    "openCopy": "{{name}} could not be copied for the slicer: {{detail}}",
+    "openProgram": "The program for {{name}} could not be started. If no program is set up for this file type, choose one under Settings → Slicer. ({{detail}})",
+    "fileOffline": "{{name}} is in a folder that cannot be reached right now.",
+    "fileNotFound": "{{name}} was not found. It may have been moved; a scan brings the catalog up to date.",
+    "fileTooLargeToCopy": "{{name}} is too large to copy out of the archive. Extract the archive yourself and open the file directly.",
+    "fileEncrypted": "{{name}} is in a password-protected archive.",
+    "dataDirTemp": "modelkeeper was started from a temporary folder ({{path}}) – probably directly from inside the zip file. Everything you catalog would be lost when Windows cleans up temporary files.\n\nExtract the zip file first (right-click → Extract all…) into a permanent folder, e.g. C:\\Users\\<you>\\modelkeeper, and start modelkeeper.exe there.",
+    "relocateOverlap": "{{path}} overlaps the root folder {{other}}. If you added the new place as a separate folder already, deactivate it first (its tags and notes stay in the catalog)."
   },
   "roots": {
     "title": "Root folders",
@@ -131,7 +141,16 @@
     "purgeConfirm": "Delete permanently",
     "purging": "Backing up and deleting…",
     "purgeShowModels": "Look at these models",
-    "deactivateHint": "Stop scanning and watching. Tags and notes are kept."
+    "deactivateHint": "Stop scanning and watching. Tags and notes are kept.",
+    "relocate": "Change path",
+    "relocateHint": "The files moved as a whole (new NAS, other drive letter): give the folder its new path. Tags, notes and corrections stay; nothing has to be scanned from scratch.",
+    "relocateConfirm": "Change the path of this folder?\n\nFrom: {{from}}\nTo: {{to}}",
+    "relocateFound": "{{found}} of {{sampled}} sample files were found at the new place.",
+    "relocateNoFiles": "The catalog knows no files of this folder yet.",
+    "relocateMissing": "Not found, for example:\n{{files}}",
+    "relocateTimes": "Some files have a different date at the new place; the next scan reads them again and confirms them by their fingerprint.",
+    "relocateSafe": "Tags, notes, favorites and corrections stay with the models. A backup is made first, then the folder is scanned at the new place. Files are not touched.",
+    "relocated": "The folder now points to {{path}}. It is being scanned."
   },
   "scan": {
     "start": "Scan",
@@ -151,7 +170,7 @@
     "issues_other": "{{count}} problems in the last scan",
     "result": {
       "done": "Scan finished: {{new}} new, {{changed}} changed, {{missing}} missing, {{hashed}} hashed.",
-      "cancelled": "Scan cancelled. Progress so far is saved: {{new}} new, {{hashed}} hashed.",
+      "cancelled": "Scan paused. Progress so far is saved: {{new}} new, {{hashed}} hashed. \"Resume\" continues from there.",
       "offline": "Scan not possible.",
       "failed": "Scan failed.",
       "fullDone": "Full check finished: {{hashed}} files and {{archives}} archives checked."
@@ -179,7 +198,14 @@
     "fullCheckConfirm": "Read every file of this folder again? This finds damaged or silently changed files and can take a while.",
     "fullCheckConfirmNas": "Read every file of this NAS folder again? Over the network this can take hours. You can cancel at any time; nothing is lost.",
     "hashChanged_one": "{{n}} file changed although its size and date did not: possibly damaged, see the problems list.",
-    "hashChanged_other": "{{n}} files changed although their size and date did not: possibly damaged, see the problems list."
+    "hashChanged_other": "{{n}} files changed although their size and date did not: possibly damaged, see the problems list.",
+    "pause": "Pause",
+    "pauseHint": "Stops the scan. Everything hashed so far is kept, even inside large files. Until you resume, the folder is not scanned automatically, not even after a restart.",
+    "resume": "Resume",
+    "resumeHint": "Continues the paused scan where it stopped.",
+    "paused": "Paused",
+    "pausedHint": "The scan is paused. This folder is not scanned automatically until you resume it.",
+    "eta": "about {{time}} left"
   },
   "stats": {
     "files": "Files",
@@ -230,7 +256,27 @@
     "inactiveNotice": "This model's files are only in deactivated folders. They are no longer scanned; add the folder again to check them.",
     "rootRemoved": "deactivated",
     "orphanedScope": "Only models that lose their last location when {{path}} is deleted permanently.",
-    "orphanedScopeClear": "Show all models"
+    "orphanedScopeClear": "Show all models",
+    "untaggedBadge": "new",
+    "showCreator": "All models by {{name}}",
+    "prev": "Previous model",
+    "next": "Next model",
+    "position": "{{i}} of {{n}}",
+    "showInExplorerShort": "Explorer",
+    "editCreator": "Change creator",
+    "edited": "set by you",
+    "creatorManualHint": "You set the creator; the detection no longer changes it.",
+    "origin": "Origin",
+    "originPlaceholder": "e.g. MyMiniFactory, Patreon",
+    "originUrl": "Link",
+    "license": "License",
+    "licensePlaceholder": "e.g. personal use",
+    "notesSaving": "Saving…",
+    "notesSaved": "Saved",
+    "notesError": "Not saved – the notes stay in the field; try again.",
+    "waitingNotice": "This model has no files in the catalog yet – it came from an import. A scan that finds its files (at its old place or anywhere by their fingerprints) links it up with its tags and notes. If the files are gone for good, remove it.",
+    "forget": "Remove from catalog",
+    "confirmForget": "Remove {{name}} from the catalog?\n\nIts tags, notes and other data are removed (a backup is made first). Files are not touched."
   },
   "supports": {
     "presupported": "Presupported",
@@ -267,7 +313,11 @@
     "confirmMerge": "Merge {{count}} models into “{{name}}”? Tags and notes are kept.",
     "invalidFolder": "This folder cannot be used for this correction.",
     "nothingToSplit": "This model has no subfolders to split into.",
-    "nothingToDetach": "This model has only one location."
+    "nothingToDetach": "This model has only one location.",
+    "queued": "Saved. A scan is running – the correction is applied when it is done.",
+    "done": "Correction applied.",
+    "merged_one": "{{count}} model merged into {{name}}.",
+    "merged_other": "{{count}} models merged into {{name}}."
   },
   "tags": {
     "title": "Tags",
@@ -284,7 +334,10 @@
     "added_other": "Tagged {{count}} models with {{tags}}.",
     "removed_one": "Removed {{tags}} from {{count}} model.",
     "removed_other": "Removed {{tags}} from {{count}} models.",
-    "invalid": "Tags must not be empty and can have at most {{max}} characters."
+    "invalid": "Tags must not be empty and can have at most {{max}} characters.",
+    "acceptAll": "Accept all",
+    "dismissed": "Suggestion {{name}} dismissed.",
+    "notFound": "There is no tag {{name}}."
   },
   "printStatus": {
     "not_printed": "Not printed",
@@ -314,12 +367,17 @@
     "missing": "Missing files",
     "missingHint": "Files disappeared since the last scan",
     "inactive": "Only in deactivated folders",
-    "inactiveHint": "All files are in deactivated folders that are no longer scanned"
+    "inactiveHint": "All files are in deactivated folders that are no longer scanned",
+    "remove": "Remove filter {{name}}"
   },
   "views": {
     "label": "View",
     "list": "List",
-    "grid": "Grid"
+    "grid": "Grid",
+    "size": "Tile size",
+    "size_s": "Small",
+    "size_m": "Medium",
+    "size_l": "Large"
   },
   "thumbs": {
     "none": "No thumbnail yet",
@@ -334,7 +392,9 @@
       "image": "Image from the model folder",
       "embedded": "Preview from the 3MF file",
       "rendered": "Rendered from the STL"
-    }
+    },
+    "current": "Thumbnail",
+    "fromViewHint": "Tip: in the 3D preview you can also use the current view as the thumbnail."
   },
   "preview": {
     "show": "3D preview",
@@ -409,7 +469,10 @@
       "preRemoveRoot": "before deleting a folder",
       "preFileTypes": "before changing file types",
       "other": "other",
-      "preRestore": "state before a restore"
+      "preRestore": "state before a restore",
+      "preImport": "before an import",
+      "preRelocate": "before changing a folder path",
+      "preForget": "before removing models"
     },
     "total_one": "{{n}} backup, {{size}} in total.",
     "total_other": "{{n}} backups, {{size}} in total.",
@@ -429,7 +492,27 @@
     "restoreConfirm": "Restore at next start",
     "title": "Data & backups",
     "restoreTitle": "Restore a backup",
-    "restoreByHand": "Restore by hand"
+    "restoreByHand": "Restore by hand",
+    "externalInDataDir": "{{path}} is inside the modelkeeper folder or contains it. Choose a folder on another drive or in the cloud.",
+    "externalInRoot": "{{path}} is inside a model folder ({{root}}). modelkeeper never writes into model folders. Choose another folder.",
+    "nothingToCheck": "There is no backup to check yet.",
+    "checkFailedShort": "The last restore test failed.",
+    "externalTitle": "Backup outside this PC",
+    "externalIntro": "The backups above are on the same drive as the app. If the PC breaks, they are gone with it. So choose a second folder, e.g. an external drive, your Dropbox folder or a separate share on the NAS. Every backup is copied there automatically, together with modelkeeper.exe and instructions for restoring.",
+    "externalFolder": "Second backup folder",
+    "externalNone": "not set up",
+    "externalChoose": "Choose folder…",
+    "externalChange": "Choose another folder…",
+    "externalOpen": "Open folder",
+    "externalOff": "Stop copying",
+    "checkTitle": "Restore test",
+    "checkOk": "Last checked {{when}}: backup {{name}} can be restored ({{models}} models, {{tags}} tags).",
+    "checkOkExternal": "Last checked {{when}}: the copy {{name}} in the second backup folder can be restored ({{models}} models, {{tags}} tags).",
+    "checkFailed": "Test of {{when}} failed: {{problem}}",
+    "checkNone": "No test has run yet.",
+    "checkNow": "Test now",
+    "checking": "Testing…",
+    "checkHint": "Once a day and after every new backup, modelkeeper checks the newest backup (preferably the copy in the second folder): its files must be unchanged, a copy of the catalog must pass the full integrity check, and the numbers of models and tags must match. The backup itself is only read."
   },
   "confirm": {
     "cancel": "Cancel",
@@ -446,22 +529,36 @@
         "id": "start",
         "title": "Getting started",
         "body": [
-          "1. Open the **Folders** tab and click **Add folder…**. Choose a local folder or a NAS path such as \\\\fritz.nas\\…",
+          "1. Click **Folders** at the bottom left, then **Add folder…**. Choose your model folder on the NAS (preferably by its network path such as \\\\fritz.nas\\…, not by a drive letter) and, if you like, more folders on the PC.",
           "2. Click **Scan**. modelkeeper lists all model files, computes a fingerprint (hash) of each – including files inside zip, rar and 7z archives – and detects the models from them.",
-          "3. Switch to the **Models** tab. Everything that was found is there.",
-          "Over the NAS, the first scan can take hours. You can use the app meanwhile. Progress is saved continuously: if you cancel or close the app, the next scan continues where it stopped. After that, only new and changed files are read.",
-          "The first folder level below a root folder counts as the creator (e.g. \"Atlas Miniatures\"). If your folder is organized differently, turn off **First folder level is the creator** for it."
+          "3. When the scan is done, click **All models** on the left. Everything that was found is there.",
+          "The first scan of a large collection on the NAS takes long, often a day or more. The estimated time left is shown below the progress bar. You can use the app meanwhile, stop the scan with **Pause**, or simply close the app: everything hashed so far is kept, even in the middle of a large file. After closing, the scan continues by itself at the next start; after **Pause**, only when you click **Resume**. After that, only new and changed files are read.",
+          "The first folder level below a root folder counts as the creator (e.g. \"Atlas Miniatures\"). If your folder is organized differently, turn off **First folder level is the creator** for it.",
+          "Keep the modelkeeper folder itself (with modelkeeper.exe and data) on the PC, not on the NAS: on a network share the catalog can be damaged. If it is there anyway, the app does not start and tells you what to do."
         ]
       },
       {
         "id": "find",
         "title": "Finding models",
         "body": [
-          "The search field searches names, creators, tags, notes and paths. Results appear while you type; the beginnings of words are enough (\"orc war\" finds \"Orc Warlord\").",
-          "- **Favorites** shows only your favorites. Make a model a favorite with the star – in the list or in the detail view.",
-          "- **Filters** opens more criteria: tag, creator, folder, file type, supports and print status, and checkboxes such as **Untagged**, **Duplicates**, **Only in one place** (no backup on NAS or PC), **Offline**, **Damaged archives**, **Extracted and as archive** (candidates for saving space), **Missing files** and **Only in deactivated folders**.",
-          "- **List** and **Grid** switch between a compact list and thumbnails.",
-          "Notes in the list: **in 2 locations** means the model is, for example, on the PC and on the NAS. **missing** means files have disappeared since the last scan. **only in a deactivated folder** means its files are in a folder that is no longer scanned."
+          "On the left are the views of your collection: **All models**, **To catalog** (models without tags), **Favorites** and **Recently added**. Below are your **Creators**, the most used **Tags** and the **Locations**. One click filters the list, a second click removes the filter. Filters combine, e.g. \"To catalog\" by one creator.",
+          "The search field searches names, creators, tags, notes and paths. Results appear while you type; word beginnings are enough (\"orc war\" finds \"Orc Warlord\").",
+          "- **Filters** opens more criteria: tag, creator, folder, file type, supports and print status, and checkboxes such as **Duplicates**, **Single location only**, **Offline** or **Broken archives**. Active filters are shown as chips below the search field; ✕ removes one.",
+          "- **Sort**: by name (by relevance while searching) or **Recently added**.",
+          "- At the top right you switch between **Grid** and **List** and choose the **tile size**.",
+          "- The **arrow keys** move through the tiles, **Home**/**End** jump to the start and the end, **F** makes the selected model a favorite, **Esc** closes the detail view. In the search field, **arrow down** moves into the list.",
+          "Marks on the tiles: **new** means the model has no tags yet. **!** means files disappeared since the last scan. The list view also shows at how many places a model is."
+        ]
+      },
+      {
+        "id": "catalog",
+        "title": "Cataloging",
+        "body": [
+          "**To catalog** lists every model without tags – work through your collection bit by bit:",
+          "1. Click the first model. The detail view opens on the right, with the cursor already in the tag field.",
+          "2. Type tags, several separated by commas, and press **Enter**. Accept dashed suggestions from the folder names with +, all at once with **Accept all**.",
+          "3. As soon as the model has tags, it leaves the list and the next one is selected. **←**/**→** or **Skip** move on without tagging.",
+          "Pictures in the model folder appear as a gallery below the large picture in the detail view; a click enlarges them, **←**/**→** browse, **Esc** closes. **Use as thumbnail** makes the picture shown the tile's picture."
         ]
       },
       {
@@ -476,7 +573,8 @@
           "- **Notes**: saved as soon as you leave the field.",
           "- **Found in** lists all places of the model, **Files** all its files with variant and identical copies. **Show in Explorer** opens the folder (for files inside archives, the archive).",
           "modelkeeper makes thumbnails itself: from an image in the model folder, the preview inside a 3MF file, or rendered from the STL. **Change thumbnail** lets you pick another image of the model, an image of your own (**Choose image…**), or go back with **Back to automatic**.",
-          "**3D preview** shows the model in 3D: drag to rotate, right mouse button to pan, mouse wheel to zoom. **Use view as thumbnail** saves the current view as the thumbnail."
+          "**3D preview** shows the model in 3D: drag to rotate, right mouse button to pan, mouse wheel to zoom. **Use view as thumbnail** saves the current view as the thumbnail.",
+          "**Open in slicer** opens the likely file (a slicer project first, otherwise the main file); ▾ lets you choose another one. The slicer always gets a read-only copy, never the original – it cannot overwrite anything in your collection. Which program is used is set under Settings → **Slicer**. Save slicer projects somewhere of your own; the copies are removed after 7 days."
         ]
       },
       {
@@ -513,6 +611,7 @@
           "- **Scan** reads only new and changed files.",
           "- **Full check** reads every file again. It finds damaged or silently changed files and can take long, especially over the NAS.",
           "- **Detect models** applies the detection again without reading files.",
+          "- **Pause** stops a running scan. The folder is then not scanned automatically (not live, not on schedule, not at start) until you click **Resume**, even after a restart. The running scan is also shown, with pause, at the bottom of the sidebar.",
           "Each folder shows numbers on files, size, duplicates, archives and problems. **Problems in the last scan** lists, for example, damaged or password-protected archives.",
           "**Share hashes**: if someone else scans the same folder (e.g. the same NAS), they can **import** your hashes instead of reading everything themselves. Tags, notes and favorites are not included."
         ]
@@ -533,15 +632,42 @@
         "id": "backup",
         "title": "Backups and restoring",
         "body": [
-          "modelkeeper backs up the catalog, the settings and the thumbnails you chose into the folder data\\backups automatically:",
-          "- once a day at start, if something changed since the last backup,",
+          "modelkeeper backs up the catalog, the settings and the thumbnails you chose into the folder data\\backups inside the modelkeeper folder automatically:",
+          "- once a day, if something changed since the last backup – at start and also when the app stays open for days,",
           "- before every update of the catalog to a new version,",
           "- before a folder is deleted permanently and before file types are changed,",
           "- any time with **Create backup now** (Settings → **Data & backups**).",
           "It keeps the 14 newest daily backups and all others of the last 90 days, and always at least the 3 newest. Every backup is checked after it is written.",
+          "**Backup outside this PC**: under Settings, choose a second backup folder, e.g. an external drive, your Dropbox folder or a separate share on the NAS (not the model folder). Every backup is copied there, together with modelkeeper.exe and instructions (README.txt).",
+          "**Restore test**: once a day and after every new backup, modelkeeper checks that the newest backup can really be restored – preferably the copy in the second folder. The result is shown in the settings; if the test fails, the sidebar shows a warning sign at **Settings**. **Test now** checks right away.",
           "**Restoring**: under **Show and restore backups**, choose a backup and click **Restore…**. At the next start, modelkeeper replaces catalog, settings and thumbnails with the backup's state. The current state is saved as a backup first – so you can undo a restore the same way.",
-          "If the catalog is damaged at start, modelkeeper stops before anything is written and shows the backups to restore from.",
-          "The backups are on the same drive as the app. So from time to time, copy the whole modelkeeper folder to another drive or a cloud folder – preferably while the app is closed. Run modelkeeper on the PC, not on the NAS."
+          "**New PC**: copy modelkeeper.exe from the second backup folder into a new folder, create data\\backups in it, copy the backup folder you want into it and start modelkeeper. The app offers the backup for restoring.",
+          "If the catalog is damaged at start, modelkeeper stops before anything is written and shows the backups to restore from."
+        ]
+      },
+      {
+        "id": "safety",
+        "title": "Undo, export and moving folders",
+        "body": [
+          "**Undo**: every change of tags, fields and favorites can be undone – click **Undo** in the message at the bottom, or press **Ctrl+Z** anywhere outside a text field. Settings → **Recent changes** lists the last changes. A model that was changed in another way since (e.g. merged) is left as it is.",
+          "Corrections of the detection – merge, split, \"is a model\", \"not a model\", detach, reset – can be undone the same way: the folders are detected again and every model gets its ID, tags and notes back.",
+          "Notes are saved while you type; \"Saved\" below the field confirms it.",
+          "**Export**: Settings → **Export and import** → **Export…** writes one JSON file with everything you entered: tags, notes, favorites, print status, edited names and creators, origin and license, corrections, the thumbnails you chose, your folders and detection settings. Every backup contains the same file as catalog-export.json – also every copy in the second backup folder.",
+          "**Import**: **Import…** reads such a file. modelkeeper shows first what it contains and how its models are found here: by their ID, at the same place, or by their files (fingerprints) even if they were moved or renamed. Models not found yet keep their data and are linked up as soon as a scan finds their files. The import only adds – nothing you entered is removed – and a backup is made first.",
+          "**For someone else**: export on your PC, give the file to the other person; they import it, choose where the folders are on their PC (or add them), and scan.",
+          "**Folder moved** (new NAS, other drive letter): Folders → **Change path…** at the folder. modelkeeper checks a sample of the files at the new place, makes a backup, changes the path and scans. The folder keeps all tags, notes and corrections. Do not add the new place as a second folder – the tags would stay with the old one.",
+          "**Waiting for files**: models from an import whose files were not found yet are listed under this view on the left (only while there are any). Remove a model there if its files are gone for good. Import and **Change path…** also work while a scan runs: the scan is paused for it and continues afterwards. Corrections of the detection made during a scan are saved right away and applied when the scan is done.",
+          "**Tags**: Settings → **Tags** renames or deletes a tag for all its models at once; renaming to an existing tag merges both (typos). Undoable."
+        ]
+      },
+      {
+        "id": "install",
+        "title": "Installing and moving",
+        "body": [
+          "modelkeeper is portable: modelkeeper.exe and its data folder (next to it, called data) belong together. Put the folder somewhere permanent, e.g. C:\\Users\\<you>\\modelkeeper – not in Downloads, not in a OneDrive or Dropbox folder (modelkeeper warns), and not inside the zip file (modelkeeper refuses to start there, the catalog would be lost).",
+          "To move it to another folder, disk or PC: close modelkeeper and move or copy the whole folder. Everything goes along. At the next start modelkeeper notices the move; if model folders moved along (a portable disk with another drive letter, model folders next to the app), it offers to update their paths.",
+          "If the model files move on their own (new NAS), use Folders → **Change path…**.",
+          "Settings → **Configuration** exports the settings and the folder list as JSON, to set up another PC the same way; **Export and import** carries the cataloging work."
         ]
       },
       {
@@ -551,6 +677,8 @@
           "- **Language**: German, English, or the system language.",
           "- **Rescan NAS folders automatically**: how often NAS folders are checked. A manual scan resets the timer.",
           "- **Data & backups**: where the data is, create and restore backups.",
+          "- **Slicer**: which program **Open in slicer** uses. Without a choice, Windows uses the program that belongs to the file type.",
+          "- **Backup outside this PC**: second backup folder and restore test.",
           "- **File types**: which files are cataloged. Removing a type drops its entries from the catalog – the files themselves are not touched; a backup is made first.",
           "- **Model detection**: **Part folders** are added to the model above, **Size variants** (e.g. S_Orc, Orc_XL) are recognized as variants. Your corrections are kept."
         ]
@@ -560,6 +688,8 @@
         "title": "Frequently asked questions",
         "body": [
           "**Does modelkeeper change my files?** No. The app only reads model files. It writes only into its own data folder next to modelkeeper.exe.",
+          "**Can the slicer change my files?** No. **Open in slicer** always passes a read-only copy from data\\open, never the file in your collection.",
+          "**Is hashing risky for my files?** No. Hashing only reads files. Pausing, closing the app or a crash cannot damage a file; the scan continues where it stopped.",
           "**I moved a folder – are my tags gone?** No. Moved files are recognized by their hash; tags, notes and status stay with the model once the new place has been scanned.",
           "**What does \"2 missing\" mean?** These files were not there in the last scan. If you moved them, the note is gone after the new place has been scanned. The **Missing files** filter shows all affected models.",
           "**Where is my data?** In the data folder next to modelkeeper.exe: catalog, settings, thumbnails, backups and a log (modelkeeper.log). **Open data folder** in the settings shows it.",
@@ -567,5 +697,206 @@
         ]
       }
     ]
+  },
+  "duration": {
+    "lessThanMinute": "< 1 min",
+    "minutes": "{{m}} min",
+    "hours": "{{h}} h {{m}} min",
+    "days": "{{d}} days {{h}} h"
+  },
+  "slicer": {
+    "title": "Slicer",
+    "program": "Program",
+    "systemDefault": "the program Windows uses for the file type",
+    "choose": "Choose slicer…",
+    "useDefault": "Use the default program",
+    "hint": "\"Open in slicer\" always gives the slicer a read-only copy (in the modelkeeper folder under data\\open), never the original file. So the slicer cannot overwrite anything in your collection. Copies are removed after 7 days; what you save next to them yourself stays.",
+    "open": "Open in slicer",
+    "openShort": "Slicer",
+    "openHint": "Opens a read-only copy in the slicer. The original stays untouched.",
+    "chooseFile": "Choose another file",
+    "opened": "{{name}} was opened in the slicer as a copy. Save slicer projects somewhere of your own.",
+    "copying": "Copying {{name}} for the slicer…"
+  },
+  "nav": {
+    "label": "Navigation",
+    "all": "All models",
+    "untagged": "To catalog",
+    "untaggedHint": "Models without tags",
+    "favorites": "Favorites",
+    "newest": "Recently added",
+    "creators": "Creators",
+    "tags": "Tags",
+    "locations": "Locations",
+    "filterList": "Filter…",
+    "showAll": "Show all {{n}}",
+    "showLess": "Show less",
+    "waiting": "Waiting for files",
+    "waitingHint": "Models from an import whose files were not found yet. A scan that finds them links them up."
+  },
+  "sort": {
+    "label": "Sort",
+    "name": "Name",
+    "relevance": "Relevance",
+    "newest": "Recently added"
+  },
+  "catalogMode": {
+    "hint": "Cataloging: pick a model, type tags and press Enter. As soon as a model has tags, it leaves this list and the next one is up. ← and → move on without tagging.",
+    "detailHint": "Enter adds the tags, then the next model follows.",
+    "skip": "Skip"
+  },
+  "empty": {
+    "libraryTitle": "No models yet",
+    "noFolders": "Add your model folders under \"Folders\", local or on the NAS, and start a scan.",
+    "notScanned": "Start a scan under \"Folders\". Models appear once the scan of a folder has finished – for the first scan of a large collection on the NAS, that can take a while.",
+    "catalogedTitle": "Everything cataloged",
+    "cataloged": "Every model has at least one tag.",
+    "clearSearch": "Reset search and filters",
+    "waitingTitle": "No model is waiting for its files."
+  },
+  "gallery": {
+    "enlarge": "Enlarge",
+    "useAsThumbnail": "Use as thumbnail",
+    "prev": "Previous picture",
+    "next": "Next picture"
+  },
+  "warning": {
+    "dataDir": {
+      "downloads": "The modelkeeper folder is in Downloads ({{path}}). Downloads is often cleaned up – move the whole modelkeeper folder to a permanent place (e.g. Documents) while the app is closed.",
+      "synced": "The modelkeeper folder is in a synced folder ({{path}}, e.g. OneDrive or Dropbox). Sync tools can damage the catalog while modelkeeper runs. Move the modelkeeper folder elsewhere and use Settings → Second backup folder for the cloud copy instead."
+    }
+  },
+  "export": {
+    "title": "Export and import",
+    "intro": "One file with everything you entered: tags, notes, favorites, print status, edited names and creators, corrections of the detection, the thumbnails you chose, your folders and detection settings. It is enough to restore your work into an empty catalog – on this PC or another one – even without the backups.",
+    "button": "Export…",
+    "exporting": "Exporting…",
+    "done": "Exported {{models}} models, {{tags}} tags, {{overrides}} corrections and {{thumbnails}} thumbnails to {{path}}.",
+    "hint": "Every backup also contains such a file (catalog-export.json), and so does every copy in the second backup folder. The file is plain JSON, readable with any text editor.",
+    "failed": "The export could not be written to {{path}}."
+  },
+  "import": {
+    "button": "Import",
+    "title": "Import cataloging work",
+    "contains": "The file contains {{models}} models, {{tags}} tags, {{overrides}} corrections and {{thumbnails}} thumbnails.",
+    "exportedAt": "Exported {{when}} (modelkeeper {{version}}).",
+    "rootsTitle": "Folders",
+    "rootsHint": "Where are these folders on this PC? Choose the matching folder of this catalog, add it as a new folder, or skip it.",
+    "rootModels_one": "{{n}} model",
+    "rootModels_other": "{{n}} models",
+    "mapTo": "Use {{path}}",
+    "addRoot": "Add as new folder (scanned afterwards)",
+    "skipRoot": "Skip (models are found by their files later)",
+    "relocateHint": "If the files are at a new place now (new NAS, other drive letter), choose the folder at its new path – or add it as a new folder.",
+    "matchTitle": "Models",
+    "byId": "{{n}} already in this catalog",
+    "byPath": "{{n}} found at the same place",
+    "byContent": "{{n}} found by their files (moved or renamed)",
+    "new": "{{n}} not found yet – kept with their data and linked up when a scan finds their files",
+    "notesKept_one": "{{n}} model has different notes here – both texts are kept.",
+    "notesKept_other": "{{n}} models have different notes here – both texts are kept.",
+    "safeHint": "The import only adds: nothing you entered in this catalog is removed or overwritten, and a backup is made first. You can import the same file again without harm.",
+    "settings": "Also take over file types and detection rules",
+    "apply": "Import",
+    "importing": "Importing…",
+    "done": "Imported: {{models}} models ({{waiting}} wait for a scan), {{tags}} tags added, {{overrides}} corrections, {{thumbnails}} thumbnails.",
+    "backupHint": "Backup before the import: {{path}}",
+    "notAnExport": "{{path}} is not a modelkeeper export.",
+    "tooNew": "{{path}} was exported by a newer modelkeeper. Update modelkeeper first.",
+    "readFailed": "{{path}} could not be read.",
+    "noFile": "Choose the export file again.",
+    "unknownRoot": "Unknown folder in the import ({{key}})."
+  },
+  "history": {
+    "title": "Recent changes",
+    "intro": "Tags, fields and favorites you changed. The newest change can be undone – also with Ctrl+Z anywhere outside a text field.",
+    "show": "Show recent changes",
+    "empty": "No changes yet.",
+    "undo": "Undo",
+    "dismiss": "Close",
+    "wasUndone": "undone",
+    "undone": "Undone: {{what}}",
+    "undoneSkipped_one": "Undone: {{what}} – {{n}} model was changed in another way since and was left as it is.",
+    "undoneSkipped_other": "Undone: {{what}} – {{n}} models were changed in another way since and were left as they are.",
+    "nothingToUndo": "Nothing to undo.",
+    "tagsAdded_one": "tags {{tags}} added to {{count}} model",
+    "tagsAdded_other": "tags {{tags}} added to {{count}} models",
+    "tagsRemoved_one": "tags {{tags}} removed from {{count}} model",
+    "tagsRemoved_other": "tags {{tags}} removed from {{count}} models",
+    "suggestionDismissed": "suggestion {{tags}} dismissed",
+    "favoritesAdded_one": "{{count}} model added to favorites",
+    "favoritesAdded_other": "{{count}} models added to favorites",
+    "favoritesRemoved_one": "{{count}} model removed from favorites",
+    "favoritesRemoved_other": "{{count}} models removed from favorites",
+    "modelEdited": "{{name}} edited",
+    "tagRenamed_one": "tag {{from}} renamed to {{to}} ({{count}} model)",
+    "tagRenamed_other": "tag {{from}} renamed to {{to}} ({{count}} models)",
+    "tagMerged_one": "tag {{from}} merged into {{to}} ({{count}} model)",
+    "tagMerged_other": "tag {{from}} merged into {{to}} ({{count}} models)",
+    "tagDeleted_one": "tag {{tags}} deleted ({{count}} model)",
+    "tagDeleted_other": "tag {{tags}} deleted ({{count}} models)",
+    "needsDetection": "This change can only be undone together with a detection run.",
+    "correction": {
+      "markModel": "{{path}} marked as one model",
+      "markNotModel": "{{path}} marked as not a model",
+      "split": "{{name}} split into its subfolders",
+      "detach": "{{path}} detached from {{name}}",
+      "merge_one": "{{count}} model merged into {{name}}",
+      "merge_other": "{{count}} models merged into {{name}}",
+      "reset": "corrections of {{name}} reset"
+    }
+  },
+  "tagManager": {
+    "title": "Tags",
+    "intro": "Rename or delete a tag for all its models at once. Renaming to an existing tag merges the two – handy for typos. Every change can be undone.",
+    "filter": "Filter tags…",
+    "rename": "Rename",
+    "delete": "Delete",
+    "merge": "Merge",
+    "confirmMerge": "Merge {{from}} into {{to}}?\n\n{{to}} already has {{n}} models; afterwards all models of {{from}} carry {{to}}.",
+    "confirmDelete_one": "Delete the tag {{name}}?\n\nIt is removed from {{n}} model. You can undo this.",
+    "confirmDelete_other": "Delete the tag {{name}}?\n\nIt is removed from {{n}} models. You can undo this.",
+    "renamed_one": "{{from}} renamed to {{to}} ({{count}} model).",
+    "renamed_other": "{{from}} renamed to {{to}} ({{count}} models).",
+    "merged_one": "{{from}} merged into {{to}} ({{count}} model).",
+    "merged_other": "{{from}} merged into {{to}} ({{count}} models).",
+    "deleted_one": "Tag {{name}} removed from {{count}} model.",
+    "deleted_other": "Tag {{name}} removed from {{count}} models.",
+    "more": "{{n}} more – narrow the filter."
+  },
+  "config": {
+    "title": "Configuration",
+    "intro": "Settings and the list of folders as a JSON file – to set up another PC or a fresh installation the same way. Your cataloging work (tags, notes …) is in the export above.",
+    "export": "Export configuration",
+    "import": "Import configuration",
+    "exported": "Configuration saved to {{path}}.",
+    "importTitle": "Import configuration",
+    "langSystem": "system default",
+    "detection": "File types and detection rules ({{types}} file types, {{parts}} part names, {{sizes}} size marks)",
+    "program": "Language ({{lang}}) and NAS rescan interval ({{hours}} h)",
+    "machine": "Paths on that PC: slicer program and second backup folder (only taken over where they exist here)",
+    "rootsTitle": "Folders",
+    "rootAdded": "already added",
+    "rootMissing": "not found on this PC",
+    "rootsHint": "Folders not found here can be added later, or mapped to another path with an import of the catalog export.",
+    "safeHint": "Changed file types make a backup first and update the catalog; added folders are scanned.",
+    "apply": "Apply",
+    "applied_one": "Configuration applied; {{n}} folder added.",
+    "applied_other": "Configuration applied; {{n}} folders added.",
+    "skipped": "Not found here, left out: {{paths}}",
+    "notAConfig": "{{path}} is not a modelkeeper configuration."
+  },
+  "moved": {
+    "text": "modelkeeper was moved (its data folder was at {{from}} before). Catalog, thumbnails, backups and settings came along.",
+    "roots_one": "This folder seems to have moved along – update its path?",
+    "roots_other": "These {{count}} folders seem to have moved along – update their paths?",
+    "apply": "Update paths",
+    "dismiss": "OK"
+  },
+  "settingsNav": {
+    "general": "General & backups",
+    "transfer": "Export & configuration",
+    "tags": "Tags & history",
+    "detection": "Detection"
   }
 }

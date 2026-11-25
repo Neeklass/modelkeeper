@@ -13,6 +13,7 @@ import (
 
 	"modelkeeper/internal/backup"
 	"modelkeeper/internal/db"
+	"modelkeeper/internal/userexport"
 )
 
 type env struct {
@@ -106,8 +107,15 @@ func TestSnapshotMatchesCatalog(t *testing.T) {
 		t.Errorf("manifest schema = %d", m.Schema)
 	}
 
-	if got := fmt.Sprint(names(t, s.Path)); got != "[catalog.db manifest.json settings.json thumbnails]" {
+	if got := fmt.Sprint(names(t, s.Path)); got != "[catalog-export.json catalog.db manifest.json settings.json thumbnails]" {
 		t.Errorf("snapshot holds %s", got) // e.g. no -wal/-shm left by reading the copy
+	}
+	// The readable export is part of every snapshot and can be read on its own.
+	if !m.Export || m.ExportError != "" {
+		t.Errorf("manifest export = %v %q", m.Export, m.ExportError)
+	}
+	if _, err := userexport.Read(filepath.Join(s.Path, userexport.FileName)); err != nil {
+		t.Errorf("export in the snapshot: %v", err)
 	}
 	entries, _ := os.ReadDir(e.backups)
 	if len(entries) != 1 || entries[0].Name() != s.Name {

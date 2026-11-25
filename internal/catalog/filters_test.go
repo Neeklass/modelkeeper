@@ -131,6 +131,18 @@ func TestFilters(t *testing.T) {
 		}
 	}
 
+	// Newest first: by the time the model was added.
+	conn.Exec(`UPDATE model SET created_at = 0`)
+	conn.Exec(`UPDATE model SET created_at = 10 WHERE id = ?`, elf)
+	conn.Exec(`UPDATE model SET created_at = 5 WHERE id = ?`, orc)
+	page, err := SearchModels(ctx, conn, ModelQuery{Sort: "newest"}, 0, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := names(page); !reflect.DeepEqual(got, []string{"Elf", "Orc"}) {
+		t.Errorf("newest first: %v", got)
+	}
+
 	opts, err := GetFilterOptions(ctx, conn)
 	if err != nil {
 		t.Fatal(err)

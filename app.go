@@ -11,6 +11,7 @@ import (
 	_ "image/png"
 	"io"
 	"log"
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -68,6 +69,18 @@ type App struct {
 	startupErr *msg.Msg
 	// notice is shown once after start (e.g. a snapshot was restored).
 	notice *msg.Msg
+	// locationWarning: the data folder lies where it may get lost or damaged
+	// (Downloads, a synced folder); shown until the folder is moved.
+	locationWarning *msg.Msg
+	// imports holds the export file chosen for import until it is applied.
+	imports pendingImport
+	// configs holds the configuration file chosen for import.
+	configs pendingConfig
+	// movedFrom: the data folder was there at the last start (the app folder
+	// was moved, M); "" if not moved or the note was dismissed.
+	movedFrom string
+	// stop is closed at shutdown; it ends the daily-snapshot ticker.
+	stop chan struct{}
 }
 
 func NewApp() *App { return &App{initDone: make(chan struct{})} }
@@ -112,6 +125,19 @@ func (a *App) init() error {
 		return msg.Wrap(err, "error.dataDirResolve")
 	}
 	a.layout = layout
+	// SQLite is not safe on network shares (locking over SMB is unreliable):
+	// the catalog could be damaged. The models may live on the NAS, the
+	// modelkeeper folder must not.
+	if catalog.DetectKind(layout.Root) == "nas" {
+		return msg.Wrap(nil, "error.dataDirOnNetwork", "path", layout.Root)
+	}
+	// A temporary folder (started from inside a zip) would lose the catalog
+	// when it is cleaned up; Downloads and synced folders get a warning.
+	warn, err := dataDirWarning(layout.Root)
+	if err != nil {
+		return err
+	}
+	a.locationWarning = warn
 	if err := layout.Ensure(); err != nil {
 		return msg.Wrap(err, "error.dataDirNotWritable", "path", layout.Root)
 	}
@@ -127,6 +153,7 @@ func (a *App) init() error {
 		return msg.Wrap(err, "error.settingsLoad", "path", layout.Settings)
 	}
 	a.settings = st
+	a.checkMoved()
 	if err := a.openCatalog(false); err != nil {
 		return err
 	}
@@ -203,7 +230,15 @@ func (a *App) startServices() error {
 			log.Printf("thumbnails: %d missing generated ones will be generated again, %d manual ones are missing", reset, lost)
 		}
 		a.detectExisting()
+		a.cleanupOpenCopies()
+		// A scan the app was closed (or crashed) in continues where it stopped.
+		if err := scans.ResumeUnfinished(context.Background()); err != nil {
+			log.Printf("resume unfinished scans: %v", err)
+		}
 	}()
+
+	a.stop = make(chan struct{})
+	go a.runDailyTicker(a.stop)
 
 	w, err := watch.New(conn, scans, watch.Options{
 		Exclude: layout.Root,
@@ -239,6 +274,9 @@ func (a *App) shutdown(ctx context.Context) {
 	if a.initDone != nil {
 		<-a.initDone // a start in progress (e.g. a restore) finishes first
 	}
+	if a.stop != nil {
+		close(a.stop)
+	}
 	a.bg.Wait() // a running snapshot finishes
 	if a.watch != nil {
 		a.watch.Close() // before the scanner, so no new scan starts
@@ -272,6 +310,16 @@ type AppStatus struct {
 	// PendingRestore: snapshot to restore at the next start, "" if none.
 	PendingRestore string   `json:"pendingRestore"`
 	Notice         *msg.Msg `json:"notice,omitempty"`
+	// LocationWarning: the data folder is in a risky place (see appdir.Risk).
+	LocationWarning *msg.Msg `json:"locationWarning,omitempty"`
+	// MovedFrom: the app folder was moved; its data folder was here before.
+	MovedFrom string `json:"movedFrom,omitempty"`
+	// SlicerPath: program for "Open in slicer", "" = system default (H5).
+	SlicerPath string `json:"slicerPath"`
+	// ExternalBackupDir: second backup folder, "" = off (J2).
+	ExternalBackupDir string `json:"externalBackupDir"`
+	// LastRestoreTest: result of the newest restore test, nil if none ran.
+	LastRestoreTest *backup.RestoreCheck `json:"lastRestoreTest,omitempty"`
 	// Starting: the start is still running; nothing else is set yet.
 	Starting bool `json:"starting"`
 }
@@ -373,7 +421,7 @@ func (a *App) GetStatus() AppStatus {
 	if !a.started() {
 		return AppStatus{Starting: true}
 	}
-	s := AppStatus{DataDir: a.layout.Root, StartupError: a.startupErr, Notice: a.notice}
+	s := AppStatus{DataDir: a.layout.Root, StartupError: a.startupErr, Notice: a.notice, LocationWarning: a.locationWarning, MovedFrom: a.movedFrom}
 	if a.layout.Backups != "" {
 		s.PendingRestore, _ = backup.PendingRestore(a.restoreTarget())
 		if list, err := backup.List(a.layout.Backups); err == nil && len(list) > 0 {
@@ -385,6 +433,10 @@ func (a *App) GetStatus() AppStatus {
 	if a.settings != nil {
 		st := a.settings.Get()
 		s.Language, s.NASRescanHours = st.Language, st.NASRescanHours
+		s.SlicerPath, s.ExternalBackupDir = st.SlicerPath, st.ExternalBackupDir
+	}
+	if a.layout.Root != "" {
+		s.LastRestoreTest = backup.LastRestoreCheck(a.layout.Root)
 	}
 	return s
 }
@@ -473,7 +525,7 @@ func (a *App) SaveFileTypes(ft settings.FileTypes) (catalog.FileTypesChange, err
 			return ch, msg.Wrap(err, "error.backupFailed", "path", a.layout.Backups)
 		}
 	}
-	err = a.scans.Exclusive(func(ctx context.Context) error {
+	err = a.scans.Interrupting(func(ctx context.Context) error {
 		if err := a.settings.Update(func(s *settings.Settings) { s.FileTypes = ft }); err != nil {
 			return msg.Wrap(err, "error.settingsSave")
 		}
@@ -544,6 +596,7 @@ func (a *App) snapshot(conn *sql.DB, reason string) (backup.Snapshot, error) {
 	}
 	log.Printf("backup %s: %s", reason, s.Path)
 	a.rotate()
+	a.afterBackupAsync(true)
 	return s, nil
 }
 
@@ -572,10 +625,12 @@ func (a *App) dailyBackup() {
 		log.Printf("backup daily: %v", err)
 		return
 	case !created:
+		a.afterBackup(false) // retests only when due
 		return
 	}
 	log.Printf("backup daily: %s", s.Path)
 	a.rotate()
+	a.afterBackup(true)
 }
 
 // CreateBackup takes a snapshot now (button in the settings).
@@ -742,12 +797,28 @@ func (a *App) ListLastScanIssues(id int64) ([]catalog.Issue, error) {
 	return is, wrapDB(err)
 }
 
-// StartScan starts a background scan of a root; progress arrives as "scan:progress" events.
+// StartScan starts a background scan of a root; progress arrives as
+// "scan:progress" events. A paused root is resumed: the scan continues where
+// the paused one stopped.
 func (a *App) StartScan(id int64) error {
 	if err := a.ready(); err != nil {
 		return err
 	}
-	return wrapDB(a.scans.Start(id))
+	err := a.scans.ResumeRoot(id)
+	runtime.EventsEmit(a.ctx, EventRootsChanged)
+	return wrapDB(err)
+}
+
+// PauseScan pauses scanning of a root (F1): a running scan of it stops,
+// everything hashed so far is kept, and the root is not scanned automatically
+// until the user resumes it with StartScan, also across restarts of the app.
+func (a *App) PauseScan(id int64) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	err := a.scans.PauseRoot(id)
+	runtime.EventsEmit(a.ctx, EventRootsChanged)
+	return wrapDB(err)
 }
 
 // StartFullCheck re-reads and re-hashes every file of a root in the
@@ -757,6 +828,10 @@ func (a *App) StartFullCheck(id int64) error {
 	if err := a.ready(); err != nil {
 		return err
 	}
+	if err := catalog.SetScanPaused(a.ctx, a.db, id, false); err != nil {
+		return wrapDB(err)
+	}
+	runtime.EventsEmit(a.ctx, EventRootsChanged)
 	return wrapDB(a.scans.StartFull(id))
 }
 
@@ -952,7 +1027,22 @@ func (a *App) correct(op func(ctx context.Context) ([]int64, error)) error {
 	if err := a.ready(); err != nil {
 		return err
 	}
-	return wrapDB(a.scans.Exclusive(func(ctx context.Context) error {
+	// While a scan runs (the first scan of a NAS takes hours), the correction
+	// is stored right away and the detection follows when the scan is done:
+	// every scan ends with a detection, which applies it.
+	if a.scans.Busy() {
+		roots, err := op(a.ctx)
+		if err != nil {
+			return wrapDB(err)
+		}
+		for _, r := range roots {
+			a.scans.EnqueueRedetect(r)
+		}
+		a.finishCorrection()
+		runtime.EventsEmit(a.ctx, EventCorrectionQueued, nil)
+		return nil
+	}
+	err := a.scans.Exclusive(func(ctx context.Context) error {
 		roots, err := op(ctx)
 		if err != nil {
 			return err
@@ -963,8 +1053,24 @@ func (a *App) correct(op func(ctx context.Context) ([]int64, error)) error {
 			}
 		}
 		return nil
-	}))
+	})
+	if err == nil {
+		a.finishCorrection()
+	}
+	return wrapDB(err)
 }
+
+// finishCorrection records the models after a correction for its undo (J8).
+// The correction itself is done; a failure here only weakens the undo.
+func (a *App) finishCorrection() {
+	if err := catalog.FinishCorrection(a.ctx, a.db); err != nil {
+		log.Printf("journal: %v", err)
+	}
+}
+
+// EventCorrectionQueued: a correction was stored while a scan runs; the
+// detection applies it when the scan is done.
+const EventCorrectionQueued = "corrections:queued"
 
 // MarkFolderModel marks a folder as a model: everything below belongs to it.
 func (a *App) MarkFolderModel(rootID int64, path string) error {
@@ -1027,6 +1133,14 @@ func (a *App) RemoveTag(modelIDs []int64, name string) error {
 		return err
 	}
 	return wrapDB(catalog.RemoveTag(a.ctx, a.db, modelIDs, name))
+}
+
+// RemoveTags removes several tags from models as one undoable action (G2).
+func (a *App) RemoveTags(modelIDs []int64, names []string) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	return wrapDB(catalog.RemoveTags(a.ctx, a.db, modelIDs, names))
 }
 
 // DismissSuggestion hides a tag suggestion (F5).
@@ -1129,7 +1243,14 @@ func (h assetHandler) serveFile(w http.ResponseWriter, r *http.Request, idText s
 		return
 	}
 	defer f.Close()
-	w.Header().Set("Content-Type", "application/octet-stream")
+	ctype := "application/octet-stream"
+	if preview.ImageExts[src.Ext] { // picture gallery
+		if t := mime.TypeByExtension("." + src.Ext); t != "" {
+			ctype = t
+		}
+	}
+	w.Header().Set("Content-Type", ctype)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Cache-Control", "no-store")
 	http.ServeContent(w, r, src.Name, mod, f)
 }

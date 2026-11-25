@@ -10,12 +10,52 @@ export function AddTags(arg1, arg2) {
   return window['go']['main']['App']['AddTags'](arg1, arg2);
 }
 
+export function ApplyConfig(arg1) {
+  return window['go']['main']['App']['ApplyConfig'](arg1);
+}
+
+export function ApplyImport(arg1, arg2) {
+  return window['go']['main']['App']['ApplyImport'](arg1, arg2);
+}
+
+export function ApplyMoveSuggestions(arg1) {
+  return window['go']['main']['App']['ApplyMoveSuggestions'](arg1);
+}
+
+export function CancelImport() {
+  return window['go']['main']['App']['CancelImport']();
+}
+
 export function CancelRestore() {
   return window['go']['main']['App']['CancelRestore']();
 }
 
 export function CancelScan() {
   return window['go']['main']['App']['CancelScan']();
+}
+
+export function CheckRelocateRoot(arg1, arg2) {
+  return window['go']['main']['App']['CheckRelocateRoot'](arg1, arg2);
+}
+
+export function CheckRestoreNow() {
+  return window['go']['main']['App']['CheckRestoreNow']();
+}
+
+export function ChooseExternalBackupDir() {
+  return window['go']['main']['App']['ChooseExternalBackupDir']();
+}
+
+export function ChooseSlicer() {
+  return window['go']['main']['App']['ChooseSlicer']();
+}
+
+export function ClearExternalBackupDir() {
+  return window['go']['main']['App']['ClearExternalBackupDir']();
+}
+
+export function ClearSlicer() {
+  return window['go']['main']['App']['ClearSlicer']();
 }
 
 export function CreateBackup() {
@@ -26,8 +66,16 @@ export function DeactivateRoot(arg1) {
   return window['go']['main']['App']['DeactivateRoot'](arg1);
 }
 
+export function DeleteTag(arg1) {
+  return window['go']['main']['App']['DeleteTag'](arg1);
+}
+
 export function DetachAnchor(arg1, arg2, arg3) {
   return window['go']['main']['App']['DetachAnchor'](arg1, arg2, arg3);
+}
+
+export function DismissMoved() {
+  return window['go']['main']['App']['DismissMoved']();
 }
 
 export function DismissNotice() {
@@ -38,8 +86,20 @@ export function DismissSuggestion(arg1, arg2) {
   return window['go']['main']['App']['DismissSuggestion'](arg1, arg2);
 }
 
+export function ExportConfig() {
+  return window['go']['main']['App']['ExportConfig']();
+}
+
 export function ExportHashes(arg1) {
   return window['go']['main']['App']['ExportHashes'](arg1);
+}
+
+export function ExportUserData() {
+  return window['go']['main']['App']['ExportUserData']();
+}
+
+export function ForgetWaitingModels(arg1) {
+  return window['go']['main']['App']['ForgetWaitingModels'](arg1);
 }
 
 export function GetDetectionSettings() {
@@ -52,6 +112,10 @@ export function GetFilterOptions() {
 
 export function GetModel(arg1) {
   return window['go']['main']['App']['GetModel'](arg1);
+}
+
+export function GetMoveSuggestions() {
+  return window['go']['main']['App']['GetMoveSuggestions']();
 }
 
 export function GetRootStats(arg1) {
@@ -72,6 +136,10 @@ export function ImportHashes(arg1) {
 
 export function ListBackups() {
   return window['go']['main']['App']['ListBackups']();
+}
+
+export function ListHistory() {
+  return window['go']['main']['App']['ListHistory']();
 }
 
 export function ListLastScanIssues(arg1) {
@@ -110,12 +178,36 @@ export function OpenDataFolder() {
   return window['go']['main']['App']['OpenDataFolder']();
 }
 
+export function OpenExternalBackupDir() {
+  return window['go']['main']['App']['OpenExternalBackupDir']();
+}
+
+export function OpenInSlicer(arg1) {
+  return window['go']['main']['App']['OpenInSlicer'](arg1);
+}
+
+export function PauseScan(arg1) {
+  return window['go']['main']['App']['PauseScan'](arg1);
+}
+
+export function PickConfigFile() {
+  return window['go']['main']['App']['PickConfigFile']();
+}
+
 export function PickFolder() {
   return window['go']['main']['App']['PickFolder']();
 }
 
+export function PickImportFile() {
+  return window['go']['main']['App']['PickImportFile']();
+}
+
 export function PickThumbnailFile(arg1) {
   return window['go']['main']['App']['PickThumbnailFile'](arg1);
+}
+
+export function PreviewImport(arg1) {
+  return window['go']['main']['App']['PreviewImport'](arg1);
 }
 
 export function PurgeRoot(arg1, arg2) {
@@ -130,8 +222,20 @@ export function RedetectRoot(arg1) {
   return window['go']['main']['App']['RedetectRoot'](arg1);
 }
 
+export function RelocateRoot(arg1, arg2) {
+  return window['go']['main']['App']['RelocateRoot'](arg1, arg2);
+}
+
 export function RemoveTag(arg1, arg2) {
   return window['go']['main']['App']['RemoveTag'](arg1, arg2);
+}
+
+export function RemoveTags(arg1, arg2) {
+  return window['go']['main']['App']['RemoveTags'](arg1, arg2);
+}
+
+export function RenameTag(arg1, arg2) {
+  return window['go']['main']['App']['RenameTag'](arg1, arg2);
 }
 
 export function RequestRestore(arg1) {
@@ -200,6 +304,10 @@ export function StartScan(arg1) {
 
 export function StartWithEmptyCatalog() {
   return window['go']['main']['App']['StartWithEmptyCatalog']();
+}
+
+export function Undo() {
+  return window['go']['main']['App']['Undo']();
 }
 
 export function UpdateModel(arg1, arg2) {

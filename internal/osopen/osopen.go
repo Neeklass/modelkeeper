@@ -27,3 +27,8 @@ func Reveal(file string) error {
 	}
 	return Folder(filepath.Dir(file))
 }
+
+// With opens a file in a given program (e.g. the slicer chosen in the settings).
+func With(program, file string) error {
+	return exec.Command(program, filepath.Clean(file)).Start()
+}

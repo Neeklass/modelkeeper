@@ -164,6 +164,8 @@ type Manager struct {
 	last   *tracker
 	queue  []job // started one after another when no scan runs (Enqueue)
 	closed bool
+	// hold > 0: queued jobs wait (Interrupting runs something in between).
+	hold int
 }
 
 // job is a queued scan.
@@ -249,6 +251,81 @@ func (m *Manager) Cancel() {
 	if m.cancel != nil {
 		m.cancel()
 	}
+}
+
+// PauseRoot pauses scanning of a root: queued scans of it are dropped and a
+// running scan of it is cancelled. Everything hashed so far stays, including
+// checkpoints inside large files, so resuming continues where it stopped.
+// While paused, the root is not scanned automatically (live watching, NAS
+// schedule, resume at start); an explicit scan by the user resumes it.
+func (m *Manager) PauseRoot(rootID int64) error {
+	if err := catalog.SetScanPaused(context.Background(), m.db, rootID, true); err != nil {
+		return err
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	q := m.queue[:0]
+	for _, j := range m.queue {
+		if j.root != rootID || j.mode == ModeDetect {
+			q = append(q, j)
+		}
+	}
+	m.queue = q
+	if m.running() && m.last != nil && m.cancel != nil {
+		if p := m.last.snapshot(); p.Running && p.RootID == rootID && p.Mode != ModeDetect {
+			m.cancel()
+		}
+	}
+	return nil
+}
+
+// ResumeRoot clears the pause of a root and starts an incremental scan of it,
+// which continues where the paused one stopped.
+func (m *Manager) ResumeRoot(rootID int64) error {
+	if err := catalog.SetScanPaused(context.Background(), m.db, rootID, false); err != nil {
+		return err
+	}
+	return m.Start(rootID)
+}
+
+// ResumeUnfinished queues an incremental scan of every active, not paused root
+// whose last scan did not finish (the app was closed or crashed during it),
+// so hashing continues where it stopped. Call it once after NewManager.
+func (m *Manager) ResumeUnfinished(ctx context.Context) error {
+	rows, err := m.db.QueryContext(ctx, `SELECT r.id,
+			(SELECT status FROM scan_run WHERE root_id = r.id AND mode != ? ORDER BY id DESC LIMIT 1),
+			(SELECT error_key FROM scan_run WHERE root_id = r.id AND mode != ? ORDER BY id DESC LIMIT 1)
+		FROM root r WHERE r.removed_at IS NULL AND r.scan_paused = 0 ORDER BY r.id`, ModeDetect, ModeDetect)
+	if err != nil {
+		return err
+	}
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		var status, errKey sql.NullString
+		if err := rows.Scan(&id, &status, &errKey); err != nil {
+			rows.Close()
+			return err
+		}
+		if unfinished(status.String, errKey.String) {
+			ids = append(ids, id)
+		}
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for _, id := range ids {
+		m.EnqueueScan(id)
+	}
+	return nil
+}
+
+// unfinished reports whether a scan run with this status stopped before its
+// end without the user pausing it: cancelled by closing the app, or marked
+// interrupted after a crash (NewManager).
+func unfinished(status, errKey string) bool {
+	return status == StatusCancelled || (status == StatusFailed && errKey == "scan.error.interrupted")
 }
 
 // Wait blocks until the current scan (if any) has finished.
@@ -516,6 +593,38 @@ func (m *Manager) Exclusive(fn func(ctx context.Context) error) error {
 	return fn(context.Background())
 }
 
+// Interrupting runs fn like Exclusive, but does not fail when a scan or
+// detection runs: that one is stopped first (everything done so far is
+// kept: hashes, checkpoints inside large files) and queued again, ahead of
+// the other queued jobs, so it continues right after fn. For rare actions
+// that must not wait hours for a NAS scan (import, changing a root's path).
+func (m *Manager) Interrupting(fn func(ctx context.Context) error) error {
+	m.mu.Lock()
+	var again *job
+	if m.running() && m.last != nil {
+		if p := m.last.snapshot(); p.Running {
+			again = &job{p.RootID, p.Mode}
+		}
+	}
+	m.hold++
+	cancel := m.cancel
+	m.mu.Unlock()
+	defer func() {
+		m.mu.Lock()
+		m.hold--
+		if again != nil && !m.closed {
+			m.queue = append([]job{*again}, m.queue...)
+		}
+		m.mu.Unlock()
+		m.next()
+	}()
+	if again != nil && cancel != nil {
+		cancel()
+	}
+	m.Wait()
+	return m.Exclusive(fn)
+}
+
 // EnqueueScan queues an incremental scan of a root; it starts as soon as no
 // other scan runs (right away if none does).
 func (m *Manager) EnqueueScan(rootID int64) { m.enqueue(rootID, ModeIncremental) }
@@ -543,17 +652,21 @@ func (m *Manager) enqueue(rootID int64, mode string) {
 }
 
 // next starts the next queued job if no scan runs. Jobs that cannot start
-// (e.g. the root was deactivated meanwhile) are dropped.
+// (e.g. the root was deactivated meanwhile) are dropped, and so are scans of
+// paused roots (detection still runs: it reads no files).
 func (m *Manager) next() {
 	for {
 		m.mu.Lock()
-		if m.closed || len(m.queue) == 0 || m.running() {
+		if m.closed || len(m.queue) == 0 || m.running() || m.hold > 0 {
 			m.mu.Unlock()
 			return
 		}
 		j := m.queue[0]
 		m.queue = m.queue[1:]
 		m.mu.Unlock()
+		if j.mode != ModeDetect && catalog.ScanPaused(context.Background(), m.db, j.root) {
+			continue
+		}
 		err := m.start(j.root, j.mode)
 		if err == nil {
 			return

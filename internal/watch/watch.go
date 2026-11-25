@@ -121,8 +121,19 @@ func New(db *sql.DB, scans Scanner, opts Options) (*Watcher, error) {
 		roots: map[int64]*root{}, pending: map[int64]time.Time{}, attempted: map[int64]time.Time{},
 		quit: make(chan struct{}), done: make(chan struct{}), flushReq: make(chan chan struct{}),
 	}
-	go w.loop()
+	// The tickers exist before New returns, so no tick of a (virtual) clock
+	// that is advanced right afterwards is missed.
+	t := tickers{}
+	t.tick, t.stopTick = w.opts.clock.NewTicker(w.opts.Quiet / 4)
+	t.retry, t.stopRetry = w.opts.clock.NewTicker(w.opts.Retry)
+	t.schedule, t.stopSchedule = w.opts.clock.NewTicker(w.opts.ScheduleCheck)
+	go w.loop(t)
 	return w, nil
+}
+
+type tickers struct {
+	tick, retry, schedule             <-chan time.Time
+	stopTick, stopRetry, stopSchedule func()
 }
 
 // Close stops watching.
@@ -272,14 +283,12 @@ func (w *Watcher) excluded(p string) bool {
 // within reports whether p is dir or lies below it.
 func within(p, dir string) bool { return pathutil.Within(p, dir) }
 
-func (w *Watcher) loop() {
+func (w *Watcher) loop(t tickers) {
 	defer close(w.done)
-	tick, stopTick := w.opts.clock.NewTicker(w.opts.Quiet / 4)
-	defer stopTick()
-	retry, stopRetry := w.opts.clock.NewTicker(w.opts.Retry)
-	defer stopRetry()
-	schedule, stopSchedule := w.opts.clock.NewTicker(w.opts.ScheduleCheck)
-	defer stopSchedule()
+	tick, retry, schedule := t.tick, t.retry, t.schedule
+	defer t.stopTick()
+	defer t.stopRetry()
+	defer t.stopSchedule()
 	for {
 		select {
 		case <-w.quit:

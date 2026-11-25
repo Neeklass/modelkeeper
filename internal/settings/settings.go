@@ -33,6 +33,15 @@ type Settings struct {
 	// NASRescanHours is the interval of scheduled incremental rescans of NAS
 	// roots in hours; 0 disables them (E4).
 	NASRescanHours int `json:"nasRescanHours"`
+	// SlicerPath is the program "Open in slicer" uses; "" = the program the
+	// system associates with the file type (H5).
+	SlicerPath string `json:"slicerPath,omitempty"`
+	// ExternalBackupDir is a second folder (another drive, a cloud folder)
+	// every snapshot is copied to; "" = off (J2).
+	ExternalBackupDir string `json:"externalBackupDir,omitempty"`
+	// DataDir is where the data folder was at the last start; a different
+	// place means the app folder was moved (M), see appdir.MovedRoot.
+	DataDir string `json:"dataDir,omitempty"`
 }
 
 // Defaults returns the built-in settings.
