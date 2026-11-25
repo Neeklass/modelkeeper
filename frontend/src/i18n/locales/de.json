@@ -272,7 +272,10 @@
     "licensePlaceholder": "z. B. privater Gebrauch",
     "notesSaving": "Wird gespeichert…",
     "notesSaved": "Gespeichert",
-    "notesError": "Nicht gespeichert – die Notizen bleiben im Feld; versuche es noch einmal."
+    "notesError": "Nicht gespeichert – die Notizen bleiben im Feld; versuche es noch einmal.",
+    "waitingNotice": "Dieses Modell hat noch keine Dateien im Katalog – es stammt aus einem Import. Ein Scan, der seine Dateien findet (am alten Ort oder irgendwo über ihre Fingerabdrücke), verknüpft es mit seinen Tags und Notizen. Sind die Dateien endgültig weg, entferne es.",
+    "forget": "Aus dem Katalog entfernen",
+    "confirmForget": "{{name}} aus dem Katalog entfernen?\n\nSeine Tags, Notizen und übrigen Daten werden entfernt (vorher wird eine Sicherung gemacht). Dateien werden nicht angefasst."
   },
   "supports": {
     "presupported": "Vorgestützt",
@@ -309,7 +312,8 @@
     "confirmMerge": "{{count}} Modelle in „{{name}}“ zusammenführen? Tags und Notizen bleiben erhalten.",
     "invalidFolder": "Dieser Ordner kann für diese Korrektur nicht verwendet werden.",
     "nothingToSplit": "Dieses Modell hat keine Unterordner zum Aufteilen.",
-    "nothingToDetach": "Dieses Modell hat nur einen Ort."
+    "nothingToDetach": "Dieses Modell hat nur einen Ort.",
+    "queued": "Gespeichert. Ein Scan läuft – die Korrektur wird angewendet, sobald er fertig ist."
   },
   "tags": {
     "title": "Tags",
@@ -328,7 +332,8 @@
     "removed_other": "{{tags}} von {{count}} Modellen entfernt.",
     "invalid": "Tags dürfen nicht leer sein und höchstens {{max}} Zeichen haben.",
     "acceptAll": "Alle übernehmen",
-    "dismissed": "Vorschlag {{name}} verworfen."
+    "dismissed": "Vorschlag {{name}} verworfen.",
+    "notFound": "Es gibt keinen Tag {{name}}."
   },
   "printStatus": {
     "not_printed": "Nicht gedruckt",
@@ -462,7 +467,8 @@
       "other": "sonstiges",
       "preRestore": "Stand vor einer Wiederherstellung",
       "preImport": "vor einem Import",
-      "preRelocate": "vor einer Pfadänderung"
+      "preRelocate": "vor einer Pfadänderung",
+      "preForget": "vor dem Entfernen von Modellen"
     },
     "total_one": "{{n}} Backup, zusammen {{size}}.",
     "total_other": "{{n}} Backups, zusammen {{size}}.",
@@ -644,7 +650,9 @@
           "**Export**: Einstellungen → **Export und Import** → **Exportieren…** schreibt eine JSON-Datei mit allem, was du eingegeben hast: Tags, Notizen, Favoriten, Druckstatus, geänderte Namen und Ersteller, Herkunft und Lizenz, Korrekturen, gewählte Vorschaubilder, deine Ordner und Erkennungseinstellungen. Jede Sicherung enthält dieselbe Datei als catalog-export.json – auch jede Kopie im zweiten Sicherungsordner.",
           "**Import**: **Importieren…** liest eine solche Datei. modelkeeper zeigt zuerst, was sie enthält und wie ihre Modelle hier gefunden werden: über ihre ID, am selben Ort oder über ihre Dateien (Fingerabdrücke), auch wenn sie verschoben oder umbenannt wurden. Noch nicht gefundene Modelle behalten ihre Daten und werden verknüpft, sobald ein Scan ihre Dateien findet. Der Import fügt nur hinzu – nichts, was du eingegeben hast, wird entfernt – und vorher wird eine Sicherung gemacht.",
           "**Für jemand anderen**: Exportiere auf deinem PC und gib die Datei weiter; die andere Person importiert sie, wählt, wo die Ordner auf ihrem PC liegen (oder fügt sie hinzu), und scannt.",
-          "**Ordner umgezogen** (neues NAS, anderer Laufwerksbuchstabe): Ordner → **Pfad ändern…** am Ordner. modelkeeper prüft eine Stichprobe der Dateien am neuen Ort, macht eine Sicherung, ändert den Pfad und scannt. Der Ordner behält alle Tags, Notizen und Korrekturen. Füge den neuen Ort nicht als zweiten Ordner hinzu – die Tags blieben beim alten."
+          "**Ordner umgezogen** (neues NAS, anderer Laufwerksbuchstabe): Ordner → **Pfad ändern…** am Ordner. modelkeeper prüft eine Stichprobe der Dateien am neuen Ort, macht eine Sicherung, ändert den Pfad und scannt. Der Ordner behält alle Tags, Notizen und Korrekturen. Füge den neuen Ort nicht als zweiten Ordner hinzu – die Tags blieben beim alten.",
+          "**Warten auf Dateien**: Modelle aus einem Import, deren Dateien noch nicht gefunden wurden, stehen links unter dieser Ansicht (nur solange es welche gibt). Entferne ein Modell dort, wenn seine Dateien endgültig weg sind. Import und **Pfad ändern…** funktionieren auch während eines Scans: Der Scan pausiert dafür und läuft danach weiter. Korrekturen der Erkennung während eines Scans werden sofort gespeichert und angewendet, wenn der Scan fertig ist.",
+          "**Tags**: Einstellungen → **Tags** benennt einen Tag für alle seine Modelle auf einmal um oder löscht ihn; Umbenennen in einen vorhandenen Tag führt beide zusammen (Tippfehler). Rückgängig machbar."
         ]
       },
       {
@@ -707,7 +715,9 @@
     "locations": "Speicherorte",
     "filterList": "Filtern…",
     "showAll": "Alle {{n}} anzeigen",
-    "showLess": "Weniger anzeigen"
+    "showLess": "Weniger anzeigen",
+    "waiting": "Warten auf Dateien",
+    "waitingHint": "Modelle aus einem Import, deren Dateien noch nicht gefunden wurden. Ein Scan, der sie findet, verknüpft sie."
   },
   "sort": {
     "label": "Sortieren",
@@ -726,7 +736,8 @@
     "notScanned": "Starte unter „Ordner“ einen Scan. Die Modelle erscheinen, sobald der Scan eines Ordners durchgelaufen ist – beim ersten Scan einer großen Sammlung auf dem NAS kann das dauern.",
     "catalogedTitle": "Alles katalogisiert",
     "cataloged": "Jedes Modell hat mindestens einen Tag.",
-    "clearSearch": "Suche und Filter zurücksetzen"
+    "clearSearch": "Suche und Filter zurücksetzen",
+    "waitingTitle": "Kein Modell wartet auf seine Dateien."
   },
   "gallery": {
     "enlarge": "Vergrößern",
@@ -802,6 +813,30 @@
     "favoritesAdded_other": "{{count}} Modelle zu den Favoriten hinzugefügt",
     "favoritesRemoved_one": "{{count}} Modell aus den Favoriten entfernt",
     "favoritesRemoved_other": "{{count}} Modelle aus den Favoriten entfernt",
-    "modelEdited": "{{name}} bearbeitet"
+    "modelEdited": "{{name}} bearbeitet",
+    "tagRenamed_one": "Tag {{from}} in {{to}} umbenannt ({{count}} Modell)",
+    "tagRenamed_other": "Tag {{from}} in {{to}} umbenannt ({{count}} Modelle)",
+    "tagMerged_one": "Tag {{from}} mit {{to}} zusammengeführt ({{count}} Modell)",
+    "tagMerged_other": "Tag {{from}} mit {{to}} zusammengeführt ({{count}} Modelle)",
+    "tagDeleted_one": "Tag {{tags}} gelöscht ({{count}} Modell)",
+    "tagDeleted_other": "Tag {{tags}} gelöscht ({{count}} Modelle)"
+  },
+  "tagManager": {
+    "title": "Tags",
+    "intro": "Einen Tag für alle seine Modelle auf einmal umbenennen oder löschen. Umbenennen in einen vorhandenen Tag führt beide zusammen – praktisch bei Tippfehlern. Jede Änderung lässt sich rückgängig machen.",
+    "filter": "Tags filtern…",
+    "rename": "Umbenennen",
+    "delete": "Löschen",
+    "merge": "Zusammenführen",
+    "confirmMerge": "{{from}} mit {{to}} zusammenführen?\n\n{{to}} hat schon {{n}} Modelle; danach tragen alle Modelle von {{from}} den Tag {{to}}.",
+    "confirmDelete_one": "Den Tag {{name}} löschen?\n\nEr wird von {{n}} Modell entfernt. Das lässt sich rückgängig machen.",
+    "confirmDelete_other": "Den Tag {{name}} löschen?\n\nEr wird von {{n}} Modellen entfernt. Das lässt sich rückgängig machen.",
+    "renamed_one": "{{from}} in {{to}} umbenannt ({{count}} Modell).",
+    "renamed_other": "{{from}} in {{to}} umbenannt ({{count}} Modelle).",
+    "merged_one": "{{from}} mit {{to}} zusammengeführt ({{count}} Modell).",
+    "merged_other": "{{from}} mit {{to}} zusammengeführt ({{count}} Modelle).",
+    "deleted_one": "Tag {{name}} von {{count}} Modell entfernt.",
+    "deleted_other": "Tag {{name}} von {{count}} Modellen entfernt.",
+    "more": "{{n}} weitere – grenze den Filter ein."
   }
 }

@@ -10,7 +10,7 @@ export interface Library {
     creators: catalog.Option[]
     exts: catalog.Option[]
     roots: catalog.Root[]
-    counts: { all: number; untagged: number; favorites: number }
+    counts: { all: number; untagged: number; favorites: number; waiting: number }
     /** Bumps whenever the catalog changed (scan finished, edits). */
     version: number
     /** Call after an edit (tags, favorites, names …). */
@@ -24,7 +24,7 @@ const count = (q: Partial<Query>) =>
 export function useLibrary(): Library {
     const [version, setVersion] = useState(0)
     const [data, setData] = useState<Omit<Library, 'version' | 'reload'>>({
-        tags: [], creators: [], exts: [], roots: [], counts: {all: 0, untagged: 0, favorites: 0},
+        tags: [], creators: [], exts: [], roots: [], counts: {all: 0, untagged: 0, favorites: 0, waiting: 0},
     })
     const reload = useCallback(() => setVersion(v => v + 1), [])
 
@@ -34,12 +34,12 @@ export function useLibrary(): Library {
             ListTags().catch(() => [] as catalog.TagCount[]),
             GetFilterOptions().catch(() => null),
             ListRoots().catch(() => [] as catalog.Root[]),
-            count({}), count({untagged: true}), count({favorites: true}),
-        ]).then(([tags, opts, roots, all, untagged, favorites]) => {
+            count({}), count({untagged: true}), count({favorites: true}), count({waiting: true}),
+        ]).then(([tags, opts, roots, all, untagged, favorites, waiting]) => {
             if (stale) return
             setData({
                 tags, creators: opts?.creators ?? [], exts: opts?.exts ?? [], roots,
-                counts: {all, untagged, favorites},
+                counts: {all, untagged, favorites, waiting},
             })
         })
         return () => {

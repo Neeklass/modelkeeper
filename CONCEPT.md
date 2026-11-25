@@ -141,6 +141,8 @@ Override  (manual corrections of model detection, survive rescans)
 - **G1** Free-form, **flat** tags.
 - **G2** Bulk editing (tag multiple models at once).
 - **G4** "Untagged" view for working through the backlog.
+- **G5** Tag management: rename (into an existing name = merge) and delete a tag for all models at once,
+  undoable (J8).
 
 ## H – Search & Views
 
@@ -204,6 +206,10 @@ Override  (manual corrections of model detection, survive rescans)
   by place or by content (F6). The import **only adds**: tags are united, a field is taken over only where
   the target has none, differing notes are both kept; a `pre-import` snapshot is taken first. Importing
   the same file again changes nothing.
+- **J7a** Imported models that are not linked to files yet are a view of their own ("Waiting for files");
+  one whose files are gone for good can be removed (snapshot `pre-forget` first). Import and path changes
+  (E10) also work during a scan: the scan is stopped for it and continues right after; corrections made
+  during a scan are stored at once and applied by the detection at the end of the scan.
 - **J8** **Undo** (journal table): every change of user data made through the catalog package (tags,
   fields, favorites, suggestions) is recorded with the model states before and after, in the same
   transaction. Undo (toast, Ctrl+Z, history list) restores the newest action for every model that still

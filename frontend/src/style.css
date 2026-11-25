@@ -631,3 +631,5 @@ details.detail-section[open] summary h3::before { content: '▾ '; }
 /* Small editable fields in the detail panel. */
 .inline-text { width: 100%; min-width: 0; }
 .history li { padding: 3px 0; border-bottom: 1px solid var(--border); }
+.tag-manager li { padding: 4px 0; border-bottom: 1px solid var(--border); }
+.danger-text { color: var(--danger); }

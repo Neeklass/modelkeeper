@@ -446,6 +446,8 @@ function EmptyState({query, library, onQuery}: { query: Query; library: Library;
             text = t('empty.cataloged')
         } else if (lv === 'favorites') {
             title = t('favorites.empty')
+        } else if (lv === 'waiting') {
+            title = t('empty.waitingTitle')
         }
     }
     return (

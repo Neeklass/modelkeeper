@@ -58,6 +58,10 @@ export function DeactivateRoot(arg1) {
   return window['go']['main']['App']['DeactivateRoot'](arg1);
 }
 
+export function DeleteTag(arg1) {
+  return window['go']['main']['App']['DeleteTag'](arg1);
+}
+
 export function DetachAnchor(arg1, arg2, arg3) {
   return window['go']['main']['App']['DetachAnchor'](arg1, arg2, arg3);
 }
@@ -76,6 +80,10 @@ export function ExportHashes(arg1) {
 
 export function ExportUserData() {
   return window['go']['main']['App']['ExportUserData']();
+}
+
+export function ForgetWaitingModels(arg1) {
+  return window['go']['main']['App']['ForgetWaitingModels'](arg1);
 }
 
 export function GetDetectionSettings() {
@@ -200,6 +208,10 @@ export function RemoveTag(arg1, arg2) {
 
 export function RemoveTags(arg1, arg2) {
   return window['go']['main']['App']['RemoveTags'](arg1, arg2);
+}
+
+export function RenameTag(arg1, arg2) {
+  return window['go']['main']['App']['RenameTag'](arg1, arg2);
 }
 
 export function RequestRestore(arg1) {

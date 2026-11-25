@@ -37,6 +37,8 @@ export function CreateBackup():Promise<main.BackupInfo>;
 
 export function DeactivateRoot(arg1:number):Promise<void>;
 
+export function DeleteTag(arg1:string):Promise<number>;
+
 export function DetachAnchor(arg1:number,arg2:number,arg3:string):Promise<void>;
 
 export function DismissNotice():Promise<void>;
@@ -46,6 +48,8 @@ export function DismissSuggestion(arg1:number,arg2:string):Promise<void>;
 export function ExportHashes(arg1:number):Promise<hashshare.ExportResult>;
 
 export function ExportUserData():Promise<main.ExportResult>;
+
+export function ForgetWaitingModels(arg1:Array<number>):Promise<number>;
 
 export function GetDetectionSettings():Promise<main.DetectionSettingsView>;
 
@@ -108,6 +112,8 @@ export function RelocateRoot(arg1:number,arg2:string):Promise<catalog.Root>;
 export function RemoveTag(arg1:Array<number>,arg2:string):Promise<void>;
 
 export function RemoveTags(arg1:Array<number>,arg2:Array<string>):Promise<void>;
+
+export function RenameTag(arg1:string,arg2:string):Promise<number>;
 
 export function RequestRestore(arg1:string):Promise<void>;
 

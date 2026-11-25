@@ -66,7 +66,7 @@ known until the user confirms it** (once per folder pattern, not once per model)
   fields, favorite, merge/split, corrections, thumbnail, root settings). Toast "… · Undo" after
   each action, Ctrl+Z, and a **History** page with the last ~500 actions, each undoable. Then
   replace confirm dialogs by undo wherever the action is reversible.
-- [ ] **2.2 Tag management with undo**: page **Tags** with counts; rename, merge, delete for
+- [x] **2.2 Tag management with undo** (Settings → Tags; rename = merge when the name exists): page **Tags** with counts; rename, merge, delete for
   all models at once, with preview ("affects 412 models").
 - [x] **2.3 Readable export of user data with every snapshot** (J6, J7): `catalog-export.json` (models,
   paths, hashes, tags, notes, favorites, corrections). Plus an import that applies it to a new
@@ -88,6 +88,11 @@ known until the user confirms it** (once per folder pattern, not once per model)
   last run and errors; a simple log viewer.
 - [x] **3.5 Change a root folder's path** after a move to a new NAS or drive letter (E10), keeping its
   ID, tags and corrections; with a sample check before.
+- [x] **3.7 Import and path change during a scan**: the scan pauses for it and continues
+  (`Manager.Interrupting`); corrections during a scan are stored and applied by the scan's detection.
+- [x] **3.8 "Waiting for files" view**: imported models not linked yet are visible as such and can be
+  removed (with a snapshot) when their files are gone for good.
+- [x] **3.9 Linux in CI**: tests and a Linux build on Ubuntu next to Windows (A2).
 - [x] **3.6 Data folder in a bad place**: refused in a temporary folder (exe started from a zip), warning
   in Downloads and synced folders (J5).
 - [ ] **3.4 Large-catalog test**: generator for ~200,000 models; grid, search and sidebar must

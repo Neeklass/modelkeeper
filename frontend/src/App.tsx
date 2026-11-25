@@ -20,6 +20,7 @@ import {Sidebar, View} from './components/Sidebar'
 import {useLibrary} from './library'
 import {CATALOG_CHANGED, useToast} from './components/Toast'
 import {DataTransferPanel, HistoryPanel} from './components/DataTransfer'
+import {TagManagerPanel} from './components/TagManager'
 
 /** Typing in a field: Ctrl+Z belongs to the field then. */
 function inField(e: KeyboardEvent): boolean {
@@ -85,6 +86,9 @@ function App() {
         return () => window.removeEventListener('keydown', onKey)
     }, [toast])
 
+    // A correction made during a scan is applied when the scan is done.
+    useEffect(() => EventsOn('corrections:queued', () => toast.show({text: t('corrections.queued')})), [toast, t])
+
     // Backup state changes in the background (external copy, restore test).
     useEffect(() => EventsOn('backups:changed', () => {
         GetStatus().then(s => !s.starting && setStatus(s)).catch(() => undefined)
@@ -131,6 +135,7 @@ function App() {
                     <SettingsPanel status={status} onChange={setStatus}/>
                     <DataTransferPanel/>
                     <HistoryPanel/>
+                    <TagManagerPanel/>
                     <DetectionSettingsPanel/>
                 </main>}
                 {view === 'help' && <HelpView/>}

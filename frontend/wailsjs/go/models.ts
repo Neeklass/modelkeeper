@@ -239,6 +239,7 @@ export namespace catalog {
 	    files: ModelFile[];
 	    hasCorrections: boolean;
 	    inactive: boolean;
+	    waiting: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelDetail(source);
@@ -268,6 +269,7 @@ export namespace catalog {
 	        this.files = this.convertValues(source["files"], ModelFile);
 	        this.hasCorrections = source["hasCorrections"];
 	        this.inactive = source["inactive"];
+	        this.waiting = source["waiting"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -303,6 +305,7 @@ export namespace catalog {
 	    thumb: string;
 	    favorite: boolean;
 	    inactive: boolean;
+	    waiting: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelRow(source);
@@ -323,6 +326,7 @@ export namespace catalog {
 	        this.thumb = source["thumb"];
 	        this.favorite = source["favorite"];
 	        this.inactive = source["inactive"];
+	        this.waiting = source["waiting"];
 	    }
 	}
 	export class ModelPage {
@@ -374,6 +378,7 @@ export namespace catalog {
 	    extractedAndArchive: boolean;
 	    missing: boolean;
 	    inactive: boolean;
+	    waiting: boolean;
 	    orphanedBy: number;
 	    sort: string;
 	
@@ -399,6 +404,7 @@ export namespace catalog {
 	        this.extractedAndArchive = source["extractedAndArchive"];
 	        this.missing = source["missing"];
 	        this.inactive = source["inactive"];
+	        this.waiting = source["waiting"];
 	        this.orphanedBy = source["orphanedBy"];
 	        this.sort = source["sort"];
 	    }

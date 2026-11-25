@@ -272,7 +272,10 @@
     "licensePlaceholder": "e.g. personal use",
     "notesSaving": "Saving…",
     "notesSaved": "Saved",
-    "notesError": "Not saved – the notes stay in the field; try again."
+    "notesError": "Not saved – the notes stay in the field; try again.",
+    "waitingNotice": "This model has no files in the catalog yet – it came from an import. A scan that finds its files (at its old place or anywhere by their fingerprints) links it up with its tags and notes. If the files are gone for good, remove it.",
+    "forget": "Remove from catalog",
+    "confirmForget": "Remove {{name}} from the catalog?\n\nIts tags, notes and other data are removed (a backup is made first). Files are not touched."
   },
   "supports": {
     "presupported": "Presupported",
@@ -309,7 +312,8 @@
     "confirmMerge": "Merge {{count}} models into “{{name}}”? Tags and notes are kept.",
     "invalidFolder": "This folder cannot be used for this correction.",
     "nothingToSplit": "This model has no subfolders to split into.",
-    "nothingToDetach": "This model has only one location."
+    "nothingToDetach": "This model has only one location.",
+    "queued": "Saved. A scan is running – the correction is applied when it is done."
   },
   "tags": {
     "title": "Tags",
@@ -328,7 +332,8 @@
     "removed_other": "Removed {{tags}} from {{count}} models.",
     "invalid": "Tags must not be empty and can have at most {{max}} characters.",
     "acceptAll": "Accept all",
-    "dismissed": "Suggestion {{name}} dismissed."
+    "dismissed": "Suggestion {{name}} dismissed.",
+    "notFound": "There is no tag {{name}}."
   },
   "printStatus": {
     "not_printed": "Not printed",
@@ -462,7 +467,8 @@
       "other": "other",
       "preRestore": "state before a restore",
       "preImport": "before an import",
-      "preRelocate": "before changing a folder path"
+      "preRelocate": "before changing a folder path",
+      "preForget": "before removing models"
     },
     "total_one": "{{n}} backup, {{size}} in total.",
     "total_other": "{{n}} backups, {{size}} in total.",
@@ -644,7 +650,9 @@
           "**Export**: Settings → **Export and import** → **Export…** writes one JSON file with everything you entered: tags, notes, favorites, print status, edited names and creators, origin and license, corrections, the thumbnails you chose, your folders and detection settings. Every backup contains the same file as catalog-export.json – also every copy in the second backup folder.",
           "**Import**: **Import…** reads such a file. modelkeeper shows first what it contains and how its models are found here: by their ID, at the same place, or by their files (fingerprints) even if they were moved or renamed. Models not found yet keep their data and are linked up as soon as a scan finds their files. The import only adds – nothing you entered is removed – and a backup is made first.",
           "**For someone else**: export on your PC, give the file to the other person; they import it, choose where the folders are on their PC (or add them), and scan.",
-          "**Folder moved** (new NAS, other drive letter): Folders → **Change path…** at the folder. modelkeeper checks a sample of the files at the new place, makes a backup, changes the path and scans. The folder keeps all tags, notes and corrections. Do not add the new place as a second folder – the tags would stay with the old one."
+          "**Folder moved** (new NAS, other drive letter): Folders → **Change path…** at the folder. modelkeeper checks a sample of the files at the new place, makes a backup, changes the path and scans. The folder keeps all tags, notes and corrections. Do not add the new place as a second folder – the tags would stay with the old one.",
+          "**Waiting for files**: models from an import whose files were not found yet are listed under this view on the left (only while there are any). Remove a model there if its files are gone for good. Import and **Change path…** also work while a scan runs: the scan is paused for it and continues afterwards. Corrections of the detection made during a scan are saved right away and applied when the scan is done.",
+          "**Tags**: Settings → **Tags** renames or deletes a tag for all its models at once; renaming to an existing tag merges both (typos). Undoable."
         ]
       },
       {
@@ -707,7 +715,9 @@
     "locations": "Locations",
     "filterList": "Filter…",
     "showAll": "Show all {{n}}",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "waiting": "Waiting for files",
+    "waitingHint": "Models from an import whose files were not found yet. A scan that finds them links them up."
   },
   "sort": {
     "label": "Sort",
@@ -726,7 +736,8 @@
     "notScanned": "Start a scan under \"Folders\". Models appear once the scan of a folder has finished – for the first scan of a large collection on the NAS, that can take a while.",
     "catalogedTitle": "Everything cataloged",
     "cataloged": "Every model has at least one tag.",
-    "clearSearch": "Reset search and filters"
+    "clearSearch": "Reset search and filters",
+    "waitingTitle": "No model is waiting for its files."
   },
   "gallery": {
     "enlarge": "Enlarge",
@@ -802,6 +813,30 @@
     "favoritesAdded_other": "{{count}} models added to favorites",
     "favoritesRemoved_one": "{{count}} model removed from favorites",
     "favoritesRemoved_other": "{{count}} models removed from favorites",
-    "modelEdited": "{{name}} edited"
+    "modelEdited": "{{name}} edited",
+    "tagRenamed_one": "tag {{from}} renamed to {{to}} ({{count}} model)",
+    "tagRenamed_other": "tag {{from}} renamed to {{to}} ({{count}} models)",
+    "tagMerged_one": "tag {{from}} merged into {{to}} ({{count}} model)",
+    "tagMerged_other": "tag {{from}} merged into {{to}} ({{count}} models)",
+    "tagDeleted_one": "tag {{tags}} deleted ({{count}} model)",
+    "tagDeleted_other": "tag {{tags}} deleted ({{count}} models)"
+  },
+  "tagManager": {
+    "title": "Tags",
+    "intro": "Rename or delete a tag for all its models at once. Renaming to an existing tag merges the two – handy for typos. Every change can be undone.",
+    "filter": "Filter tags…",
+    "rename": "Rename",
+    "delete": "Delete",
+    "merge": "Merge",
+    "confirmMerge": "Merge {{from}} into {{to}}?\n\n{{to}} already has {{n}} models; afterwards all models of {{from}} carry {{to}}.",
+    "confirmDelete_one": "Delete the tag {{name}}?\n\nIt is removed from {{n}} model. You can undo this.",
+    "confirmDelete_other": "Delete the tag {{name}}?\n\nIt is removed from {{n}} models. You can undo this.",
+    "renamed_one": "{{from}} renamed to {{to}} ({{count}} model).",
+    "renamed_other": "{{from}} renamed to {{to}} ({{count}} models).",
+    "merged_one": "{{from}} merged into {{to}} ({{count}} model).",
+    "merged_other": "{{from}} merged into {{to}} ({{count}} models).",
+    "deleted_one": "Tag {{name}} removed from {{count}} model.",
+    "deleted_other": "Tag {{name}} removed from {{count}} models.",
+    "more": "{{n}} more – narrow the filter."
   }
 }

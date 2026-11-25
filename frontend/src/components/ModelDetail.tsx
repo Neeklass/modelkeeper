@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
-    AddTags, DetachAnchor, DismissSuggestion, GetModel, ListThumbnailCandidates, MarkFolderModel, MarkFolderNotModel,
+    AddTags, DetachAnchor, DismissSuggestion, ForgetWaitingModels, GetModel, ListThumbnailCandidates, MarkFolderModel, MarkFolderNotModel,
     OpenInSlicer, PickThumbnailFile, RemoveTag, ResetCorrections, ResetThumbnail, SetThumbnail, SetThumbnailFromView,
     ShowInExplorer, SplitModel, UpdateModel,
 } from '../../wailsjs/go/main/App'
@@ -155,6 +155,16 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
                 </div>
             </div>
             {error && <p className="error">{translateMsg(error)}</p>}
+            {d.waiting && (
+                <div className="notice-inactive small">
+                    <p>{t('models.waitingNotice')}</p>
+                    <button className="subtle small" disabled={busy}
+                            onClick={() => act(async () => {
+                                await ForgetWaitingModels([d.id])
+                                onClose()
+                            }, t('models.confirmForget', {name: d.name}))}>{t('models.forget')}…</button>
+                </div>
+            )}
 
             <div className="media">
                 {media.kind === '3d' ? (
