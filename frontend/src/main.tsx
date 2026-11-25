@@ -4,11 +4,14 @@ import './style.css'
 import './i18n'
 import App from './App'
 import {ConfirmProvider} from './components/ConfirmDialog'
+import {ToastProvider} from './components/Toast'
 
 createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <ConfirmProvider>
-            <App/>
+            <ToastProvider>
+                <App/>
+            </ToastProvider>
         </ConfirmProvider>
     </React.StrictMode>
 )

@@ -18,6 +18,14 @@ import {useConfirm} from './components/ConfirmDialog'
 import {HelpView} from './components/HelpView'
 import {Sidebar, View} from './components/Sidebar'
 import {useLibrary} from './library'
+import {CATALOG_CHANGED, useToast} from './components/Toast'
+import {DataTransferPanel, HistoryPanel} from './components/DataTransfer'
+
+/** Typing in a field: Ctrl+Z belongs to the field then. */
+function inField(e: KeyboardEvent): boolean {
+    const el = e.target as HTMLElement | null
+    return !!el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))
+}
 
 /** Intervals for scheduled NAS rescans in hours (App.NASRescanChoices), 0 = off. */
 const NAS_RESCAN_HOURS = [0, 1, 6, 12, 24, 168]
@@ -30,6 +38,7 @@ function App() {
     const [query, setQuery] = useState<Query>(emptyQuery)
     const [scopeLabel, setScopeLabel] = useState<string | undefined>()
     const library = useLibrary()
+    const toast = useToast()
     // Opening the library from elsewhere with a query (e.g. the folders view).
     const showModels = (q: Partial<Query>, label?: string) => {
         setQuery({...emptyQuery, ...q})
@@ -57,6 +66,25 @@ function App() {
         }
     }, [])
 
+    // Undo and imports change the catalog outside the normal flow.
+    const reload = library.reload
+    useEffect(() => {
+        window.addEventListener(CATALOG_CHANGED, reload)
+        return () => window.removeEventListener(CATALOG_CHANGED, reload)
+    }, [reload])
+
+    // Ctrl+Z undoes the newest change of user data (TODO 2.1), outside text fields.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey || e.key.toLowerCase() !== 'z') return
+            if (e.defaultPrevented || inField(e) || document.querySelector('.modal-backdrop')) return
+            e.preventDefault()
+            toast.undo()
+        }
+        window.addEventListener('keydown', onKey)
+        return () => window.removeEventListener('keydown', onKey)
+    }, [toast])
+
     // Backup state changes in the background (external copy, restore test).
     useEffect(() => EventsOn('backups:changed', () => {
         GetStatus().then(s => !s.starting && setStatus(s)).catch(() => undefined)
@@ -79,6 +107,11 @@ function App() {
                          setView('library')
                      }}/>
             <div className="content">
+                {status.locationWarning && (
+                    <div className="row notice-warn" role="alert">
+                        <span className="small">{translateMsg(status.locationWarning as Msg)}</span>
+                    </div>
+                )}
                 {status.notice && (
                     <div className="row notice-inactive">
                         <span className="small">{translateMsg(status.notice as Msg)}</span>
@@ -96,6 +129,8 @@ function App() {
                 {view === 'settings' && <main className="page">
                     <h1>{t('tabs.settings')}</h1>
                     <SettingsPanel status={status} onChange={setStatus}/>
+                    <DataTransferPanel/>
+                    <HistoryPanel/>
                     <DetectionSettingsPanel/>
                 </main>}
                 {view === 'help' && <HelpView/>}

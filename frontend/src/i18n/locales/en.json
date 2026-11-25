@@ -95,7 +95,9 @@
     "fileOffline": "{{name}} is in a folder that cannot be reached right now.",
     "fileNotFound": "{{name}} was not found. It may have been moved; a scan brings the catalog up to date.",
     "fileTooLargeToCopy": "{{name}} is too large to copy out of the archive. Extract the archive yourself and open the file directly.",
-    "fileEncrypted": "{{name}} is in a password-protected archive."
+    "fileEncrypted": "{{name}} is in a password-protected archive.",
+    "dataDirTemp": "modelkeeper was started from a temporary folder ({{path}}) – probably directly from inside the zip file. Everything you catalog would be lost when Windows cleans up temporary files.\n\nExtract the zip file first (right-click → Extract all…) into a permanent folder, e.g. C:\\Users\\<you>\\modelkeeper, and start modelkeeper.exe there.",
+    "relocateOverlap": "{{path}} overlaps the root folder {{other}}. If you added the new place as a separate folder already, deactivate it first (its tags and notes stay in the catalog)."
   },
   "roots": {
     "title": "Root folders",
@@ -138,7 +140,16 @@
     "purgeConfirm": "Delete permanently",
     "purging": "Backing up and deleting…",
     "purgeShowModels": "Look at these models",
-    "deactivateHint": "Stop scanning and watching. Tags and notes are kept."
+    "deactivateHint": "Stop scanning and watching. Tags and notes are kept.",
+    "relocate": "Change path",
+    "relocateHint": "The files moved as a whole (new NAS, other drive letter): give the folder its new path. Tags, notes and corrections stay; nothing has to be scanned from scratch.",
+    "relocateConfirm": "Change the path of this folder?\n\nFrom: {{from}}\nTo: {{to}}",
+    "relocateFound": "{{found}} of {{sampled}} sample files were found at the new place.",
+    "relocateNoFiles": "The catalog knows no files of this folder yet.",
+    "relocateMissing": "Not found, for example:\n{{files}}",
+    "relocateTimes": "Some files have a different date at the new place; the next scan reads them again and confirms them by their fingerprint.",
+    "relocateSafe": "Tags, notes, favorites and corrections stay with the models. A backup is made first, then the folder is scanned at the new place. Files are not touched.",
+    "relocated": "The folder now points to {{path}}. It is being scanned."
   },
   "scan": {
     "start": "Scan",
@@ -250,7 +261,18 @@
     "prev": "Previous model",
     "next": "Next model",
     "position": "{{i}} of {{n}}",
-    "showInExplorerShort": "Explorer"
+    "showInExplorerShort": "Explorer",
+    "editCreator": "Change creator",
+    "edited": "set by you",
+    "creatorManualHint": "You set the creator; the detection no longer changes it.",
+    "origin": "Origin",
+    "originPlaceholder": "e.g. MyMiniFactory, Patreon",
+    "originUrl": "Link",
+    "license": "License",
+    "licensePlaceholder": "e.g. personal use",
+    "notesSaving": "Saving…",
+    "notesSaved": "Saved",
+    "notesError": "Not saved – the notes stay in the field; try again."
   },
   "supports": {
     "presupported": "Presupported",
@@ -305,7 +327,8 @@
     "removed_one": "Removed {{tags}} from {{count}} model.",
     "removed_other": "Removed {{tags}} from {{count}} models.",
     "invalid": "Tags must not be empty and can have at most {{max}} characters.",
-    "acceptAll": "Accept all"
+    "acceptAll": "Accept all",
+    "dismissed": "Suggestion {{name}} dismissed."
   },
   "printStatus": {
     "not_printed": "Not printed",
@@ -437,7 +460,9 @@
       "preRemoveRoot": "before deleting a folder",
       "preFileTypes": "before changing file types",
       "other": "other",
-      "preRestore": "state before a restore"
+      "preRestore": "state before a restore",
+      "preImport": "before an import",
+      "preRelocate": "before changing a folder path"
     },
     "total_one": "{{n}} backup, {{size}} in total.",
     "total_other": "{{n}} backups, {{size}} in total.",
@@ -611,6 +636,18 @@
         ]
       },
       {
+        "id": "safety",
+        "title": "Undo, export and moving folders",
+        "body": [
+          "**Undo**: every change of tags, fields and favorites can be undone – click **Undo** in the message at the bottom, or press **Ctrl+Z** anywhere outside a text field. Settings → **Recent changes** lists the last changes. A model that was changed in another way since (e.g. merged) is left as it is.",
+          "Notes are saved while you type; \"Saved\" below the field confirms it.",
+          "**Export**: Settings → **Export and import** → **Export…** writes one JSON file with everything you entered: tags, notes, favorites, print status, edited names and creators, origin and license, corrections, the thumbnails you chose, your folders and detection settings. Every backup contains the same file as catalog-export.json – also every copy in the second backup folder.",
+          "**Import**: **Import…** reads such a file. modelkeeper shows first what it contains and how its models are found here: by their ID, at the same place, or by their files (fingerprints) even if they were moved or renamed. Models not found yet keep their data and are linked up as soon as a scan finds their files. The import only adds – nothing you entered is removed – and a backup is made first.",
+          "**For someone else**: export on your PC, give the file to the other person; they import it, choose where the folders are on their PC (or add them), and scan.",
+          "**Folder moved** (new NAS, other drive letter): Folders → **Change path…** at the folder. modelkeeper checks a sample of the files at the new place, makes a backup, changes the path and scans. The folder keeps all tags, notes and corrections. Do not add the new place as a second folder – the tags would stay with the old one."
+        ]
+      },
+      {
         "id": "settings",
         "title": "Settings",
         "body": [
@@ -696,5 +733,75 @@
     "useAsThumbnail": "Use as thumbnail",
     "prev": "Previous picture",
     "next": "Next picture"
+  },
+  "warning": {
+    "dataDir": {
+      "downloads": "The modelkeeper folder is in Downloads ({{path}}). Downloads is often cleaned up – move the whole modelkeeper folder to a permanent place (e.g. Documents) while the app is closed.",
+      "synced": "The modelkeeper folder is in a synced folder ({{path}}, e.g. OneDrive or Dropbox). Sync tools can damage the catalog while modelkeeper runs. Move the modelkeeper folder elsewhere and use Settings → Second backup folder for the cloud copy instead."
+    }
+  },
+  "export": {
+    "title": "Export and import",
+    "intro": "One file with everything you entered: tags, notes, favorites, print status, edited names and creators, corrections of the detection, the thumbnails you chose, your folders and detection settings. It is enough to restore your work into an empty catalog – on this PC or another one – even without the backups.",
+    "button": "Export…",
+    "exporting": "Exporting…",
+    "done": "Exported {{models}} models, {{tags}} tags, {{overrides}} corrections and {{thumbnails}} thumbnails to {{path}}.",
+    "hint": "Every backup also contains such a file (catalog-export.json), and so does every copy in the second backup folder. The file is plain JSON, readable with any text editor.",
+    "failed": "The export could not be written to {{path}}."
+  },
+  "import": {
+    "button": "Import",
+    "title": "Import cataloging work",
+    "contains": "The file contains {{models}} models, {{tags}} tags, {{overrides}} corrections and {{thumbnails}} thumbnails.",
+    "exportedAt": "Exported {{when}} (modelkeeper {{version}}).",
+    "rootsTitle": "Folders",
+    "rootsHint": "Where are these folders on this PC? Choose the matching folder of this catalog, add it as a new folder, or skip it.",
+    "rootModels_one": "{{n}} model",
+    "rootModels_other": "{{n}} models",
+    "mapTo": "Use {{path}}",
+    "addRoot": "Add as new folder (scanned afterwards)",
+    "skipRoot": "Skip (models are found by their files later)",
+    "relocateHint": "If the files are at a new place now (new NAS, other drive letter), choose the folder at its new path – or add it as a new folder.",
+    "matchTitle": "Models",
+    "byId": "{{n}} already in this catalog",
+    "byPath": "{{n}} found at the same place",
+    "byContent": "{{n}} found by their files (moved or renamed)",
+    "new": "{{n}} not found yet – kept with their data and linked up when a scan finds their files",
+    "notesKept_one": "{{n}} model has different notes here – both texts are kept.",
+    "notesKept_other": "{{n}} models have different notes here – both texts are kept.",
+    "safeHint": "The import only adds: nothing you entered in this catalog is removed or overwritten, and a backup is made first. You can import the same file again without harm.",
+    "settings": "Also take over file types and detection rules",
+    "apply": "Import",
+    "importing": "Importing…",
+    "done": "Imported: {{models}} models ({{waiting}} wait for a scan), {{tags}} tags added, {{overrides}} corrections, {{thumbnails}} thumbnails.",
+    "backupHint": "Backup before the import: {{path}}",
+    "notAnExport": "{{path}} is not a modelkeeper export.",
+    "tooNew": "{{path}} was exported by a newer modelkeeper. Update modelkeeper first.",
+    "readFailed": "{{path}} could not be read.",
+    "noFile": "Choose the export file again.",
+    "unknownRoot": "Unknown folder in the import ({{key}})."
+  },
+  "history": {
+    "title": "Recent changes",
+    "intro": "Tags, fields and favorites you changed. The newest change can be undone – also with Ctrl+Z anywhere outside a text field.",
+    "show": "Show recent changes",
+    "empty": "No changes yet.",
+    "undo": "Undo",
+    "dismiss": "Close",
+    "wasUndone": "undone",
+    "undone": "Undone: {{what}}",
+    "undoneSkipped_one": "Undone: {{what}} – {{n}} model was changed in another way since and was left as it is.",
+    "undoneSkipped_other": "Undone: {{what}} – {{n}} models were changed in another way since and were left as they are.",
+    "nothingToUndo": "Nothing to undo.",
+    "tagsAdded_one": "tags {{tags}} added to {{count}} model",
+    "tagsAdded_other": "tags {{tags}} added to {{count}} models",
+    "tagsRemoved_one": "tags {{tags}} removed from {{count}} model",
+    "tagsRemoved_other": "tags {{tags}} removed from {{count}} models",
+    "suggestionDismissed": "suggestion {{tags}} dismissed",
+    "favoritesAdded_one": "{{count}} model added to favorites",
+    "favoritesAdded_other": "{{count}} models added to favorites",
+    "favoritesRemoved_one": "{{count}} model removed from favorites",
+    "favoritesRemoved_other": "{{count}} models removed from favorites",
+    "modelEdited": "{{name}} edited"
   }
 }

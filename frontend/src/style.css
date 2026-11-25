@@ -602,3 +602,32 @@ details.detail-section[open] summary h3::before { content: '▾ '; }
 .model-tile:hover, .model-tile.selected { background: none; box-shadow: none; }
 .media-main .detail-thumb { max-height: none; }
 .tile-media .tile-thumb { background: var(--thumb-bg); }
+
+/* Toast with "Undo" (TODO 2.1). */
+.toast {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 110;
+    display: flex; align-items: center; gap: 12px; max-width: min(640px, calc(100vw - 32px));
+    padding: 10px 14px; border-radius: 8px; background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+}
+.toast-error { border-color: var(--danger); }
+.toast .link { font-weight: 600; white-space: nowrap; }
+
+/* The data folder is in a risky place. */
+.notice-warn {
+    border-left: 3px solid var(--danger); padding: 6px 10px; border-radius: 0 6px 6px 0;
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+.content > .notice-warn { margin: 8px 16px 0; }
+
+/* Import dialog. */
+.modal-wide { max-width: 760px; width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: auto; }
+.modal h3 { margin: 8px 0 0; font-size: 14px; }
+.import-roots { width: 100%; border-collapse: collapse; }
+.import-roots td { padding: 6px 4px; vertical-align: top; border-top: 1px solid var(--border); }
+.import-roots td:last-child { width: 45%; }
+.import-roots select { width: 100%; }
+
+/* Small editable fields in the detail panel. */
+.inline-text { width: 100%; min-width: 0; }
+.history li { padding: 3px 0; border-bottom: 1px solid var(--border); }
