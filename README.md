@@ -180,6 +180,8 @@ The result is `build/bin/modelkeeper.exe`. Development with live reload:
 
 ## Release
 
+Before a release, go through [RELEASE-TEST.md](RELEASE-TEST.md) on a real PC.
+
 Push a tag like `v0.11.0` (`git tag v0.11.0 && git push origin v0.11.0`): the
 Release workflow tests, builds and publishes
 `modelkeeper-v0.11.0-windows-amd64.zip` and `…-linux-amd64.tar.gz` as a GitHub
