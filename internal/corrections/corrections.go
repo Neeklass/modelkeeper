@@ -49,8 +49,12 @@ func setOverride(ctx context.Context, tx *sql.Tx, kind string, rootID int64, pat
 			return err
 		}
 	}
-	_, err := tx.ExecContext(ctx, `INSERT INTO override (kind, root_id, path, model_id, created_at) VALUES (?, ?, ?, ?, ?)`,
-		kind, rootID, path, modelID, time.Now().UnixMilli())
+	return insertOverride(ctx, tx, kind, rootID, path, modelID, nil)
+}
+
+func insertOverride(ctx context.Context, tx *sql.Tx, kind string, rootID int64, path string, modelID, data any) error {
+	_, err := tx.ExecContext(ctx, `INSERT INTO override (kind, root_id, path, model_id, data, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+		kind, rootID, path, modelID, data, time.Now().UnixMilli())
 	return err
 }
 
@@ -343,6 +347,10 @@ func Reset(ctx context.Context, db *sql.DB, modelID int64) ([]int64, error) {
 				// The anchor itself and everything below it.
 				if _, err := tx.ExecContext(ctx, `DELETE FROM override WHERE root_id = ?
 					AND (path = ? OR substr(path, 1, ?) = ?)`, a.rootID, a.path, len(a.path)+1, a.path+"/"); err != nil {
+					return err
+				}
+				// Files moved into the model from elsewhere (file corrections).
+				if err := dropFileGroups(ctx, tx, a.rootID, a.path); err != nil {
 					return err
 				}
 			}

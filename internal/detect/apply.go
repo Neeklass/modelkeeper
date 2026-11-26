@@ -3,6 +3,7 @@ package detect
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -39,6 +40,7 @@ func Apply(ctx context.Context, db *sql.DB, rootID int64, rules Rules) (Result, 
 		return res, err
 	}
 	rules.IsModel, rules.NotModel, rules.Detached = ov.isModel, ov.notModel, ov.detached
+	rules.FileGroup = ov.fileGroup
 
 	entries, err := loadEntries(ctx, db, rootID)
 	if err != nil {
@@ -608,25 +610,46 @@ type overrides struct {
 	isModel, notModel, detached map[string]bool
 	mergeInto                   map[string]int64 // anchor path -> target model
 	splitFrom                   map[string]int64 // anchor path -> model it must not join
+	fileGroup                   map[string]string
+}
+
+// FileGroupOf reads the group of a file correction from an "is_model"
+// override's data ({"group": "<path>"}); "" for a folder marked as a model.
+// File corrections need no own override kind, so databases stay compatible.
+func FileGroupOf(data string) string {
+	if !strings.HasPrefix(data, "{") {
+		return ""
+	}
+	var d struct {
+		Group string `json:"group"`
+	}
+	if json.Unmarshal([]byte(data), &d) != nil {
+		return ""
+	}
+	return d.Group
 }
 
 func loadOverrides(ctx context.Context, db *sql.DB, rootID int64) (overrides, error) {
 	ov := overrides{isModel: map[string]bool{}, notModel: map[string]bool{}, detached: map[string]bool{},
-		mergeInto: map[string]int64{}, splitFrom: map[string]int64{}}
-	rows, err := db.QueryContext(ctx, `SELECT kind, path, coalesce(model_id, 0) FROM override WHERE root_id = ? ORDER BY id`, rootID)
+		mergeInto: map[string]int64{}, splitFrom: map[string]int64{}, fileGroup: map[string]string{}}
+	rows, err := db.QueryContext(ctx, `SELECT kind, path, coalesce(model_id, 0), coalesce(data, '') FROM override WHERE root_id = ? ORDER BY id`, rootID)
 	if err != nil {
 		return ov, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var kind, p string
+		var kind, p, data string
 		var mid int64
-		if err := rows.Scan(&kind, &p, &mid); err != nil {
+		if err := rows.Scan(&kind, &p, &mid, &data); err != nil {
 			return ov, err
 		}
 		switch kind {
 		case "is_model":
-			ov.isModel[p] = true
+			if g := FileGroupOf(data); g != "" {
+				ov.fileGroup[p] = g
+			} else {
+				ov.isModel[p] = true
+			}
 		case "not_model":
 			ov.notModel[p] = true
 		case "merge":

@@ -344,7 +344,36 @@
     "queued": "Saved. A scan is running – the correction is applied when it is done.",
     "done": "Correction applied.",
     "merged_one": "{{count}} model merged into {{name}}.",
-    "merged_other": "{{count}} models merged into {{name}}."
+    "merged_other": "{{count}} models merged into {{name}}.",
+    "addTo": "Add to another model",
+    "addToHint": "Merge this model into another one, e.g. parts that belong together",
+    "addToTitle": "Add “{{name}}” to …",
+    "addToIntro": "All files, tags and notes of this model move to the model you pick. This survives every scan and can be undone.",
+    "confirmAddTo": "Add “{{name}}” to “{{target}}”? Tags and notes are kept.",
+    "addedTo": "“{{name}}” added to “{{target}}”.",
+    "pickFilesHint": "Tick files to move them to another model or to split them off as a new model.",
+    "pickFile": "Select {{name}}",
+    "filesPicked_one": "{{count}} file selected",
+    "filesPicked_other": "{{count}} files selected",
+    "moveFiles": "Move to another model",
+    "detachFiles": "Split off as new model",
+    "moveFilesTitle_one": "Move {{count}} file to …",
+    "moveFilesTitle_other": "Move {{count}} files to …",
+    "moveFilesIntro": "The files stay where they are on disk; only the catalog assigns them to the other model. This survives every scan and can be undone.",
+    "confirmMoveFiles_one": "Move {{count}} file to “{{target}}”?",
+    "confirmMoveFiles_other": "Move {{count}} files to “{{target}}”?",
+    "filesMoved_one": "{{count}} file moved to {{target}}.",
+    "filesMoved_other": "{{count}} files moved to {{target}}.",
+    "confirmDetachFiles_one": "Split {{count}} file off as a model of its own?",
+    "confirmDetachFiles_other": "Split {{count}} files off as one new model?",
+    "filesDetached_one": "{{count}} file split off as a new model.",
+    "filesDetached_other": "{{count}} files split off as a new model.",
+    "noFiles": "No files selected.",
+    "invalidFile": "A selected file no longer belongs to this model. Reload the model and try again.",
+    "sameModel": "Pick a different model.",
+    "detachNeedsContent": "Select at least one 3D, slicer or archive file to split off.",
+    "detachOneRoot": "Files from different library folders cannot be split off together.",
+    "detachAll": "At least one file has to stay in the model. To rename it, edit its name instead."
   },
   "tags": {
     "title": "Tags",
@@ -924,7 +953,11 @@
       "detach": "{{path}} detached from {{name}}",
       "merge_one": "{{count}} model merged into {{name}}",
       "merge_other": "{{count}} models merged into {{name}}",
-      "reset": "corrections of {{name}} reset"
+      "reset": "corrections of {{name}} reset",
+      "moveFiles_one": "{{count}} file of {{from}} moved to {{name}}",
+      "moveFiles_other": "{{count}} files of {{from}} moved to {{name}}",
+      "detachFiles_one": "{{count}} file split off from {{name}}",
+      "detachFiles_other": "{{count}} files split off from {{name}}"
     },
     "modelsEdited_one": "{{count}} model edited",
     "modelsEdited_other": "{{count}} models edited",
@@ -1201,5 +1234,13 @@
     "tour4": "Every change can be undone (Ctrl+Z, history in the settings).",
     "tour5": "Help explains everything in detail; Settings → Maintenance checks the catalog.",
     "finish": "Start"
+  },
+  "picker": {
+    "search": "Search models…",
+    "files_one": "{{count}} file",
+    "files_other": "{{count}} files",
+    "none": "No models found.",
+    "more_one": "{{count}} more – refine the search.",
+    "more_other": "{{count}} more – refine the search."
   }
 }

@@ -1131,6 +1131,21 @@ func (a *App) MergeModels(targetID int64, sourceIDs []int64) error {
 	})
 }
 
+// MoveFilesToModel moves single files (locations on disk) of a model into
+// another model. The correction survives rescans.
+func (a *App) MoveFilesToModel(sourceID, targetID int64, locationIDs []int64) error {
+	return a.correct(func(ctx context.Context) ([]int64, error) {
+		return corrections.MoveFiles(ctx, a.db, sourceID, targetID, locationIDs)
+	})
+}
+
+// DetachFiles splits single files of a model off as a new model.
+func (a *App) DetachFiles(id int64, locationIDs []int64) error {
+	return a.correct(func(ctx context.Context) ([]int64, error) {
+		return corrections.DetachFiles(ctx, a.db, id, locationIDs)
+	})
+}
+
 // ResetCorrections removes all manual corrections at a model's folders.
 func (a *App) ResetCorrections(id int64) error {
 	return a.correct(func(ctx context.Context) ([]int64, error) { return corrections.Reset(ctx, a.db, id) })

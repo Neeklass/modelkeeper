@@ -344,7 +344,36 @@
     "queued": "Gespeichert. Ein Scan läuft – die Korrektur wird angewendet, sobald er fertig ist.",
     "done": "Korrektur angewendet.",
     "merged_one": "{{count}} Modell mit {{name}} zusammengeführt.",
-    "merged_other": "{{count}} Modelle mit {{name}} zusammengeführt."
+    "merged_other": "{{count}} Modelle mit {{name}} zusammengeführt.",
+    "addTo": "Zu anderem Modell hinzufügen",
+    "addToHint": "Dieses Modell mit einem anderen zusammenführen, z. B. Teile, die zusammengehören",
+    "addToTitle": "„{{name}}“ hinzufügen zu …",
+    "addToIntro": "Alle Dateien, Tags und Notizen dieses Modells wandern in das gewählte Modell. Das bleibt bei jedem Scan erhalten und lässt sich rückgängig machen.",
+    "confirmAddTo": "„{{name}}“ zu „{{target}}“ hinzufügen? Tags und Notizen bleiben erhalten.",
+    "addedTo": "„{{name}}“ zu „{{target}}“ hinzugefügt.",
+    "pickFilesHint": "Dateien ankreuzen, um sie in ein anderes Modell zu verschieben oder als neues Modell abzutrennen.",
+    "pickFile": "{{name}} auswählen",
+    "filesPicked_one": "{{count}} Datei ausgewählt",
+    "filesPicked_other": "{{count}} Dateien ausgewählt",
+    "moveFiles": "In anderes Modell verschieben",
+    "detachFiles": "Als neues Modell abtrennen",
+    "moveFilesTitle_one": "{{count}} Datei verschieben nach …",
+    "moveFilesTitle_other": "{{count}} Dateien verschieben nach …",
+    "moveFilesIntro": "Die Dateien bleiben auf der Festplatte, wo sie sind – nur der Katalog ordnet sie dem anderen Modell zu. Das bleibt bei jedem Scan erhalten und lässt sich rückgängig machen.",
+    "confirmMoveFiles_one": "{{count}} Datei nach „{{target}}“ verschieben?",
+    "confirmMoveFiles_other": "{{count}} Dateien nach „{{target}}“ verschieben?",
+    "filesMoved_one": "{{count}} Datei nach {{target}} verschoben.",
+    "filesMoved_other": "{{count}} Dateien nach {{target}} verschoben.",
+    "confirmDetachFiles_one": "{{count}} Datei als eigenes Modell abtrennen?",
+    "confirmDetachFiles_other": "{{count}} Dateien als ein neues Modell abtrennen?",
+    "filesDetached_one": "{{count}} Datei als neues Modell abgetrennt.",
+    "filesDetached_other": "{{count}} Dateien als neues Modell abgetrennt.",
+    "noFiles": "Keine Dateien ausgewählt.",
+    "invalidFile": "Eine ausgewählte Datei gehört nicht mehr zu diesem Modell. Modell neu laden und erneut versuchen.",
+    "sameModel": "Bitte ein anderes Modell wählen.",
+    "detachNeedsContent": "Mindestens eine 3D-, Slicer- oder Archivdatei zum Abtrennen auswählen.",
+    "detachOneRoot": "Dateien aus verschiedenen Bibliotheksordnern lassen sich nicht zusammen abtrennen.",
+    "detachAll": "Mindestens eine Datei muss im Modell bleiben. Zum Umbenennen einfach den Namen bearbeiten."
   },
   "tags": {
     "title": "Tags",
@@ -924,7 +953,11 @@
       "detach": "{{path}} von {{name}} getrennt",
       "merge_one": "{{count}} Modell mit {{name}} zusammengeführt",
       "merge_other": "{{count}} Modelle mit {{name}} zusammengeführt",
-      "reset": "Korrekturen von {{name}} zurückgesetzt"
+      "reset": "Korrekturen von {{name}} zurückgesetzt",
+      "moveFiles_one": "{{count}} Datei von {{from}} nach {{name}} verschoben",
+      "moveFiles_other": "{{count}} Dateien von {{from}} nach {{name}} verschoben",
+      "detachFiles_one": "{{count}} Datei von {{name}} abgetrennt",
+      "detachFiles_other": "{{count}} Dateien von {{name}} abgetrennt"
     },
     "modelsEdited_one": "{{count}} Modell bearbeitet",
     "modelsEdited_other": "{{count}} Modelle bearbeitet",
@@ -1201,5 +1234,13 @@
     "tour4": "Jede Änderung lässt sich rückgängig machen (Strg+Z, Verlauf in den Einstellungen).",
     "tour5": "Die Hilfe erklärt alles ausführlich; Einstellungen → Wartung prüft den Katalog.",
     "finish": "Los geht’s"
+  },
+  "picker": {
+    "search": "Modelle suchen…",
+    "files_one": "{{count}} Datei",
+    "files_other": "{{count}} Dateien",
+    "none": "Keine Modelle gefunden.",
+    "more_one": "{{count}} weiteres – Suche verfeinern.",
+    "more_other": "{{count}} weitere – Suche verfeinern."
   }
 }

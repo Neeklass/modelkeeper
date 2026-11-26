@@ -3,7 +3,7 @@ import {useTranslation} from 'react-i18next'
 import {
     AddPrint, AddPrintPhotos, GetSlicerInfo, AddTags, DeletePrint, DeletePrintPhoto, UsePhotoAsThumbnail, DetachAnchor, DismissSuggestion, RemoveFromCollection, ForgetWaitingModels, GetModel, ListThumbnailCandidates, MarkFolderModel, MarkFolderNotModel,
     OpenInSlicer, PickThumbnailFile, RemoveTag, ResetCorrections, ResetThumbnail, SetThumbnail, SetThumbnailFromView,
-    ShowInExplorer, SplitModel, UpdateModel,
+    ShowInExplorer, SplitModel, UpdateModel, MergeModels, MoveFilesToModel, DetachFiles,
 } from '../../wailsjs/go/main/App'
 import {catalog, slicer, thumbs} from '../../wailsjs/go/models'
 import {Thumb} from './Thumb'
@@ -16,6 +16,7 @@ import {useConfirm} from './ConfirmDialog'
 import {PathText} from './PathText'
 import {Lightbox, LightboxImage} from './Lightbox'
 import {useToast} from './Toast'
+import {ModelPicker} from './ModelPicker'
 
 const PRINT_STATUSES = ['not_printed', 'printed', 'failed']
 const SUPPORTS = ['presupported', 'unsupported', 'both', 'none']
@@ -76,11 +77,16 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
     const [lightbox, setLightbox] = useState<number | null>(null)
     const [opened, setOpened] = useState<string | null>(null)
     const [copying, setCopying] = useState<string | null>(null)
+    // Files picked for moving or splitting off (F4d), and the open model picker.
+    const [picked, setPicked] = useState<Set<number>>(new Set())
+    const [picker, setPicker] = useState<'model' | 'files' | null>(null)
 
     useEffect(() => {
         setMedia({kind: 'thumb'})
         setLightbox(null)
         setOpened(null)
+        setPicked(new Set())
+        setPicker(null)
     }, [id])
     useEffect(() => {
         setError(null)
@@ -130,6 +136,39 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
         setCopying(basename(f.path)) // a large file on the NAS takes a moment to copy
         OpenInSlicer(f.locationId).then(() => setOpened(basename(f.path))).catch(e => setError(toMsg(e)))
             .finally(() => setCopying(null))
+    }
+
+    // Only files on disk can be moved; files inside an archive go with it.
+    const movable = (f: catalog.ModelFile) => f.present && !f.archivePath
+    const pickedIds = d.files.filter(f => movable(f) && picked.has(f.locationId)).map(f => f.locationId)
+    const togglePick = (locId: number) => setPicked(p => {
+        const n = new Set(p)
+        if (n.has(locId)) n.delete(locId)
+        else n.add(locId)
+        return n
+    })
+    const onPicked = (targetId: number, targetName: string) => {
+        const mode = picker
+        setPicker(null)
+        if (mode === 'model') {
+            act(() => MergeModels(targetId, [d.id]),
+                t('corrections.confirmAddTo', {name: d.name, target: targetName}),
+                t('corrections.addedTo', {name: d.name, target: targetName}))
+        } else if (mode === 'files') {
+            const ids = pickedIds
+            act(async () => {
+                await MoveFilesToModel(d.id, targetId, ids)
+                setPicked(new Set())
+            }, t('corrections.confirmMoveFiles', {count: ids.length, target: targetName}),
+                t('corrections.filesMoved', {count: ids.length, target: targetName}))
+        }
+    }
+    const detachPicked = () => {
+        const ids = pickedIds
+        act(async () => {
+            await DetachFiles(d.id, ids)
+            setPicked(new Set())
+        }, t('corrections.confirmDetachFiles', {count: ids.length}), t('corrections.filesDetached', {count: ids.length}))
     }
 
     const groups = new Map<string, catalog.ModelFile[]>()
@@ -216,6 +255,9 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
                         {t('models.showInExplorer')}
                     </button>
                 )}
+                <button disabled={busy} onClick={() => setPicker('model')} title={t('corrections.addToHint')}>
+                    {t('corrections.addTo')}…
+                </button>
             </div>
             {copying && <p className="small muted">{t('slicer.copying', {name: copying})}</p>}
             {opened && <p className="small ok-text">{t('slicer.opened', {name: opened})}</p>}
@@ -325,6 +367,17 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
 
             <details className="detail-section">
                 <summary><h3>{t('models.filesTitle', {n: d.files.length})}</h3></summary>
+                <p className="small muted">{t('corrections.pickFilesHint')}</p>
+                {pickedIds.length > 0 && (
+                    <div className="file-actions">
+                        <strong className="small">{t('corrections.filesPicked', {count: pickedIds.length})}</strong>
+                        <div className="row wrap">
+                            <button disabled={busy} onClick={() => setPicker('files')}>{t('corrections.moveFiles')}…</button>
+                            <button disabled={busy} onClick={detachPicked}>{t('corrections.detachFiles')}</button>
+                            <button className="link" onClick={() => setPicked(new Set())}>{t('selection.clear')}</button>
+                        </div>
+                    </div>
+                )}
                 {[...groups.entries()].map(([variant, files]) => (
                     <div key={variant}>
                         {groups.size > 1 && <h4>{variant || t('models.noVariant')}</h4>}
@@ -332,7 +385,12 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
                             {files.map(f => (
                                 <li key={f.locationId} className={f.present ? '' : 'missing'}>
                                     <div className="row spread">
-                                        <span className="ellipsis" title={f.archivePath ? `${f.archivePath} › ${f.path}` : f.path}>
+                                        {movable(f) && (
+                                            <input type="checkbox" className="file-pick" checked={picked.has(f.locationId)}
+                                                   disabled={busy} aria-label={t('corrections.pickFile', {name: basename(f.path)})}
+                                                   onChange={() => togglePick(f.locationId)}/>
+                                        )}
+                                        <span className="ellipsis file-name" title={f.archivePath ? `${f.archivePath} › ${f.path}` : f.path}>
                                             {f.archivePath && <span className="muted">{basename(f.archivePath)} › </span>}
                                             {basename(f.path)}
                                         </span>
@@ -389,6 +447,13 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
             </details>
 
             <Corrections d={d} busy={busy} act={act}/>
+
+            {picker && (
+                <ModelPicker exclude={d.id} onClose={() => setPicker(null)} onPick={onPicked}
+                             title={picker === 'model' ? t('corrections.addToTitle', {name: d.name})
+                                 : t('corrections.moveFilesTitle', {count: pickedIds.length})}
+                             intro={picker === 'model' ? t('corrections.addToIntro') : t('corrections.moveFilesIntro')}/>
+            )}
 
             {lightbox !== null && lightbox >= 0 && boxImages.length > 0 && (
                 <Lightbox images={boxImages} index={Math.min(lightbox, boxImages.length - 1)}

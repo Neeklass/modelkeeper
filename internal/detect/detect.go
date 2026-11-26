@@ -56,6 +56,10 @@ type Rules struct {
 	IsModel  map[string]bool // "this folder is a model": everything below belongs to it
 	NotModel map[string]bool // "not a model": the folder merges into the one above
 	Detached map[string]bool // split off from a merged model: never merged with parallel trees
+	// FileGroup: single files the user moved (file path -> group path). All
+	// files of a group form one model anchored at the group path, wherever
+	// they lie; that is a file path too.
+	FileGroup map[string]string
 }
 
 // Candidate is a suggested model.
@@ -85,10 +89,11 @@ type rules struct {
 	isModel      map[string]bool
 	notModel     map[string]bool
 	detached     map[string]bool
+	fileGroup    map[string]string
 }
 
 func compile(r Rules) rules {
-	c := rules{parts: map[string]bool{}, isModel: r.IsModel, notModel: r.NotModel, detached: r.Detached}
+	c := rules{parts: map[string]bool{}, isModel: r.IsModel, notModel: r.NotModel, detached: r.Detached, fileGroup: r.FileGroup}
 	if r.CreatorLevel {
 		c.creatorDepth = 1
 	}
@@ -290,6 +295,16 @@ func Detect(entries []Entry, r Rules) []Candidate {
 			supplementary = append(supplementary, e)
 			continue
 		}
+		if g, ok := c.fileGroup[e.Path]; ok {
+			// Moved by the user: the file belongs to its group, not to its folder.
+			cd := get(g, "file")
+			if e.Category == CatArchive {
+				addArchive(cd, e, "", c)
+			} else {
+				cd.Assign = append(cd.Assign, Assign{LocID: e.LocID, FileID: e.FileID, Content: true})
+			}
+			continue
+		}
 		dir := path.Dir(e.Path)
 		if dir == "." {
 			dir = ""
@@ -344,6 +359,11 @@ func Detect(entries []Entry, r Rules) []Candidate {
 		}
 	}
 	for _, e := range supplementary {
+		if g, ok := c.fileGroup[e.Path]; ok {
+			cd := get(g, "file")
+			cd.Assign = append(cd.Assign, Assign{LocID: e.LocID, FileID: e.FileID})
+			continue
+		}
 		dir := path.Dir(e.Path)
 		if dir == "." {
 			dir = ""

@@ -687,3 +687,15 @@ details.detail-section[open] summary h3::before { content: '▾ '; }
 
 .brand { display: flex; align-items: center; gap: 8px; }
 .brand svg { flex: none; }
+
+/* Model picker (F4d). */
+.modal.picker { max-width: 560px; max-height: calc(100vh - 48px); }
+.picker-list { overflow-y: auto; max-height: 50vh; display: flex; flex-direction: column; gap: 2px; margin: 0; }
+.picker-list li { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
+.picker-list li.active { background: var(--surface-2); }
+.picker-text { display: flex; flex-direction: column; min-width: 0; }
+/* Moving single files out of a model (F4d). */
+.file-actions { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; margin: 6px 0;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); }
+.file-pick { flex-shrink: 0; margin: 0 6px 0 0; }
+.files .row.spread .file-name { flex: 1; min-width: 0; }

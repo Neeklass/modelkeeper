@@ -250,3 +250,7 @@ export function UpdateModel(arg1:number,arg2:catalog.ModelUpdate):Promise<void>;
 export function UpdateModels(arg1:Array<number>,arg2:catalog.ModelUpdate):Promise<void>;
 
 export function UsePhotoAsThumbnail(arg1:number):Promise<void>;
+
+export function MoveFilesToModel(arg1:number,arg2:number,arg3:Array<number>):Promise<void>;
+
+export function DetachFiles(arg1:number,arg2:Array<number>):Promise<void>;

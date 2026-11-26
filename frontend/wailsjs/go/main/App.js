@@ -481,3 +481,11 @@ export function UpdateModels(arg1, arg2) {
 export function UsePhotoAsThumbnail(arg1) {
   return window['go']['main']['App']['UsePhotoAsThumbnail'](arg1);
 }
+
+export function MoveFilesToModel(arg1,arg2,arg3) {
+  return window['go']['main']['App']['MoveFilesToModel'](arg1,arg2,arg3);
+}
+
+export function DetachFiles(arg1,arg2) {
+  return window['go']['main']['App']['DetachFiles'](arg1,arg2);
+}
