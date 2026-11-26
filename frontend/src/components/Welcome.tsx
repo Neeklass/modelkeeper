@@ -9,6 +9,7 @@ import i18n, {languages, resolveLanguage, systemLanguage} from '../i18n'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
 import {formatDateTime, formatNumber} from '../format'
 import {PathText} from './PathText'
+import {AppIcon} from './AppIcon'
 
 type Step = 'language' | 'start' | 'restore' | 'folders' | 'backup' | 'tour'
 
@@ -56,7 +57,7 @@ export function Welcome({status, onDone}: { status: main.AppStatus; onDone: () =
                 </div>
 
                 {step === 'language' && <>
-                    <h1>{t('welcome.title')}</h1>
+                    <div className="row"><AppIcon size={48}/><h1>{t('welcome.title')}</h1></div>
                     <p>{t('welcome.intro')}</p>
                     <label className="row">
                         {t('settings.language')}

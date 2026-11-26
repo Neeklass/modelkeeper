@@ -5,16 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>modelkeeper</title>
 <style>
-  :root { color-scheme: dark light; --bg: #18181b; --card: #232326; --fg: #ececef; --muted: #9a9aa3; --accent: #7aa2ff; }
-  @media (prefers-color-scheme: light) { :root { --bg: #f6f6f7; --card: #fff; --fg: #18181b; --muted: #666; --accent: #2f5bd3; } }
+  :root { color-scheme: dark light; --bg: #141414; --card: #1e1e1e; --fg: #ededed; --muted: #a3a3a3; --accent: #f2f2f2; }
+  @media (prefers-color-scheme: light) { :root { --bg: #f5f5f5; --card: #fff; --fg: #171717; --muted: #5c5c5c; --accent: #111111; } }
+  a { text-decoration: underline; }
   * { box-sizing: border-box; }
   body { margin: 0; font: 15px/1.4 system-ui, sans-serif; background: var(--bg); color: var(--fg); }
   header { position: sticky; top: 0; background: var(--bg); padding: 10px; display: flex; gap: 8px; flex-wrap: wrap; z-index: 2; }
-  input, select, button { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid #444; background: var(--card); color: var(--fg); }
+  input, select, button { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid #383838; background: var(--card); color: var(--fg); }
   input[type=search] { flex: 1 1 200px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 10px; }
   .tile { background: var(--card); border-radius: 10px; overflow: hidden; cursor: pointer; border: 0; padding: 0; text-align: left; color: inherit; }
-  .tile img, .tile .noimg { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #2c2c30; }
+  .tile img, .tile .noimg { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #262626; }
   .tile .name { padding: 6px 8px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .muted { color: var(--muted); }
   .more { display: block; margin: 10px auto 30px; }

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 64 64">
+  <!-- modelkeeper app icon: a D20 whose lower half turns into print layers (Graphit). -->
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="#1e1e1e"/>
+  <path d="M32 12 L49 22 V42 L32 52 L15 42 V22 Z" fill="none" stroke="#f2f2f2" stroke-width="3.2" stroke-linejoin="round"/>
+  <path d="M32 12 L24 34 H40 Z" fill="#f2f2f2"/>
+  <path d="M15 22 L24 34 M49 22 L40 34 M24 34 L32 52 L40 34" fill="none" stroke="#f2f2f2" stroke-width="2.4" stroke-linejoin="round" opacity=".75"/>
+  <path d="M19 45 H45 M17 40 H24 M40 40 H47" stroke="#f2f2f2" stroke-width="2" stroke-linecap="round" opacity=".45"/>
+</svg>

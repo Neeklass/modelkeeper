@@ -1,36 +1,38 @@
 :root {
-    --bg: #18181b;
-    --surface: #232328;
-    --surface-2: #2c2c33;   /* raised: placeholders, hover */
-    --border: #3a3a42;
-    --text: #e8e8ec;
-    --muted: #9a9aa5;
-    --accent: #6ea8fe;
-    --on-accent: #0b1220;
+    /* Graphit: monochrome. The only colors are the model pictures and the
+       status colors (danger, warn, ok), so warnings are never overlooked. */
+    --bg: #141414;
+    --surface: #1e1e1e;
+    --surface-2: #2a2a2a;   /* raised: placeholders, hover */
+    --border: #383838;
+    --text: #ededed;
+    --muted: #a3a3a3;
+    --accent: #f2f2f2;
+    --on-accent: #141414;
     --danger: #ff7b7b;      /* errors and destructive actions */
-    --warn: #f0b429;        /* needs attention: missing, deactivated, unverified */
-    --ok: #4caf50;
-    --thumb-bg: #303038;
-    --thumb-fg: #6b6b78;
+    --warn: #e3b341;        /* needs attention: missing, deactivated, unverified */
+    --ok: #5cb85c;
+    --thumb-bg: #262626;
+    --thumb-fg: #6e6e6e;
     --shadow: 0 12px 40px rgba(0, 0, 0, .5);
     color-scheme: dark;
 }
 
 @media (prefers-color-scheme: light) {
     :root {
-        --bg: #f6f6f8;
+        --bg: #f5f5f5;
         --surface: #ffffff;
-        --surface-2: #eeeef2;
-        --border: #d6d6dc;
-        --text: #1d1d22;
-        --muted: #62626d;
-        --accent: #2563eb;
+        --surface-2: #ebebeb;
+        --border: #d4d4d4;
+        --text: #171717;
+        --muted: #5c5c5c;
+        --accent: #111111;
         --on-accent: #ffffff;
         --danger: #c62828;
-        --warn: #a15c00;
+        --warn: #8a5a00;
         --ok: #2e7d32;
-        --thumb-bg: #e4e4ea;
-        --thumb-fg: #9a9aa6;
+        --thumb-bg: #e6e6e6;
+        --thumb-fg: #9a9a9a;
         --shadow: 0 12px 40px rgba(0, 0, 0, .18);
         color-scheme: light;
     }
@@ -102,7 +104,9 @@ button:hover { border-color: var(--accent); }
 .small { font-size: 12px; }
 .warn dd { color: var(--warn); }
 button:disabled { opacity: .5; cursor: default; border-color: var(--border); }
-button.link { border: none; background: none; padding: 0; color: var(--accent); }
+/* With a monochrome accent, links are told apart from text by the underline. */
+button.link { border: none; background: none; padding: 0; color: var(--accent); text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: 3px; }
+button.link:hover { text-decoration-color: currentColor; }
 
 .root {
     border-top: 1px solid var(--border);
@@ -680,3 +684,6 @@ details.detail-section[open] summary h3::before { content: '▾ '; }
 .bulk-label { display: inline-block; min-width: 7em; }
 .print-form input, .print-form select { min-width: 0; max-width: 100%; }
 .print-form { flex-wrap: wrap; }
+
+.brand { display: flex; align-items: center; gap: 8px; }
+.brand svg { flex: none; }
