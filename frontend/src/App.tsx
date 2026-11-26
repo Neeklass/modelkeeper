@@ -49,6 +49,12 @@ function App() {
     const [scopeLabel, setScopeLabel] = useState<string | undefined>()
     const library = useLibrary()
     const healthReport = useHealth()
+    // The first-run guide stays open until it is finished or skipped, even
+    // when adding a folder makes the status say it is no longer needed.
+    const [welcome, setWelcome] = useState(false)
+    useEffect(() => {
+        if (status?.showWelcome) setWelcome(true)
+    }, [status?.showWelcome])
     const [updateFound, setUpdateFound] = useState<string | null>(null)
     useEffect(() => EventsOn('update:found', (s: main.UpdateStatus) => setUpdateFound(s.latest?.version ?? null)), [])
     const toast = useToast()
@@ -114,8 +120,9 @@ function App() {
     if (status.startupError) {
         return <StartupError status={status} onStarted={setStatus}/>
     }
-    if (status.showWelcome) {
+    if (welcome) {
         return <Welcome status={status} onDone={() => {
+            setWelcome(false)
             GetStatus().then(setStatus).catch(() => setStatus(main.AppStatus.createFrom({...status, showWelcome: false})))
             library.reload()
         }}/>

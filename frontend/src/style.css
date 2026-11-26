@@ -337,7 +337,8 @@ button.danger:hover:not(:disabled) { border-color: var(--danger); }
 .modal h2 { margin: 0; font-size: 16px; }
 .modal-body { margin: 0; white-space: pre-line; color: var(--muted); }
 .modal-actions { justify-content: flex-end; margin-top: 4px; }
-button.danger-solid { background: var(--danger); border-color: var(--danger); color: #fff; font-weight: 600; }
+/* A fixed dark red: white text stays readable in the dark and the light theme. */
+button.danger-solid { background: #c62828; border-color: #c62828; color: #fff; font-weight: 600; }
 button.danger-solid:hover { filter: brightness(1.08); }
 
 /* Quiet secondary actions (e.g. deactivating a folder) */
@@ -675,3 +676,7 @@ details.detail-section[open] summary h3::before { content: '▾ '; }
 .welcome-choices { display: grid; gap: 8px; margin: 12px 0; }
 .welcome-choice { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 12px 14px; }
 .welcome-tour li { margin: 6px 0; }
+
+.bulk-label { display: inline-block; min-width: 7em; }
+.print-form input, .print-form select { min-width: 0; max-width: 100%; }
+.print-form { flex-wrap: wrap; }

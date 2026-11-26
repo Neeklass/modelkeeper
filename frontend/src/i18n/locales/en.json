@@ -623,7 +623,7 @@
           "**Edit fields** for several models at once (print status, supports, creator, origin, license) in the selection bar – undoable.",
           "**Print log**: in the detail view, **Log a print** with date, result, printer, settings and notes. The newest print sets the print status.",
           "**Statistics** (sidebar, bottom): size per folder, creator and file type, the largest models, and how much is stored more than once. modelkeeper never deletes copies itself.",
-          "**Sync with other PCs**: Settings → Export & configuration → choose the same shared folder (NAS or Dropbox) on each PC. Every 30 minutes, at the start and when closing, each PC writes its file and takes over the others' changes – also removed tags and changed fields. Folders are matched by path; a sync never adds folders."
+          "**Sync with other PCs**: Settings → Export & configuration → choose the same shared folder (NAS or Dropbox) on each PC. Every 30 minutes, at the start and when closing, each PC writes its file and takes over the others' changes – also removed tags and changed fields. Folders are matched by path; a sync never adds folders. The very first sync between two PCs only adds (tags, notes) and removes nothing, because neither PC knows yet what the other one had; from the second sync on, removed tags and changed fields carry over too."
         ]
       },
       {

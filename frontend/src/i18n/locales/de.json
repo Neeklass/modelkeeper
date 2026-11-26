@@ -623,7 +623,7 @@
           "**Felder bearbeiten** für mehrere Modelle auf einmal (Druckstatus, Supports, Ersteller, Herkunft, Lizenz) in der Auswahlleiste – rückgängig machbar.",
           "**Druckprotokoll**: In der Detailansicht **Druck eintragen** mit Datum, Ergebnis, Drucker, Einstellungen und Notizen. Der neueste Druck setzt den Druckstatus.",
           "**Statistik** (Seitenleiste unten): Größe pro Ordner, Ersteller und Dateityp, die größten Modelle und wie viel mehrfach gespeichert ist. modelkeeper löscht Kopien nie selbst.",
-          "**Mit anderen PCs abgleichen**: Einstellungen → Export & Konfiguration → auf jedem PC denselben gemeinsamen Ordner (NAS oder Dropbox) wählen. Alle 30 Minuten, beim Start und beim Schließen schreibt jeder PC seine Datei und übernimmt die Änderungen der anderen – auch entfernte Tags und geänderte Felder. Ordner werden über den Pfad zugeordnet; ein Abgleich fügt nie Ordner hinzu."
+          "**Mit anderen PCs abgleichen**: Einstellungen → Export & Konfiguration → auf jedem PC denselben gemeinsamen Ordner (NAS oder Dropbox) wählen. Alle 30 Minuten, beim Start und beim Schließen schreibt jeder PC seine Datei und übernimmt die Änderungen der anderen – auch entfernte Tags und geänderte Felder. Ordner werden über den Pfad zugeordnet; ein Abgleich fügt nie Ordner hinzu. Der allererste Abgleich zwischen zwei PCs ergänzt nur (Tags, Notizen) und entfernt nichts, weil noch keiner weiß, was der andere hatte; ab dem zweiten Abgleich werden auch entfernte Tags und geänderte Felder übernommen."
         ]
       },
       {

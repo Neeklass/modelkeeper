@@ -139,6 +139,16 @@ func Apply(ctx context.Context, db *sql.DB, rootID int64, rules Rules) (Result, 
 		}
 	}
 
+	// A missing file whose content is present in the same model again was
+	// moved inside the model (a renamed subfolder like Supported ->
+	// Presupported), not lost: it no longer counts as missing.
+	if _, err := tx.ExecContext(ctx, `UPDATE location SET model_id = NULL, variant_id = NULL
+		WHERE root_id = ? AND present = 0 AND model_id IS NOT NULL AND file_id IS NOT NULL
+		  AND EXISTS (SELECT 1 FROM location p WHERE p.model_id = location.model_id
+		              AND p.present = 1 AND p.file_id = location.file_id)`, rootID); err != nil {
+		return res, err
+	}
+
 	if err := Cleanup(ctx, tx); err != nil {
 		return res, err
 	}
