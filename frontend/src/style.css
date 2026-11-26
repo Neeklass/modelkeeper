@@ -662,3 +662,16 @@ details.detail-section[open] summary h3::before { content: '▾ '; }
 .print-list li { padding: 4px 0; border-bottom: 1px solid var(--border); }
 .print-form { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
 .print-form textarea, .print-form .full { grid-column: 1 / -1; }
+.print-photos { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; margin-top: 4px; }
+.print-photo { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
+.print-photo img { width: 72px; height: 72px; object-fit: cover; border-radius: 6px; display: block; }
+.print-photo-actions { display: flex; gap: 4px; align-items: center; }
+.plain-button { background: none; border: none; padding: 0; cursor: pointer; }
+.chip.alias { opacity: 0.8; font-style: italic; }
+.group-input { width: 8em; }
+.slicer-info { color: var(--fg-muted, inherit); margin-top: 2px; }
+.selectable { user-select: text; -webkit-user-select: text; }
+.welcome { max-width: 640px; }
+.welcome-choices { display: grid; gap: 8px; margin: 12px 0; }
+.welcome-choice { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 12px 14px; }
+.welcome-tour li { margin: 6px 0; }

@@ -6,8 +6,16 @@ export function AddPrint(arg1) {
   return window['go']['main']['App']['AddPrint'](arg1);
 }
 
+export function AddPrintPhotos(arg1) {
+  return window['go']['main']['App']['AddPrintPhotos'](arg1);
+}
+
 export function AddRoot(arg1) {
   return window['go']['main']['App']['AddRoot'](arg1);
+}
+
+export function AddTagAlias(arg1, arg2) {
+  return window['go']['main']['App']['AddTagAlias'](arg1, arg2);
 }
 
 export function AddTags(arg1, arg2) {
@@ -40,6 +48,18 @@ export function CancelRestore() {
 
 export function CancelScan() {
   return window['go']['main']['App']['CancelScan']();
+}
+
+export function CancelZipExport() {
+  return window['go']['main']['App']['CancelZipExport']();
+}
+
+export function CheckForUpdateNow() {
+  return window['go']['main']['App']['CheckForUpdateNow']();
+}
+
+export function CheckHealthNow() {
+  return window['go']['main']['App']['CheckHealthNow']();
 }
 
 export function CheckRelocateRoot(arg1, arg2) {
@@ -86,6 +106,10 @@ export function DeletePrint(arg1) {
   return window['go']['main']['App']['DeletePrint'](arg1);
 }
 
+export function DeletePrintPhoto(arg1) {
+  return window['go']['main']['App']['DeletePrintPhoto'](arg1);
+}
+
 export function DeleteSavedSearch(arg1) {
   return window['go']['main']['App']['DeleteSavedSearch'](arg1);
 }
@@ -110,16 +134,36 @@ export function DismissSuggestion(arg1, arg2) {
   return window['go']['main']['App']['DismissSuggestion'](arg1, arg2);
 }
 
+export function ExportCollectionZip(arg1) {
+  return window['go']['main']['App']['ExportCollectionZip'](arg1);
+}
+
 export function ExportConfig() {
   return window['go']['main']['App']['ExportConfig']();
+}
+
+export function ExportDiagnostics() {
+  return window['go']['main']['App']['ExportDiagnostics']();
 }
 
 export function ExportHashes(arg1) {
   return window['go']['main']['App']['ExportHashes'](arg1);
 }
 
+export function ExportModelsZip(arg1) {
+  return window['go']['main']['App']['ExportModelsZip'](arg1);
+}
+
 export function ExportUserData() {
   return window['go']['main']['App']['ExportUserData']();
+}
+
+export function FindSimilarTags() {
+  return window['go']['main']['App']['FindSimilarTags']();
+}
+
+export function FinishWelcome() {
+  return window['go']['main']['App']['FinishWelcome']();
 }
 
 export function ForgetWaitingModels(arg1) {
@@ -132,6 +176,14 @@ export function GetDetectionSettings() {
 
 export function GetFilterOptions() {
   return window['go']['main']['App']['GetFilterOptions']();
+}
+
+export function GetHealth() {
+  return window['go']['main']['App']['GetHealth']();
+}
+
+export function GetLANStatus() {
+  return window['go']['main']['App']['GetLANStatus']();
 }
 
 export function GetModel(arg1) {
@@ -150,6 +202,10 @@ export function GetScanProgress() {
   return window['go']['main']['App']['GetScanProgress']();
 }
 
+export function GetSlicerInfo(arg1) {
+  return window['go']['main']['App']['GetSlicerInfo'](arg1);
+}
+
 export function GetStats() {
   return window['go']['main']['App']['GetStats']();
 }
@@ -162,12 +218,20 @@ export function GetSyncStatus() {
   return window['go']['main']['App']['GetSyncStatus']();
 }
 
+export function GetUpdateStatus() {
+  return window['go']['main']['App']['GetUpdateStatus']();
+}
+
 export function ImportHashes(arg1) {
   return window['go']['main']['App']['ImportHashes'](arg1);
 }
 
 export function ListBackups() {
   return window['go']['main']['App']['ListBackups']();
+}
+
+export function ListBackupsIn(arg1) {
+  return window['go']['main']['App']['ListBackupsIn'](arg1);
 }
 
 export function ListCollections() {
@@ -218,6 +282,10 @@ export function MoveInCollection(arg1, arg2, arg3) {
   return window['go']['main']['App']['MoveInCollection'](arg1, arg2, arg3);
 }
 
+export function NewLANKey() {
+  return window['go']['main']['App']['NewLANKey']();
+}
+
 export function OpenDataFolder() {
   return window['go']['main']['App']['OpenDataFolder']();
 }
@@ -230,8 +298,16 @@ export function OpenInSlicer(arg1) {
   return window['go']['main']['App']['OpenInSlicer'](arg1);
 }
 
+export function OpenReleasePage() {
+  return window['go']['main']['App']['OpenReleasePage']();
+}
+
 export function PauseScan(arg1) {
   return window['go']['main']['App']['PauseScan'](arg1);
+}
+
+export function PickBackupFolder() {
+  return window['go']['main']['App']['PickBackupFolder']();
 }
 
 export function PickConfigFile() {
@@ -278,6 +354,10 @@ export function RemoveTag(arg1, arg2) {
   return window['go']['main']['App']['RemoveTag'](arg1, arg2);
 }
 
+export function RemoveTagAlias(arg1) {
+  return window['go']['main']['App']['RemoveTagAlias'](arg1);
+}
+
 export function RemoveTags(arg1, arg2) {
   return window['go']['main']['App']['RemoveTags'](arg1, arg2);
 }
@@ -302,6 +382,10 @@ export function ResetThumbnail(arg1) {
   return window['go']['main']['App']['ResetThumbnail'](arg1);
 }
 
+export function RestoreFrom(arg1, arg2) {
+  return window['go']['main']['App']['RestoreFrom'](arg1, arg2);
+}
+
 export function SaveDetectionRules(arg1, arg2) {
   return window['go']['main']['App']['SaveDetectionRules'](arg1, arg2);
 }
@@ -322,6 +406,10 @@ export function SetFavorite(arg1, arg2) {
   return window['go']['main']['App']['SetFavorite'](arg1, arg2);
 }
 
+export function SetLANView(arg1, arg2) {
+  return window['go']['main']['App']['SetLANView'](arg1, arg2);
+}
+
 export function SetLanguage(arg1) {
   return window['go']['main']['App']['SetLanguage'](arg1);
 }
@@ -338,12 +426,20 @@ export function SetSyncDir(arg1) {
   return window['go']['main']['App']['SetSyncDir'](arg1);
 }
 
+export function SetTagGroup(arg1, arg2) {
+  return window['go']['main']['App']['SetTagGroup'](arg1, arg2);
+}
+
 export function SetThumbnail(arg1, arg2) {
   return window['go']['main']['App']['SetThumbnail'](arg1, arg2);
 }
 
 export function SetThumbnailFromView(arg1, arg2) {
   return window['go']['main']['App']['SetThumbnailFromView'](arg1, arg2);
+}
+
+export function SetUpdateCheck(arg1) {
+  return window['go']['main']['App']['SetUpdateCheck'](arg1);
 }
 
 export function ShowInExplorer(arg1) {
@@ -380,4 +476,8 @@ export function UpdateModel(arg1, arg2) {
 
 export function UpdateModels(arg1, arg2) {
   return window['go']['main']['App']['UpdateModels'](arg1, arg2);
+}
+
+export function UsePhotoAsThumbnail(arg1) {
+  return window['go']['main']['App']['UsePhotoAsThumbnail'](arg1);
 }

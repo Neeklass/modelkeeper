@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
     CheckRestoreNow, ChooseExternalBackupDir, ChooseSlicer, ClearExternalBackupDir, ClearSlicer, CreateBackup, DismissNotice,
-    GetStatus, OpenDataFolder, OpenExternalBackupDir, SetLanguage, SetNASRescanHours, StartWithEmptyCatalog,
+    GetStatus, OpenDataFolder, OpenReleasePage, OpenExternalBackupDir, SetLanguage, SetNASRescanHours, StartWithEmptyCatalog,
 } from '../wailsjs/go/main/App'
 import {main} from '../wailsjs/go/models'
 import {EventsOn} from '../wailsjs/runtime/runtime'
@@ -24,9 +24,11 @@ import {TagManagerPanel} from './components/TagManager'
 import {ConfigTransferPanel, MovedBanner} from './components/ConfigTransfer'
 import {StatsView} from './components/StatsView'
 import {SyncPanel} from './components/SyncPanel'
+import {Welcome} from './components/Welcome'
+import {DiagnosticsButton, DiagnosticsPanel, HealthPanel, LANPanel, UpdatePanel, useHealth} from './components/Maintenance'
 
 /** Sections of the settings page. */
-const SETTINGS_SECTIONS = ['general', 'transfer', 'tags', 'detection'] as const
+const SETTINGS_SECTIONS = ['general', 'transfer', 'tags', 'detection', 'maintenance'] as const
 type SettingsSection = typeof SETTINGS_SECTIONS[number]
 
 /** Typing in a field: Ctrl+Z belongs to the field then. */
@@ -46,6 +48,9 @@ function App() {
     const [query, setQuery] = useState<Query>(emptyQuery)
     const [scopeLabel, setScopeLabel] = useState<string | undefined>()
     const library = useLibrary()
+    const healthReport = useHealth()
+    const [updateFound, setUpdateFound] = useState<string | null>(null)
+    useEffect(() => EventsOn('update:found', (s: main.UpdateStatus) => setUpdateFound(s.latest?.version ?? null)), [])
     const toast = useToast()
     const [settingsSection, setSettingsSection] = useState<SettingsSection>('general')
     // Opening the library from elsewhere with a query (e.g. the folders view).
@@ -109,6 +114,12 @@ function App() {
     if (status.startupError) {
         return <StartupError status={status} onStarted={setStatus}/>
     }
+    if (status.showWelcome) {
+        return <Welcome status={status} onDone={() => {
+            GetStatus().then(setStatus).catch(() => setStatus(main.AppStatus.createFrom({...status, showWelcome: false})))
+            library.reload()
+        }}/>
+    }
 
     return (
         <div className="shell">
@@ -122,6 +133,22 @@ function App() {
                 {status.movedFrom && (
                     <MovedBanner from={status.movedFrom}
                                  onDone={() => setStatus(main.AppStatus.createFrom({...status, movedFrom: undefined}))}/>
+                )}
+                {updateFound && (
+                    <div className="row notice-inactive">
+                        <span className="small">{t('update.banner', {version: updateFound})}</span>
+                        <button className="link small" onClick={() => OpenReleasePage()}>{t('update.open')}</button>
+                        <button className="link small" onClick={() => setUpdateFound(null)}>{t('update.later')}</button>
+                    </div>
+                )}
+                {healthReport && (!healthReport.integrityOk || healthReport.lowSpace) && (
+                    <div className="row notice-warn" role="alert">
+                        <span className="small">{t(!healthReport.integrityOk ? 'health.bannerIntegrity' : 'health.bannerSpace')}</span>
+                        <button className="link small" onClick={() => {
+                            setView('settings')
+                            setSettingsSection('maintenance')
+                        }}>{t('health.bannerOpen')}</button>
+                    </div>
                 )}
                 {status.locationWarning && (
                     <div className="row notice-warn" role="alert">
@@ -165,6 +192,12 @@ function App() {
                         <HistoryPanel/>
                     </>}
                     {settingsSection === 'detection' && <DetectionSettingsPanel/>}
+                    {settingsSection === 'maintenance' && <>
+                        <HealthPanel/>
+                        <UpdatePanel/>
+                        <LANPanel/>
+                        <DiagnosticsPanel/>
+                    </>}
                 </main>}
                 {view === 'stats' && <StatsView onShowModels={q => showModels(q)}/>}
                 {view === 'help' && <HelpView/>}
@@ -212,6 +245,8 @@ function StartupError({status, onStarted}: { status: main.AppStatus; onStarted: 
                         <p>{t('backup.restoreHint')}</p>
                     </details>
                 </>}
+                <h2>{t('diag.title')}</h2>
+                <DiagnosticsButton/>
                 {error && <p className="error">{translateMsg(error)}</p>}
             </section>
         </div>

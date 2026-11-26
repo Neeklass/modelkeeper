@@ -364,7 +364,9 @@
     "invalid": "Tags must not be empty and can have at most {{max}} characters.",
     "acceptAll": "Accept all",
     "dismissed": "Suggestion {{name}} dismissed.",
-    "notFound": "There is no tag {{name}}."
+    "notFound": "There is no tag {{name}}.",
+    "aliasSame": "An alias must differ from the tag.",
+    "groupInvalid": "A group name has at most {{max}} characters."
   },
   "printStatus": {
     "not_printed": "Not printed",
@@ -540,7 +542,14 @@
     "checkNone": "No test has run yet.",
     "checkNow": "Test now",
     "checking": "Testing…",
-    "checkHint": "Once a day and after every new backup, modelkeeper checks the newest backup (preferably the copy in the second folder): its files must be unchanged, a copy of the catalog must pass the full integrity check, and the numbers of models and tags must match. The backup itself is only read."
+    "checkHint": "Once a day and after every new backup, modelkeeper checks the newest backup (preferably the copy in the second folder): its files must be unchanged, a copy of the catalog must pass the full integrity check, and the numbers of models and tags must match. The backup itself is only read.",
+    "fromExternal": "Show backups in the external folder",
+    "fromFolder": "Restore from another folder…",
+    "otherFolder": "Backups in {{path}}",
+    "externalList": "Backups in the external backup folder",
+    "noExternal": "No external backup folder is set.",
+    "externalUnreachable": "The backup folder {{path}} cannot be reached.",
+    "fetchFailed": "The backup {{name}} could not be copied from {{path}}; it may be damaged. Nothing was changed."
   },
   "confirm": {
     "cancel": "Cancel",
@@ -615,6 +624,22 @@
           "**Print log**: in the detail view, **Log a print** with date, result, printer, settings and notes. The newest print sets the print status.",
           "**Statistics** (sidebar, bottom): size per folder, creator and file type, the largest models, and how much is stored more than once. modelkeeper never deletes copies itself.",
           "**Sync with other PCs**: Settings → Export & configuration → choose the same shared folder (NAS or Dropbox) on each PC. Every 30 minutes, at the start and when closing, each PC writes its file and takes over the others' changes – also removed tags and changed fields. Folders are matched by path; a sync never adds folders."
+        ]
+      },
+      {
+        "id": "care",
+        "title": "Safety, maintenance and other devices",
+        "body": [
+          "**Restore on a new PC**: in the first-run guide choose **Take over the work from another PC**, or in Settings → General → Backups **Restore from another folder…**, and pick the backup folder of the old PC (e.g. on the NAS or in Dropbox). The backup is checked, copied and restored at the next start.",
+          "**Undo a sync or import**: each sync with another PC and each import is one entry in the history (Settings → Tags → History) and can be undone like any change.",
+          "**Health check** (Settings → Maintenance): checks the catalog for damage, compacts it, puts thumbnails no model uses aside (deleted after 30 days) and warns when the drive is nearly full. Runs weekly by itself.",
+          "**Diagnostics**: Settings → Maintenance → **Export diagnostics…** writes a zip with the log and settings – without your catalog – to send along with a problem. Also on the error screen at the start.",
+          "**Photos of prints**: in the print log, **+ Photo** adds pictures of the result; **As cover** makes one the model's picture. Photos are part of the backups and the sync.",
+          "**Tag aliases and groups** (Settings → Tags): an alias like \"elves\" adds the tag \"elf\" when typed; a group (\"Race\", \"Scale\") sorts tags in the sidebar. Similar tags (plural, hyphen) are offered for merging.",
+          "**Print information**: for sliced files (.ctb, .gcode, .3mf) the file list in the detail view shows print time, layers and material on request.",
+          "**Collection as zip**: in a collection, **Export as zip…** copies all its files into one zip file (the originals are only read).",
+          "**Phone and tablet** (Settings → Maintenance): turns on a read-only view in the home network. Open the link shown there on the phone; nothing can be changed and no model file downloaded.",
+          "**Updates**: modelkeeper asks GitHub at the start whether a new version exists (can be turned off). Replace the program files; the data folder stays."
         ]
       },
       {
@@ -756,7 +781,21 @@
     "openHint": "Opens a read-only copy in the slicer. The original stays untouched.",
     "chooseFile": "Choose another file",
     "opened": "{{name}} was opened in the slicer as a copy. Save slicer projects somewhere of your own.",
-    "copying": "Copying {{name}} for the slicer…"
+    "copying": "Copying {{name}} for the slicer…",
+    "showInfo": "Show print information",
+    "loading": "Reading…",
+    "noInfo": "No print information in this file.",
+    "unreadable": "The file could not be read.",
+    "none": "No print information in this file.",
+    "time": "⏱ {{time}}",
+    "layerHeight": "{{mm}} mm layers",
+    "layers_one": "{{n}} layer",
+    "layers_other": "{{n}} layers",
+    "ml": "{{ml}} ml",
+    "grams": "{{g}} g",
+    "metres": "{{m}} m filament",
+    "nozzle": "{{mm}} mm nozzle",
+    "exposure": "exposure {{s}} s (bottom {{bottom}} s)"
   },
   "nav": {
     "label": "Navigation",
@@ -888,7 +927,11 @@
       "reset": "corrections of {{name}} reset"
     },
     "modelsEdited_one": "{{count}} model edited",
-    "modelsEdited_other": "{{count}} models edited"
+    "modelsEdited_other": "{{count}} models edited",
+    "synced_one": "Sync with {{peer}}: {{count}} model changed",
+    "synced_other": "Sync with {{peer}}: {{count}} models changed",
+    "imported_one": "Import of {{file}}: {{count}} model changed",
+    "imported_other": "Import of {{file}}: {{count}} models changed"
   },
   "tagManager": {
     "title": "Tags",
@@ -906,7 +949,24 @@
     "merged_other": "{{from}} merged into {{to}} ({{count}} models).",
     "deleted_one": "Tag {{name}} removed from {{count}} model.",
     "deleted_other": "Tag {{name}} removed from {{count}} models.",
-    "more": "{{n}} more – narrow the filter."
+    "more": "{{n}} more – narrow the filter.",
+    "similarIntro": "These tags look like the same one. Merging keeps the most used one; the others become its aliases, so typing them later adds it.",
+    "mergeInto": "Merge into {{to}}",
+    "mergeSimilarHint": "Merge into {{to}} and keep the other spellings as aliases",
+    "confirmMergeSimilar": "Merge {{tags}} into {{to}}? The other spellings become aliases. This can be undone.",
+    "mergedSimilar_one": "Merged into {{to}} ({{count}} model).",
+    "mergedSimilar_other": "Merged into {{to}} ({{count}} models).",
+    "alias": "alias",
+    "addAliasHint": "Another spelling: typing it adds this tag",
+    "aliasPlaceholder": "e.g. elves",
+    "aliasHint": "Typing {{alias}} adds {{tag}}",
+    "removeAlias": "Remove alias {{alias}}",
+    "confirmAliasMerge_one": "{{alias}} is a tag on {{n}} model. Merge it into {{tag}} and keep it as alias?",
+    "confirmAliasMerge_other": "{{alias}} is a tag on {{n}} models. Merge it into {{tag}} and keep it as alias?",
+    "aliasAdded_one": "{{alias}} now adds {{tag}} ({{count}} model changed).",
+    "aliasAdded_other": "{{alias}} now adds {{tag}} ({{count}} models changed).",
+    "group": "Group",
+    "groupOf": "Group of {{tag}}"
   },
   "config": {
     "title": "Configuration",
@@ -941,7 +1001,8 @@
     "general": "General & backups",
     "transfer": "Export & configuration",
     "tags": "Tags & history",
-    "detection": "Detection"
+    "detection": "Detection",
+    "maintenance": "Maintenance"
   },
   "collections": {
     "title": "Collections",
@@ -999,7 +1060,16 @@
     "notesPlaceholder": "How did it turn out?",
     "save": "Save",
     "delete": "Delete entry",
-    "confirmDelete": "Delete this entry of the print log?"
+    "confirmDelete": "Delete this entry of the print log?",
+    "addPhoto": "Photo",
+    "showPhoto": "Show photo",
+    "asCover": "As cover",
+    "asCoverHint": "Use this photo as the picture of the model",
+    "deletePhoto": "Delete photo",
+    "confirmDeletePhoto": "Delete this photo?",
+    "notFound": "The print log entry no longer exists.",
+    "tooManyPhotos": "At most {{max}} photos per print.",
+    "photoUnreadable": "{{file}} could not be read as a picture."
   },
   "sync": {
     "title": "Sync with other PCs",
@@ -1023,5 +1093,113 @@
     "unreachable": "The shared folder {{path}} cannot be reached (NAS off? Dropbox not running?).",
     "writeFailed": "This PC's file could not be written into {{path}}.",
     "failed": "Sync failed: {{error}}"
+  },
+  "health": {
+    "title": "Health check",
+    "intro": "Checks that the catalog is intact, compacts it, puts thumbnails no model uses any more aside and looks at the free space of the drive. Model files are never touched.",
+    "lastRun": "Last check: {{when}}",
+    "integrityOk": "Catalog intact",
+    "integrityBad": "The catalog is damaged",
+    "integrityHelp": "Restore the newest backup (Settings → General → Backups) – nothing is changed until you do. Export the diagnostics and send them along.",
+    "catalog": "Catalog: {{size}}",
+    "compacted": "compacted, {{size}} freed",
+    "thumbnails_one": "{{n}} thumbnail ({{size}})",
+    "thumbnails_other": "{{n}} thumbnails ({{size}})",
+    "orphaned_one": "{{count}} unused put aside",
+    "orphaned_other": "{{count}} unused put aside",
+    "purged_one": "{{count}} old one deleted",
+    "purged_other": "{{count}} old ones deleted",
+    "disk": "Drive of the data folder: {{free}} free of {{total}}",
+    "lowSpaceHelp": "The drive is nearly full. Backups and the catalog need room: free some space, or move the app folder to a larger drive.",
+    "never": "Not checked yet.",
+    "runNow": "Check now",
+    "running": "Checking…",
+    "weekly": "Runs on its own once a week when no scan runs. Unused thumbnails are kept for 30 days before they are deleted.",
+    "failed": "The health check failed.",
+    "bannerIntegrity": "The health check found damage in the catalog.",
+    "bannerSpace": "The drive of the data folder is nearly full.",
+    "bannerOpen": "Details"
+  },
+  "diag": {
+    "title": "Diagnostics",
+    "export": "Export diagnostics…",
+    "hint": "A zip with the log, the settings and system information, to send along when something goes wrong. It does not contain your catalog, backups or any model file.",
+    "done": "Saved:",
+    "failed": "The diagnostics could not be written."
+  },
+  "bundle": {
+    "export": "Export as zip…",
+    "hint": "All files of the models in this collection in one zip file, e.g. for the slicer PC. The originals are only read.",
+    "running": "Writing zip: {{done}} of {{total}}",
+    "done": "Zip saved:",
+    "skipped": "{{n}} files skipped (folder offline or file missing)",
+    "busy": "A zip export is already running.",
+    "empty": "The collection is empty.",
+    "noFiles": "None of the files can be reached right now (folders offline?).",
+    "inLibrary": "The zip must not be saved inside {{path}}: modelkeeper never writes into model folders or its data folder.",
+    "failed": "The zip could not be written: {{detail}}",
+    "cancelled": "Zip export cancelled; the incomplete file was removed."
+  },
+  "lan": {
+    "title": "Phone and tablet",
+    "intro": "A read-only view of the catalog for other devices at home, e.g. a tablet in the hobby room: search, pictures, tags, notes, collections and prints. Nothing can be changed there, and no model file can be downloaded.",
+    "enable": "Allow devices in the home network",
+    "port": "Port",
+    "links": "Open one of these links on the phone or tablet (same Wi-Fi):",
+    "noAddress": "No home network address found for this PC.",
+    "newKey": "New access key",
+    "keyHint": "The key in the link protects the view. A new key makes links given out before stop working.",
+    "firewall": "Windows may ask once whether modelkeeper may accept connections – allow it for private networks only. Only devices in the home network get an answer.",
+    "listenFailed": "Port {{port}} is not free ({{detail}}). Choose another port.",
+    "badPort": "Choose a port between 1024 and 65535."
+  },
+  "update": {
+    "title": "Updates",
+    "current": "This version: {{version}}",
+    "newer": "Version {{version}} is available.",
+    "upToDate": "Up to date (newest: {{version}}).",
+    "open": "Open download page",
+    "checkNow": "Check now",
+    "checking": "Checking…",
+    "atStart": "Check at every start",
+    "hint": "Only asks GitHub for the newest version; downloading and installing stay with you. Your catalog is kept when you replace the program files.",
+    "unavailable": "No release information could be read (offline, or no release published yet).",
+    "banner": "modelkeeper {{version}} is available.",
+    "later": "Later"
+  },
+  "welcome": {
+    "step": "Step {{n}} of {{total}}",
+    "skip": "Skip",
+    "title": "Welcome to modelkeeper",
+    "intro": "modelkeeper keeps track of your 3D print files: it finds the models in your folders, and you add tags, notes, collections and prints.",
+    "safe": "modelkeeper only reads your model files. It never moves, changes or deletes them.",
+    "next": "Next",
+    "back": "Back",
+    "later": "Later",
+    "startTitle": "How do you want to start?",
+    "fresh": "Start fresh",
+    "freshHint": "Choose the folders with your models; modelkeeper reads them in the background.",
+    "fromBackup": "Take over the work from another PC (backup)",
+    "fromBackupHint": "Choose the backup folder of the old PC (e.g. on the NAS or in Dropbox) and restore a backup.",
+    "fromSync": "Work together with another PC (sync)",
+    "fromSyncHint": "Choose the same shared folder as on the other PC; its tags and notes come over by themselves.",
+    "syncOn": "Sync folder:",
+    "restoreTitle": "Choose a backup",
+    "noBackups": "No backups were found in this folder.",
+    "restoreDone": "The backup is restored when modelkeeper starts the next time. Close and open it again.",
+    "foldersTitle": "Where are your models?",
+    "foldersIntro": "Add the folders with your 3D print files – on this PC or on the NAS. You can add more later under Folders.",
+    "addFolder": "Add folder",
+    "foldersHint": "The first read of a large NAS folder takes a while; you can work in the meantime, and it continues after a restart.",
+    "backupTitle": "A second copy of your work",
+    "backupIntro": "modelkeeper backs up the catalog every day in its data folder. Choose a second folder on another drive, the NAS or in Dropbox, so that the work survives a broken PC.",
+    "backupHint": "Recommended. You can also do it later in the settings.",
+    "tourTitle": "A few tips",
+    "tour1": "Library: search, filter on the left, select several models with Ctrl or Shift + click.",
+    "tour2": "Cataloging: open a model, type a tag, press Enter – the next model opens. \"To catalog\" shows what still has no tags.",
+    "tour3": "Collections and saved searches in the sidebar keep your own lists.",
+    "tour4": "Every change can be undone (Ctrl+Z, history in the settings).",
+    "tour5": "Help explains everything in detail; Settings → Maintenance checks the catalog.",
+    "finish": "Start"
   }
 }

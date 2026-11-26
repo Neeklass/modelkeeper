@@ -364,7 +364,9 @@
     "invalid": "Tags dürfen nicht leer sein und höchstens {{max}} Zeichen haben.",
     "acceptAll": "Alle übernehmen",
     "dismissed": "Vorschlag {{name}} verworfen.",
-    "notFound": "Es gibt keinen Tag {{name}}."
+    "notFound": "Es gibt keinen Tag {{name}}.",
+    "aliasSame": "Ein Alias muss sich vom Tag unterscheiden.",
+    "groupInvalid": "Ein Gruppenname hat höchstens {{max}} Zeichen."
   },
   "printStatus": {
     "not_printed": "Nicht gedruckt",
@@ -540,7 +542,14 @@
     "checkNone": "Noch kein Test gelaufen.",
     "checkNow": "Jetzt testen",
     "checking": "Wird getestet…",
-    "checkHint": "Einmal am Tag und nach jeder neuen Sicherung prüft modelkeeper die neueste Sicherung (bevorzugt die Kopie im zweiten Ordner): Die Dateien müssen unverändert sein, eine Kopie des Katalogs muss die vollständige Integritätsprüfung bestehen, und die Zahl der Modelle und Tags muss stimmen. Die Sicherung selbst wird dabei nur gelesen."
+    "checkHint": "Einmal am Tag und nach jeder neuen Sicherung prüft modelkeeper die neueste Sicherung (bevorzugt die Kopie im zweiten Ordner): Die Dateien müssen unverändert sein, eine Kopie des Katalogs muss die vollständige Integritätsprüfung bestehen, und die Zahl der Modelle und Tags muss stimmen. Die Sicherung selbst wird dabei nur gelesen.",
+    "fromExternal": "Sicherungen im externen Ordner anzeigen",
+    "fromFolder": "Aus einem anderen Ordner wiederherstellen…",
+    "otherFolder": "Sicherungen in {{path}}",
+    "externalList": "Sicherungen im externen Sicherungsordner",
+    "noExternal": "Es ist kein externer Sicherungsordner eingestellt.",
+    "externalUnreachable": "Der Sicherungsordner {{path}} ist nicht erreichbar.",
+    "fetchFailed": "Die Sicherung {{name}} konnte nicht aus {{path}} kopiert werden; sie ist vielleicht beschädigt. Es wurde nichts geändert."
   },
   "confirm": {
     "cancel": "Abbrechen",
@@ -615,6 +624,22 @@
           "**Druckprotokoll**: In der Detailansicht **Druck eintragen** mit Datum, Ergebnis, Drucker, Einstellungen und Notizen. Der neueste Druck setzt den Druckstatus.",
           "**Statistik** (Seitenleiste unten): Größe pro Ordner, Ersteller und Dateityp, die größten Modelle und wie viel mehrfach gespeichert ist. modelkeeper löscht Kopien nie selbst.",
           "**Mit anderen PCs abgleichen**: Einstellungen → Export & Konfiguration → auf jedem PC denselben gemeinsamen Ordner (NAS oder Dropbox) wählen. Alle 30 Minuten, beim Start und beim Schließen schreibt jeder PC seine Datei und übernimmt die Änderungen der anderen – auch entfernte Tags und geänderte Felder. Ordner werden über den Pfad zugeordnet; ein Abgleich fügt nie Ordner hinzu."
+        ]
+      },
+      {
+        "id": "care",
+        "title": "Sicherheit, Wartung und andere Geräte",
+        "body": [
+          "**Auf einem neuen PC wiederherstellen**: Im Einstiegs-Assistenten **Arbeit von einem anderen PC übernehmen** wählen, oder in Einstellungen → Allgemein → Sicherungen **Aus einem anderen Ordner wiederherstellen…**, und den Sicherungsordner des alten PCs wählen (z. B. auf dem NAS oder in Dropbox). Die Sicherung wird geprüft, kopiert und beim nächsten Start wiederhergestellt.",
+          "**Abgleich oder Import rückgängig machen**: Jeder Abgleich mit einem anderen PC und jeder Import ist ein Eintrag im Verlauf (Einstellungen → Tags → Verlauf) und lässt sich wie jede Änderung rückgängig machen.",
+          "**Zustandsprüfung** (Einstellungen → Wartung): prüft den Katalog auf Schäden, verkleinert ihn, legt ungenutzte Vorschaubilder beiseite (nach 30 Tagen gelöscht) und warnt, wenn das Laufwerk fast voll ist. Läuft wöchentlich von selbst.",
+          "**Diagnose**: Einstellungen → Wartung → **Diagnose exportieren…** schreibt eine Zip-Datei mit Protokoll und Einstellungen – ohne deinen Katalog – zum Mitschicken bei einem Problem. Auch auf dem Fehlerbildschirm beim Start.",
+          "**Fotos von Drucken**: Im Druckprotokoll fügt **+ Foto** Bilder des Ergebnisses hinzu; **Als Titelbild** macht eines zum Bild des Modells. Fotos sind Teil der Sicherungen und des Abgleichs.",
+          "**Tag-Aliase und -Gruppen** (Einstellungen → Tags): Ein Alias wie „Elfen“ fügt beim Tippen den Tag „Elf“ hinzu; eine Gruppe („Volk“, „Maßstab“) sortiert Tags in der Seitenleiste. Ähnliche Tags (Mehrzahl, Bindestrich) werden zum Zusammenführen angeboten.",
+          "**Druckinformationen**: Für Slicer-Dateien (.ctb, .gcode, .3mf) zeigt die Dateiliste in der Detailansicht auf Wunsch Druckzeit, Schichten und Material.",
+          "**Sammlung als Zip**: In einer Sammlung kopiert **Als Zip exportieren…** alle ihre Dateien in eine Zip-Datei (die Originale werden nur gelesen).",
+          "**Handy und Tablet** (Einstellungen → Wartung): schaltet eine Nur-Lese-Ansicht im Heimnetz ein. Den dort gezeigten Link auf dem Handy öffnen; ändern lässt sich nichts, und keine Modelldatei kann heruntergeladen werden.",
+          "**Updates**: modelkeeper fragt beim Start bei GitHub, ob es eine neue Version gibt (abschaltbar). Programmdateien ersetzen; der Datenordner bleibt."
         ]
       },
       {
@@ -756,7 +781,21 @@
     "openHint": "Öffnet eine schreibgeschützte Kopie im Slicer. Das Original bleibt unberührt.",
     "chooseFile": "Andere Datei wählen",
     "opened": "{{name}} wurde als Kopie im Slicer geöffnet. Speichere Slicer-Projekte an einem eigenen Ort.",
-    "copying": "{{name}} wird für den Slicer kopiert…"
+    "copying": "{{name}} wird für den Slicer kopiert…",
+    "showInfo": "Druckinformationen anzeigen",
+    "loading": "Wird gelesen…",
+    "noInfo": "Keine Druckinformationen in dieser Datei.",
+    "unreadable": "Die Datei konnte nicht gelesen werden.",
+    "none": "Keine Druckinformationen in dieser Datei.",
+    "time": "⏱ {{time}}",
+    "layerHeight": "{{mm}} mm Schichten",
+    "layers_one": "{{n}} Schicht",
+    "layers_other": "{{n}} Schichten",
+    "ml": "{{ml}} ml",
+    "grams": "{{g}} g",
+    "metres": "{{m}} m Filament",
+    "nozzle": "{{mm}} mm Düse",
+    "exposure": "Belichtung {{s}} s (Boden {{bottom}} s)"
   },
   "nav": {
     "label": "Navigation",
@@ -888,7 +927,11 @@
       "reset": "Korrekturen von {{name}} zurückgesetzt"
     },
     "modelsEdited_one": "{{count}} Modell bearbeitet",
-    "modelsEdited_other": "{{count}} Modelle bearbeitet"
+    "modelsEdited_other": "{{count}} Modelle bearbeitet",
+    "synced_one": "Abgleich mit {{peer}}: {{count}} Modell geändert",
+    "synced_other": "Abgleich mit {{peer}}: {{count}} Modelle geändert",
+    "imported_one": "Import von {{file}}: {{count}} Modell geändert",
+    "imported_other": "Import von {{file}}: {{count}} Modelle geändert"
   },
   "tagManager": {
     "title": "Tags",
@@ -906,7 +949,24 @@
     "merged_other": "{{from}} mit {{to}} zusammengeführt ({{count}} Modelle).",
     "deleted_one": "Tag {{name}} von {{count}} Modell entfernt.",
     "deleted_other": "Tag {{name}} von {{count}} Modellen entfernt.",
-    "more": "{{n}} weitere – grenze den Filter ein."
+    "more": "{{n}} weitere – grenze den Filter ein.",
+    "similarIntro": "Diese Tags sehen nach demselben aus. Beim Zusammenführen bleibt der meistgenutzte; die anderen werden zu Aliasen, sodass sie später diesen hinzufügen.",
+    "mergeInto": "In {{to}} zusammenführen",
+    "mergeSimilarHint": "In {{to}} zusammenführen und die anderen Schreibweisen als Aliase behalten",
+    "confirmMergeSimilar": "{{tags}} in {{to}} zusammenführen? Die anderen Schreibweisen werden Aliase. Lässt sich rückgängig machen.",
+    "mergedSimilar_one": "In {{to}} zusammengeführt ({{count}} Modell).",
+    "mergedSimilar_other": "In {{to}} zusammengeführt ({{count}} Modelle).",
+    "alias": "Alias",
+    "addAliasHint": "Andere Schreibweise: Wer sie eintippt, bekommt diesen Tag",
+    "aliasPlaceholder": "z. B. Elfen",
+    "aliasHint": "{{alias}} fügt {{tag}} hinzu",
+    "removeAlias": "Alias {{alias}} entfernen",
+    "confirmAliasMerge_one": "{{alias}} ist ein Tag an {{n}} Modell. In {{tag}} zusammenführen und als Alias behalten?",
+    "confirmAliasMerge_other": "{{alias}} ist ein Tag an {{n}} Modellen. In {{tag}} zusammenführen und als Alias behalten?",
+    "aliasAdded_one": "{{alias}} fügt jetzt {{tag}} hinzu ({{count}} Modell geändert).",
+    "aliasAdded_other": "{{alias}} fügt jetzt {{tag}} hinzu ({{count}} Modelle geändert).",
+    "group": "Gruppe",
+    "groupOf": "Gruppe von {{tag}}"
   },
   "config": {
     "title": "Konfiguration",
@@ -941,7 +1001,8 @@
     "general": "Allgemein & Sicherung",
     "transfer": "Export & Konfiguration",
     "tags": "Tags & Verlauf",
-    "detection": "Erkennung"
+    "detection": "Erkennung",
+    "maintenance": "Wartung"
   },
   "collections": {
     "title": "Sammlungen",
@@ -999,7 +1060,16 @@
     "notesPlaceholder": "Wie ist er geworden?",
     "save": "Speichern",
     "delete": "Eintrag löschen",
-    "confirmDelete": "Diesen Eintrag aus dem Druckprotokoll löschen?"
+    "confirmDelete": "Diesen Eintrag aus dem Druckprotokoll löschen?",
+    "addPhoto": "Foto",
+    "showPhoto": "Foto anzeigen",
+    "asCover": "Als Titelbild",
+    "asCoverHint": "Dieses Foto als Bild des Modells verwenden",
+    "deletePhoto": "Foto löschen",
+    "confirmDeletePhoto": "Dieses Foto löschen?",
+    "notFound": "Den Eintrag im Druckprotokoll gibt es nicht mehr.",
+    "tooManyPhotos": "Höchstens {{max}} Fotos pro Druck.",
+    "photoUnreadable": "{{file}} konnte nicht als Bild gelesen werden."
   },
   "sync": {
     "title": "Mit anderen PCs abgleichen",
@@ -1023,5 +1093,113 @@
     "unreachable": "Der gemeinsame Ordner {{path}} ist nicht erreichbar (NAS aus? Dropbox läuft nicht?).",
     "writeFailed": "Die Datei dieses PCs konnte nicht nach {{path}} geschrieben werden.",
     "failed": "Abgleich fehlgeschlagen: {{error}}"
+  },
+  "health": {
+    "title": "Zustandsprüfung",
+    "intro": "Prüft, ob der Katalog unbeschädigt ist, verkleinert ihn, legt Vorschaubilder beiseite, die kein Modell mehr nutzt, und schaut auf den freien Platz des Laufwerks. Modelldateien werden nie angefasst.",
+    "lastRun": "Letzte Prüfung: {{when}}",
+    "integrityOk": "Katalog unbeschädigt",
+    "integrityBad": "Der Katalog ist beschädigt",
+    "integrityHelp": "Stelle die neueste Sicherung wieder her (Einstellungen → Allgemein → Sicherungen) – bis dahin wird nichts verändert. Exportiere die Diagnose und schicke sie mit.",
+    "catalog": "Katalog: {{size}}",
+    "compacted": "verkleinert, {{size}} frei geworden",
+    "thumbnails_one": "{{n}} Vorschaubild ({{size}})",
+    "thumbnails_other": "{{n}} Vorschaubilder ({{size}})",
+    "orphaned_one": "{{count}} ungenutztes beiseitegelegt",
+    "orphaned_other": "{{count}} ungenutzte beiseitegelegt",
+    "purged_one": "{{count}} altes gelöscht",
+    "purged_other": "{{count}} alte gelöscht",
+    "disk": "Laufwerk des Datenordners: {{free}} frei von {{total}}",
+    "lowSpaceHelp": "Das Laufwerk ist fast voll. Sicherungen und der Katalog brauchen Platz: Schaffe Platz oder verschiebe den App-Ordner auf ein größeres Laufwerk.",
+    "never": "Noch nicht geprüft.",
+    "runNow": "Jetzt prüfen",
+    "running": "Wird geprüft…",
+    "weekly": "Läuft einmal pro Woche von selbst, wenn kein Scan läuft. Ungenutzte Vorschaubilder werden 30 Tage aufbewahrt, bevor sie gelöscht werden.",
+    "failed": "Die Zustandsprüfung ist fehlgeschlagen.",
+    "bannerIntegrity": "Die Zustandsprüfung hat einen Schaden im Katalog gefunden.",
+    "bannerSpace": "Das Laufwerk des Datenordners ist fast voll.",
+    "bannerOpen": "Details"
+  },
+  "diag": {
+    "title": "Diagnose",
+    "export": "Diagnose exportieren…",
+    "hint": "Eine Zip-Datei mit dem Protokoll, den Einstellungen und Systeminformationen, zum Mitschicken, wenn etwas schiefgeht. Sie enthält weder deinen Katalog noch Sicherungen oder Modelldateien.",
+    "done": "Gespeichert:",
+    "failed": "Die Diagnose konnte nicht geschrieben werden."
+  },
+  "bundle": {
+    "export": "Als Zip exportieren…",
+    "hint": "Alle Dateien der Modelle dieser Sammlung in einer Zip-Datei, z. B. für den Slicer-PC. Die Originale werden nur gelesen.",
+    "running": "Zip wird geschrieben: {{done}} von {{total}}",
+    "done": "Zip gespeichert:",
+    "skipped": "{{n}} Dateien übersprungen (Ordner offline oder Datei fehlt)",
+    "busy": "Es läuft schon ein Zip-Export.",
+    "empty": "Die Sammlung ist leer.",
+    "noFiles": "Keine der Dateien ist gerade erreichbar (Ordner offline?).",
+    "inLibrary": "Die Zip-Datei darf nicht in {{path}} gespeichert werden: modelkeeper schreibt nie in Modellordner oder seinen Datenordner.",
+    "failed": "Die Zip-Datei konnte nicht geschrieben werden: {{detail}}",
+    "cancelled": "Zip-Export abgebrochen; die unvollständige Datei wurde entfernt."
+  },
+  "lan": {
+    "title": "Handy und Tablet",
+    "intro": "Eine Nur-Lese-Ansicht des Katalogs für andere Geräte zu Hause, z. B. ein Tablet im Hobbyraum: Suche, Bilder, Tags, Notizen, Sammlungen und Drucke. Dort lässt sich nichts ändern und keine Modelldatei herunterladen.",
+    "enable": "Geräte im Heimnetz zulassen",
+    "port": "Port",
+    "links": "Öffne einen dieser Links auf dem Handy oder Tablet (gleiches WLAN):",
+    "noAddress": "Für diesen PC wurde keine Heimnetz-Adresse gefunden.",
+    "newKey": "Neuer Zugangsschlüssel",
+    "keyHint": "Der Schlüssel im Link schützt die Ansicht. Ein neuer Schlüssel macht vorher weitergegebene Links ungültig.",
+    "firewall": "Windows fragt eventuell einmal, ob modelkeeper Verbindungen annehmen darf – erlaube es nur für private Netzwerke. Nur Geräte im Heimnetz bekommen eine Antwort.",
+    "listenFailed": "Port {{port}} ist nicht frei ({{detail}}). Wähle einen anderen Port.",
+    "badPort": "Wähle einen Port zwischen 1024 und 65535."
+  },
+  "update": {
+    "title": "Updates",
+    "current": "Diese Version: {{version}}",
+    "newer": "Version {{version}} ist verfügbar.",
+    "upToDate": "Aktuell (neueste: {{version}}).",
+    "open": "Download-Seite öffnen",
+    "checkNow": "Jetzt prüfen",
+    "checking": "Wird geprüft…",
+    "atStart": "Bei jedem Start prüfen",
+    "hint": "Fragt nur bei GitHub nach der neuesten Version; Herunterladen und Installieren bleiben bei dir. Dein Katalog bleibt erhalten, wenn du die Programmdateien ersetzt.",
+    "unavailable": "Es konnten keine Versionsinformationen gelesen werden (offline oder noch keine Version veröffentlicht).",
+    "banner": "modelkeeper {{version}} ist verfügbar.",
+    "later": "Später"
+  },
+  "welcome": {
+    "step": "Schritt {{n}} von {{total}}",
+    "skip": "Überspringen",
+    "title": "Willkommen bei modelkeeper",
+    "intro": "modelkeeper behält den Überblick über deine 3D-Druck-Dateien: Es findet die Modelle in deinen Ordnern, und du ergänzt Tags, Notizen, Sammlungen und Drucke.",
+    "safe": "modelkeeper liest deine Modelldateien nur. Es verschiebt, ändert oder löscht sie nie.",
+    "next": "Weiter",
+    "back": "Zurück",
+    "later": "Später",
+    "startTitle": "Wie möchtest du anfangen?",
+    "fresh": "Neu anfangen",
+    "freshHint": "Wähle die Ordner mit deinen Modellen; modelkeeper liest sie im Hintergrund ein.",
+    "fromBackup": "Arbeit von einem anderen PC übernehmen (Sicherung)",
+    "fromBackupHint": "Wähle den Sicherungsordner des alten PCs (z. B. auf dem NAS oder in Dropbox) und stelle eine Sicherung wieder her.",
+    "fromSync": "Mit einem anderen PC zusammenarbeiten (Abgleich)",
+    "fromSyncHint": "Wähle denselben gemeinsamen Ordner wie auf dem anderen PC; dessen Tags und Notizen kommen von selbst herüber.",
+    "syncOn": "Abgleichsordner:",
+    "restoreTitle": "Sicherung wählen",
+    "noBackups": "In diesem Ordner wurden keine Sicherungen gefunden.",
+    "restoreDone": "Die Sicherung wird beim nächsten Start von modelkeeper wiederhergestellt. Schließe es und öffne es erneut.",
+    "foldersTitle": "Wo sind deine Modelle?",
+    "foldersIntro": "Füge die Ordner mit deinen 3D-Druck-Dateien hinzu – auf diesem PC oder auf dem NAS. Weitere kannst du später unter Ordner hinzufügen.",
+    "addFolder": "Ordner hinzufügen",
+    "foldersHint": "Das erste Einlesen eines großen NAS-Ordners dauert eine Weile; du kannst währenddessen arbeiten, und es geht nach einem Neustart weiter.",
+    "backupTitle": "Eine zweite Kopie deiner Arbeit",
+    "backupIntro": "modelkeeper sichert den Katalog jeden Tag in seinem Datenordner. Wähle einen zweiten Ordner auf einem anderen Laufwerk, dem NAS oder in Dropbox, damit die Arbeit einen kaputten PC übersteht.",
+    "backupHint": "Empfohlen. Du kannst es auch später in den Einstellungen machen.",
+    "tourTitle": "Ein paar Tipps",
+    "tour1": "Bibliothek: suchen, links filtern, mehrere Modelle mit Strg oder Umschalt + Klick auswählen.",
+    "tour2": "Katalogisieren: Modell öffnen, Tag tippen, Enter drücken – das nächste Modell öffnet sich. „Zu katalogisieren“ zeigt, was noch keine Tags hat.",
+    "tour3": "Sammlungen und gespeicherte Suchen in der Seitenleiste halten deine eigenen Listen.",
+    "tour4": "Jede Änderung lässt sich rückgängig machen (Strg+Z, Verlauf in den Einstellungen).",
+    "tour5": "Die Hilfe erklärt alles ausführlich; Einstellungen → Wartung prüft den Katalog.",
+    "finish": "Los geht’s"
   }
 }

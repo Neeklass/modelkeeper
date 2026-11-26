@@ -232,3 +232,73 @@ func (a *App) OpenExternalBackupDir() error {
 	}
 	return nil
 }
+
+// backupFolder resolves a folder the user named for restoring: the external
+// backup folder ("" = the one in the settings), or a folder picked by hand
+// (its modelkeeper-backups folder if it has one, e.g. the external folder of
+// the old PC on a new one).
+func (a *App) backupFolder(dir string) (string, error) {
+	if dir == "" && a.settings != nil {
+		dir = a.settings.Get().ExternalBackupDir
+	}
+	if dir == "" {
+		return "", msg.Wrap(nil, "backup.noExternal")
+	}
+	if fi, err := os.Stat(backup.ExternalDir(dir)); err == nil && fi.IsDir() {
+		return backup.ExternalDir(dir), nil
+	}
+	if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
+		return "", msg.Wrap(err, "backup.externalUnreachable", "path", dir)
+	}
+	return dir, nil
+}
+
+// ListBackupsIn lists the snapshots in another backup folder ("" = the
+// external one), newest first. Works on the startup error screen too.
+func (a *App) ListBackupsIn(dir string) ([]BackupInfo, error) {
+	if !a.started() || a.layout.Backups == "" {
+		return nil, msg.Wrap(nil, "error.notReady")
+	}
+	from, err := a.backupFolder(dir)
+	if err != nil {
+		return nil, err
+	}
+	list, err := backup.List(from)
+	if err != nil {
+		return nil, msg.Wrap(err, "backup.externalUnreachable", "path", from)
+	}
+	out := []BackupInfo{}
+	for _, s := range list {
+		b := backupInfo(s)
+		b.Bytes = backup.SnapshotSize(s)
+		out = append(out, *b)
+	}
+	return out, nil
+}
+
+// PickBackupFolder lets the user choose a folder with snapshots (e.g. the
+// external backup folder of the old PC); "" if cancelled.
+func (a *App) PickBackupFolder() (string, error) {
+	if !a.started() {
+		return "", msg.Wrap(nil, "error.notReady")
+	}
+	return runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{})
+}
+
+// RestoreFrom copies snapshot name from another backup folder ("" = the
+// external one) into the local backups, checked, and restores it at the
+// next start like any snapshot (the current state is kept as a snapshot).
+func (a *App) RestoreFrom(dir, name string) error {
+	if !a.started() || a.layout.Backups == "" {
+		return msg.Wrap(nil, "error.notReady")
+	}
+	from, err := a.backupFolder(dir)
+	if err != nil {
+		return err
+	}
+	if _, err := backup.Fetch(context.Background(), from, a.layout.Backups, name); err != nil {
+		return msg.Wrap(err, "backup.fetchFailed", "name", name, "path", from)
+	}
+	log.Printf("snapshot %s fetched from %s", name, from)
+	return a.RequestRestore(name)
+}

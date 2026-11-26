@@ -110,8 +110,12 @@ func userData(t *testing.T, e *env, thumbDir string) {
 	if err := catalog.SetFavorite(ctx, e.db, []int64{elf}, true); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := catalog.AddPrint(ctx, e.db, catalog.Print{ModelID: orc, PrintedAt: 1_700_000_000_000, Result: "ok",
-		Printer: "Saturn 4", Settings: "2.4 s", Notes: "perfect"}); err != nil {
+	pr, err := catalog.AddPrint(ctx, e.db, catalog.Print{ModelID: orc, PrintedAt: 1_700_000_000_000, Result: "ok",
+		Printer: "Saturn 4", Settings: "2.4 s", Notes: "perfect"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := catalog.AddPrintPhoto(ctx, e.db, pr.ID, testJPEG(t), 8, 8); err != nil {
 		t.Fatal(err)
 	}
 	col, err := catalog.CreateCollection(ctx, e.db, "Campaign")
@@ -474,4 +478,45 @@ func TestSyncBothWays(t *testing.T) {
 	if x, y := canonical(t, noThumbs(build(a.db))), canonical(t, noThumbs(build(b))); x != y {
 		t.Errorf("the two catalogs differ after the sync\nA:\n%s\nB:\n%s", x, y)
 	}
+}
+
+// A sync is one entry in the history, and undo puts the catalog back (J9).
+func TestSyncIsUndoable(t *testing.T) {
+	ctx := context.Background()
+	a := newEnv(t)
+	userData(t, a, filepath.Join(t.TempDir(), "thumbnails"))
+	base, err := userexport.Build(ctx, a.db, userexport.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var orc int64
+	if err := a.db.QueryRow(`SELECT model_id FROM location WHERE path = 'Atlas/Orc/orc.stl'`).Scan(&orc); err != nil {
+		t.Fatal(err)
+	}
+	before, _ := catalog.GetModel(ctx, a.db, orc)
+	// The other PC's file: the same catalog with one tag more on the orc.
+	other, _ := userexport.Build(ctx, a.db, userexport.Options{})
+	for i := range other.Models {
+		if other.Models[i].UID == before.UID {
+			other.Models[i].Tags = append(other.Models[i].Tags, "from peer")
+		}
+	}
+	plan, _ := userexport.Preview(ctx, a.db, other, nil)
+	res, err := userexport.Apply(ctx, a.db, other, choicesOf(plan), userexport.ApplyOptions{
+		Base: base, Journal: "history.synced", JournalParams: map[string]any{"peer": "pc-b"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	expect(t, "changed", res.Changed, 1)
+	h, err := catalog.ListHistory(ctx, a.db, 1)
+	if err != nil || len(h) != 1 {
+		t.Fatalf("history %v %v", h, err)
+	}
+	expect(t, "action", h[0].Action, "history.synced")
+	expect(t, "peer", h[0].Params["peer"], "pc-b")
+	if _, err := catalog.Undo(ctx, a.db, nil); err != nil {
+		t.Fatal(err)
+	}
+	after, _ := catalog.GetModel(ctx, a.db, orc)
+	expect(t, "tags after undo", strings.Join(after.Tags, ","), strings.Join(before.Tags, ","))
 }

@@ -3,10 +3,12 @@ package userexport
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"image"
 	"image/jpeg"
 	"os"
 	"path/filepath"
@@ -86,8 +88,11 @@ type Result struct {
 	OverridesSkipped int    `json:"overridesSkipped"` // root skipped or a local correction decides
 	Thumbnails       int    `json:"thumbnails"`
 	Prints           int    `json:"prints"`      // print log entries added
+	Photos           int    `json:"photos"`      // print photos added
 	Collections      int    `json:"collections"` // collection memberships added
 	TagsRemoved      int    `json:"tagsRemoved"` // sync: tags the other PC removed
+	Changed          int    `json:"changed"`     // existing models whose user data changed (journaled)
+	Created          int    `json:"created"`     // models new in this catalog
 	// RootsAdded are new root folders (to be scanned); RootsChanged existing
 	// ones with new corrections or places (to be detected again).
 	RootsAdded   []int64 `json:"rootsAdded"`
@@ -368,6 +373,11 @@ type ApplyOptions struct {
 	// out of a collection) is applied; what it did not change does not
 	// overwrite this catalog. Without it the import only adds.
 	Base *Export
+	// Journal: message key under which the changes of existing models are
+	// recorded as one undoable action (e.g. "history.synced"); with
+	// JournalParams as its parameters. Empty: not recorded.
+	Journal       string
+	JournalParams map[string]any
 }
 
 // Apply imports the export into the catalog. Root folders to be added are
@@ -416,6 +426,10 @@ func Apply(ctx context.Context, db *sql.DB, e *Export, choices []RootChoice, o A
 	defer tx.Rollback()
 	now := time.Now().UnixMilli()
 	taken := map[int64]bool{}
+	var rec *catalog.Recorder
+	if o.Journal != "" {
+		rec = catalog.NewRecorder()
+	}
 	base := map[string]*Model{}
 	if o.Base != nil {
 		for i := range o.Base.Models {
@@ -430,8 +444,14 @@ func Apply(ctx context.Context, db *sql.DB, e *Export, choices []RootChoice, o A
 			return res, err
 		}
 		count(&res.Match, how)
+		if id != 0 && rec != nil {
+			if err := rec.Before(ctx, tx, id); err != nil {
+				return res, err
+			}
+		}
 		var localUID, thumbSource string
 		if id == 0 {
+			res.Created++
 			if id, err = createModel(ctx, tx, m, now); err != nil {
 				return res, fmt.Errorf("model %s: %w", m.UID, err)
 			}
@@ -569,6 +589,16 @@ func Apply(ctx context.Context, db *sql.DB, e *Export, choices []RootChoice, o A
 	}
 	if err := refreshSearch(ctx, tx, touched); err != nil {
 		return res, err
+	}
+	if rec != nil {
+		params := map[string]any{}
+		for k, v := range o.JournalParams {
+			params[k] = v
+		}
+		params["created"] = res.Created
+		if res.Changed, err = rec.Write(ctx, tx, o.Journal, params); err != nil {
+			return res, err
+		}
 	}
 	if err := tx.Commit(); err != nil {
 		return res, err
@@ -711,6 +741,10 @@ func addTags(ctx context.Context, tx *sql.Tx, id int64, names []string) (int, er
 		if name == "" {
 			continue
 		}
+		name, err := catalog.ResolveTag(ctx, tx, name) // an alias here adds its tag
+		if err != nil {
+			return n, err
+		}
 		var tagID int64
 		if err := tx.QueryRowContext(ctx, `INSERT INTO tag (name) VALUES (?)
 			ON CONFLICT (name) DO UPDATE SET name = name RETURNING id`, name).Scan(&tagID); err != nil {
@@ -821,6 +855,30 @@ func importExtras(ctx context.Context, tx *sql.Tx, e *Export, localOf map[string
 			if n, _ := r.RowsAffected(); n > 0 {
 				res.Prints++
 			}
+			if len(p.Photos) == 0 {
+				continue
+			}
+			var pid int64
+			if err := tx.QueryRowContext(ctx, `SELECT id FROM print_log WHERE model_id = ?1 AND printed_at = ?2
+				AND result = ?3 AND printer = ?4 AND settings = ?5 AND notes = ?6 ORDER BY id LIMIT 1`,
+				id, p.PrintedAt, p.Result, p.Printer, p.Settings, p.Notes).Scan(&pid); err != nil {
+				return err
+			}
+			for _, ph := range p.Photos {
+				cfg, _, err := image.DecodeConfig(bytes.NewReader(ph))
+				if err != nil {
+					continue // not an image: skipped
+				}
+				sum := sha256.Sum256(ph)
+				r, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO print_photo (print_id, data, sha256, width, height, created_at)
+					VALUES (?, ?, ?, ?, ?, ?)`, pid, ph, sum[:], cfg.Width, cfg.Height, now)
+				if err != nil {
+					return err
+				}
+				if n, _ := r.RowsAffected(); n > 0 {
+					res.Photos++
+				}
+			}
 		}
 	}
 	for _, c := range e.Collections {
@@ -846,6 +904,25 @@ func importExtras(ctx context.Context, tx *sql.Tx, e *Export, localOf map[string
 			if n, _ := r.RowsAffected(); n > 0 {
 				res.Collections++
 			}
+		}
+	}
+	for _, a := range e.TagAliases {
+		alias, target := strings.Join(strings.Fields(a.Alias), " "), strings.Join(strings.Fields(a.Target), " ")
+		if alias == "" || target == "" || strings.EqualFold(alias, target) {
+			continue
+		}
+		if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO tag_alias (alias, target, created_at) VALUES (?, ?, ?)`,
+			alias, target, now); err != nil {
+			return err
+		}
+	}
+	for _, g := range e.TagGroups {
+		tag, grp := strings.Join(strings.Fields(g.Tag), " "), strings.Join(strings.Fields(g.Group), " ")
+		if tag == "" || grp == "" {
+			continue
+		}
+		if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO tag_group (tag, grp) VALUES (?, ?)`, tag, grp); err != nil {
+			return err
 		}
 	}
 	for _, ss := range e.SavedSearches {

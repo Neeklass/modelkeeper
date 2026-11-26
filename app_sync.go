@@ -387,6 +387,7 @@ func (a *App) applyPeer(name string, raw []byte, state *syncState) error {
 		}
 		res, err = userexport.Apply(ctx, a.db, exp, choices, userexport.ApplyOptions{
 			ThumbDir: a.layout.Thumbnails, Base: base,
+			Journal: "history.synced", JournalParams: map[string]any{"peer": peerLabel(name)},
 		})
 		return err
 	})
@@ -455,4 +456,14 @@ func (a *App) peerExportOnClose() {
 		return
 	}
 	a.saveSyncState(state)
+}
+
+// peerLabel is the name of another PC as shown to the user: its host name
+// (the file name without prefix, random id and extension).
+func peerLabel(file string) string {
+	n := strings.TrimSuffix(strings.TrimPrefix(file, syncPrefix), ".json")
+	if i := strings.LastIndex(n, "-"); i > 0 {
+		n = n[:i]
+	}
+	return n
 }

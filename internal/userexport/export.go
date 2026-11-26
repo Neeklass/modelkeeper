@@ -32,6 +32,7 @@ import (
 	"strings"
 	"time"
 
+	"modelkeeper/internal/catalog"
 	"modelkeeper/internal/detect"
 )
 
@@ -61,6 +62,9 @@ type Export struct {
 	// Collections in their order (G6) and saved searches.
 	Collections   []Collection  `json:"collections,omitempty"`
 	SavedSearches []SavedSearch `json:"savedSearches,omitempty"`
+	// Tag aliases and groups (G1).
+	TagAliases []catalog.TagAlias `json:"tagAliases,omitempty"`
+	TagGroups  []catalog.TagGroup `json:"tagGroups,omitempty"`
 }
 
 // Collection is a collection with its models (uids) in order.
@@ -82,6 +86,8 @@ type Print struct {
 	Printer   string `json:"printer,omitempty"`
 	Settings  string `json:"settings,omitempty"`
 	Notes     string `json:"notes,omitempty"`
+	// Photos of the result (JPEG; base64 in the JSON).
+	Photos [][]byte `json:"photos,omitempty"`
 }
 
 // Root is a root folder of the exporting catalog.
@@ -200,6 +206,16 @@ func Build(ctx context.Context, db *sql.DB, o Options) (*Export, error) {
 			return nil, fmt.Errorf("read settings: %w", err)
 		}
 		if len(b) > 0 && json.Valid(b) {
+			// Secrets of this PC never leave it (the sync folder may be a cloud folder).
+			var m map[string]json.RawMessage
+			if json.Unmarshal(b, &m) == nil {
+				if _, ok := m["lanKey"]; ok {
+					delete(m, "lanKey")
+					if nb, err := json.Marshal(m); err == nil {
+						b = nb
+					}
+				}
+			}
 			var buf bytes.Buffer
 			if json.Compact(&buf, b) == nil {
 				e.Settings = json.RawMessage(buf.Bytes())
@@ -348,19 +364,39 @@ func Build(ctx context.Context, db *sql.DB, o Options) (*Export, error) {
 	}); err != nil {
 		return nil, err
 	}
-	if err := each(`SELECT model_id, printed_at, result, printer, settings, notes FROM print_log
+	type printRef struct{ model, print int }
+	printOf := map[int64]printRef{}
+	if err := each(`SELECT id, model_id, printed_at, result, printer, settings, notes FROM print_log
 		WHERE model_id IN (`+selected+`) ORDER BY model_id, printed_at, id`, func(_ int, rows *sql.Rows) error {
-		var id int64
+		var pid, id int64
 		var p Print
-		if err := rows.Scan(&id, &p.PrintedAt, &p.Result, &p.Printer, &p.Settings, &p.Notes); err != nil {
+		if err := rows.Scan(&pid, &id, &p.PrintedAt, &p.Result, &p.Printer, &p.Settings, &p.Notes); err != nil {
 			return err
 		}
 		if i, ok := index[id]; ok {
 			e.Models[i].Prints = append(e.Models[i].Prints, p)
+			printOf[pid] = printRef{i, len(e.Models[i].Prints) - 1}
 		}
 		return nil
 	}); err != nil {
 		return nil, err
+	}
+	if len(printOf) > 0 {
+		if err := each(`SELECT print_id, data FROM print_photo WHERE print_id IN
+			(SELECT id FROM print_log WHERE model_id IN (`+selected+`)) ORDER BY print_id, id`, func(_ int, rows *sql.Rows) error {
+			var pid int64
+			var b []byte
+			if err := rows.Scan(&pid, &b); err != nil {
+				return err
+			}
+			if r, ok := printOf[pid]; ok {
+				pr := &e.Models[r.model].Prints[r.print]
+				pr.Photos = append(pr.Photos, b)
+			}
+			return nil
+		}); err != nil {
+			return nil, err
+		}
 	}
 	colIndex := map[int64]int{}
 	if err := each(`SELECT id, name FROM collection ORDER BY name COLLATE NOCASE, id`, func(_ int, rows *sql.Rows) error {
@@ -403,6 +439,20 @@ func Build(ctx context.Context, db *sql.DB, o Options) (*Export, error) {
 		return nil
 	}); err != nil {
 		return nil, err
+	}
+	aliases, err := catalog.ListTagAliases(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	groups, err := catalog.ListTagGroups(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	if len(aliases) > 0 {
+		e.TagAliases = aliases
+	}
+	if len(groups) > 0 {
+		e.TagGroups = groups
 	}
 	for i, p := range ids {
 		m := &e.Models[i]

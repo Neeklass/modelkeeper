@@ -46,6 +46,15 @@ type Settings struct {
 	// (J9). SyncID names this installation's file in it.
 	SyncDir string `json:"syncDir,omitempty"`
 	SyncID  string `json:"syncId,omitempty"`
+	// LANView: the read-only view for other devices at home is on (port,
+	// access key). Off by default.
+	LANView bool   `json:"lanView,omitempty"`
+	LANPort int    `json:"lanPort,omitempty"`
+	LANKey  string `json:"lanKey,omitempty"`
+	// UpdateCheck: look for a new release at the start ("" = on, "off").
+	UpdateCheck string `json:"updateCheck,omitempty"`
+	// WelcomeDone: the first-run guide was finished or skipped.
+	WelcomeDone bool `json:"welcomeDone,omitempty"`
 }
 
 // Defaults returns the built-in settings.

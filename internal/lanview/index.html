@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>modelkeeper</title>
+<style>
+  :root { color-scheme: dark light; --bg: #18181b; --card: #232326; --fg: #ececef; --muted: #9a9aa3; --accent: #7aa2ff; }
+  @media (prefers-color-scheme: light) { :root { --bg: #f6f6f7; --card: #fff; --fg: #18181b; --muted: #666; --accent: #2f5bd3; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.4 system-ui, sans-serif; background: var(--bg); color: var(--fg); }
+  header { position: sticky; top: 0; background: var(--bg); padding: 10px; display: flex; gap: 8px; flex-wrap: wrap; z-index: 2; }
+  input, select, button { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid #444; background: var(--card); color: var(--fg); }
+  input[type=search] { flex: 1 1 200px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 10px; }
+  .tile { background: var(--card); border-radius: 10px; overflow: hidden; cursor: pointer; border: 0; padding: 0; text-align: left; color: inherit; }
+  .tile img, .tile .noimg { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #2c2c30; }
+  .tile .name { padding: 6px 8px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .muted { color: var(--muted); }
+  .more { display: block; margin: 10px auto 30px; }
+  .detail { position: fixed; inset: 0; background: var(--bg); overflow: auto; padding: 14px; z-index: 5; }
+  .detail img.cover { width: 100%; max-width: 520px; border-radius: 10px; display: block; margin: 8px 0; }
+  .chips span { display: inline-block; background: var(--card); border-radius: 99px; padding: 2px 10px; margin: 2px; font-size: 13px; }
+  .photos img { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; margin: 3px; }
+  .print { border-top: 1px solid #3333; padding: 6px 0; }
+  .ok { color: #4caf7d; } .bad { color: #e06c6c; }
+  pre { white-space: pre-wrap; font: inherit; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <input type="search" id="q" autocomplete="off">
+  <select id="tag"></select>
+  <select id="col"></select>
+  <label><input type="checkbox" id="fav"> <span id="favLabel"></span></label>
+</header>
+<div class="grid" id="grid"></div>
+<p class="muted" id="count" style="padding:0 12px"></p>
+<button class="more" id="more" hidden></button>
+<div class="detail" id="detail" hidden></div>
+<script>
+const T = {
+  en: {search: 'Search…', allTags: 'All tags', allCols: 'All collections', fav: 'Favorites', more: 'More', back: '← Back',
+       count: n => n + ' models', prints: 'Prints', creator: 'Creator', notes: 'Notes', license: 'License', origin: 'Origin',
+       files: n => n + ' files', readonly: 'Read-only view of modelkeeper', none: 'Nothing found.',
+       status: {not_printed: 'Not printed', printed: 'Printed', failed: 'Print failed'}},
+  de: {search: 'Suchen…', allTags: 'Alle Tags', allCols: 'Alle Sammlungen', fav: 'Favoriten', more: 'Mehr', back: '← Zurück',
+       count: n => n + ' Modelle', prints: 'Drucke', creator: 'Ersteller', notes: 'Notizen', license: 'Lizenz', origin: 'Herkunft',
+       files: n => n + ' Dateien', readonly: 'Nur-Lese-Ansicht von modelkeeper', none: 'Nichts gefunden.',
+       status: {not_printed: 'Nicht gedruckt', printed: 'Gedruckt', failed: 'Druck fehlgeschlagen'}},
+}
+let L = T.en
+const $ = id => document.getElementById(id)
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]))
+const get = async url => { const r = await fetch(url, {credentials: 'same-origin'}); if (!r.ok) throw new Error(r.status); return r.json() }
+let offset = 0, total = 0, timer = 0
+
+function params() {
+  const p = new URLSearchParams()
+  if ($('q').value.trim()) p.set('q', $('q').value.trim())
+  if ($('tag').value) p.set('tag', $('tag').value)
+  if ($('col').value) p.set('collection', $('col').value)
+  if ($('fav').checked) p.set('fav', '1')
+  p.set('offset', offset)
+  return p
+}
+
+async function load(reset) {
+  if (reset) { offset = 0; $('grid').innerHTML = '' }
+  const page = await get('/api/models?' + params())
+  total = page.total
+  for (const m of page.items) {
+    const b = document.createElement('button')
+    b.className = 'tile'
+    b.innerHTML = (m.thumb ? `<img loading="lazy" src="${esc(m.thumb)}" alt="">` : '<div class="noimg"></div>') +
+      `<div class="name">${m.favorite ? '★ ' : ''}${esc(m.name)}</div>`
+    b.onclick = () => show(m.id)
+    $('grid').appendChild(b)
+  }
+  offset += page.items.length
+  $('count').textContent = total ? L.count(total) : L.none
+  $('more').hidden = offset >= total
+}
+
+async function show(id) {
+  const d = await get('/api/model/' + id)
+  const prints = (d.prints || []).map(p => `<div class="print"><span class="${p.result === 'ok' ? 'ok' : 'bad'}">${p.result === 'ok' ? '✓' : '✗'}</span>
+      ${esc(new Date(p.printedAt).toLocaleDateString())} ${esc(p.printer)} <span class="muted">${esc(p.settings)}</span>
+      ${p.notes ? `<div>${esc(p.notes)}</div>` : ''}
+      <div class="photos">${(p.photos || []).map(ph => `<a href="/photos/${ph}.jpg" target="_blank"><img src="/photos/${ph}.jpg" alt=""></a>`).join('')}</div></div>`).join('')
+  $('detail').innerHTML = `<button id="back">${L.back}</button>
+    <h2>${d.favorite ? '★ ' : ''}${esc(d.name)}</h2>
+    ${d.thumb ? `<img class="cover" src="${esc(d.thumb)}" alt="">` : ''}
+    <p>${d.creator ? `${L.creator}: <b>${esc(d.creator)}</b> · ` : ''}${esc(L.status[d.printStatus] || '')} · ${L.files(d.files)}</p>
+    <div class="chips">${(d.tags || []).map(t => `<span>${esc(t)}</span>`).join('')}</div>
+    ${(d.collections || []).length ? `<p class="muted">${d.collections.map(esc).join(', ')}</p>` : ''}
+    ${d.notes ? `<h3>${L.notes}</h3><pre>${esc(d.notes)}</pre>` : ''}
+    ${d.origin || d.originUrl ? `<p>${L.origin}: ${esc(d.origin)} ${/^https?:\/\//.test(d.originUrl) ? `<a href="${esc(d.originUrl)}" target="_blank" rel="noreferrer">${esc(d.originUrl)}</a>` : esc(d.originUrl)}</p>` : ''}
+    ${d.license ? `<p>${L.license}: ${esc(d.license)}</p>` : ''}
+    ${prints ? `<h3>${L.prints}</h3>${prints}` : ''}`
+  $('detail').hidden = false
+  $('back').onclick = () => { $('detail').hidden = true }
+  history.pushState({detail: id}, '')
+}
+window.onpopstate = () => { $('detail').hidden = true }
+
+async function init() {
+  const info = await get('/api/info')
+  L = T[info.language === 'de' || (!info.language && navigator.language.startsWith('de')) ? 'de' : 'en']
+  document.documentElement.lang = L === T.de ? 'de' : 'en'
+  document.title = 'modelkeeper – ' + L.readonly
+  $('q').placeholder = L.search
+  $('favLabel').textContent = L.fav
+  $('more').textContent = L.more
+  const tags = await get('/api/tags')
+  $('tag').innerHTML = `<option value="">${L.allTags}</option>` + tags.sort((a, b) => b.models - a.models)
+    .map(t => `<option value="${t.id}">${esc(t.name)} (${t.models})</option>`).join('')
+  const cols = await get('/api/collections')
+  $('col').innerHTML = `<option value="">${L.allCols}</option>` + cols.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')
+  $('col').hidden = cols.length === 0
+  $('q').oninput = () => { clearTimeout(timer); timer = setTimeout(() => load(true), 300) }
+  for (const id of ['tag', 'col', 'fav']) $(id).onchange = () => load(true)
+  $('more').onclick = () => load(false)
+  load(true)
+}
+init()
+</script>
+</body>
+</html>

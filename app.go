@@ -242,6 +242,9 @@ func (a *App) startServices() error {
 	a.stop = make(chan struct{})
 	go a.runDailyTicker(a.stop)
 	go a.runPeerSync(a.stop)
+	go a.runHealthTicker(a.stop)
+	a.startLAN()
+	go a.runUpdateCheck(a.stop)
 
 	w, err := watch.New(conn, scans, watch.Options{
 		Exclude: layout.Root,
@@ -326,6 +329,8 @@ type AppStatus struct {
 	LastRestoreTest *backup.RestoreCheck `json:"lastRestoreTest,omitempty"`
 	// Starting: the start is still running; nothing else is set yet.
 	Starting bool `json:"starting"`
+	// ShowWelcome: a new installation (no root folder yet, guide not done).
+	ShowWelcome bool `json:"showWelcome"`
 }
 
 // BackupInfo describes a snapshot.
@@ -438,11 +443,28 @@ func (a *App) GetStatus() AppStatus {
 		st := a.settings.Get()
 		s.Language, s.NASRescanHours = st.Language, st.NASRescanHours
 		s.SlicerPath, s.ExternalBackupDir = st.SlicerPath, st.ExternalBackupDir
+		if !st.WelcomeDone && a.db != nil && a.startupErr == nil {
+			var roots int
+			if a.db.QueryRow(`SELECT count(*) FROM root`).Scan(&roots) == nil && roots == 0 {
+				s.ShowWelcome = true
+			}
+		}
 	}
 	if a.layout.Root != "" {
 		s.LastRestoreTest = backup.LastRestoreCheck(a.layout.Root)
 	}
 	return s
+}
+
+// FinishWelcome marks the first-run guide as done (it is not shown again).
+func (a *App) FinishWelcome() error {
+	if !a.started() || a.settings == nil {
+		return msg.Wrap(nil, "error.notReady")
+	}
+	if err := a.settings.Update(func(s *settings.Settings) { s.WelcomeDone = true }); err != nil {
+		return msg.Wrap(err, "error.settingsSave")
+	}
+	return nil
 }
 
 // SetLanguage stores the UI language ("" = follow system locale).
@@ -1194,6 +1216,10 @@ type assetHandler struct{ a *App }
 func (h assetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if name, ok := strings.CutPrefix(r.URL.Path, "/thumbs/"); ok {
 		h.serveThumb(w, r, name)
+		return
+	}
+	if name, ok := strings.CutPrefix(r.URL.Path, "/photos/"); ok {
+		h.servePhoto(w, r, name)
 		return
 	}
 	if id, ok := strings.CutPrefix(r.URL.Path, "/files/"); ok {

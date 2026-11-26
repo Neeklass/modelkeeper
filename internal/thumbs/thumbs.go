@@ -69,7 +69,7 @@ func Candidates(ctx context.Context, db *sql.DB, modelID int64) ([]Candidate, er
 	rows, err := db.QueryContext(ctx, `SELECT l.id, r.path, l.path, coalesce(a.path, ''), l.ext, l.size
 		FROM location l JOIN root r ON r.id = l.root_id LEFT JOIN location a ON a.id = l.archive_id
 		WHERE l.model_id = ? AND l.present = 1 AND r.status <> 'offline'
-		  AND l.ext IN ('jpg', 'jpeg', 'png', 'webp', '3mf', 'stl')`, modelID)
+		  AND l.ext IN ('jpg', 'jpeg', 'png', 'webp', '3mf', 'stl', 'obj')`, modelID)
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +99,11 @@ func Candidates(ctx context.Context, db *sql.DB, modelID int64) ([]Candidate, er
 				continue
 			}
 			c.Kind, c.score = KindEmbedded, 2000
+		case c.ext == "obj":
+			if c.Size > maxModelBytes {
+				continue
+			}
+			c.Kind, c.score = KindRendered, 900 // after STL: OBJ is often a second export
 		case c.ext == "stl":
 			if c.Size > maxModelBytes {
 				continue
@@ -260,8 +265,23 @@ func load(c Candidate) (image.Image, error) {
 		img, _, err := image.Decode(bytes.NewReader(data))
 		return img, err
 	case KindEmbedded:
-		return embedded3MF(data)
+		img, err := embedded3MF(data)
+		if errors.Is(err, errNoSource) { // a 3MF without a preview: draw its mesh
+			tris, err := parse3MF(data)
+			if err != nil {
+				return nil, err
+			}
+			return renderMesh(tris, Size)
+		}
+		return img, err
 	case KindRendered:
+		if c.ext == "obj" {
+			tris, err := parseOBJ(data)
+			if err != nil {
+				return nil, err
+			}
+			return renderMesh(tris, Size)
+		}
 		return renderSTL(data, Size)
 	}
 	return nil, errNoSource
@@ -337,16 +357,21 @@ func embedded3MF(data []byte) (image.Image, error) {
 // encode scales the image to fit Size x Size and writes a JPEG; transparent
 // areas get the render background.
 func encode(img image.Image) ([]byte, error) {
+	data, _, _, err := encodeMax(img, Size, 82)
+	return data, err
+}
+
+func encodeMax(img image.Image, size, quality int) ([]byte, int, int, error) {
 	b := img.Bounds()
 	if b.Empty() {
-		return nil, errors.New("empty image")
+		return nil, 0, 0, errors.New("empty image")
 	}
 	w, h := b.Dx(), b.Dy()
-	if w > Size || h > Size {
+	if w > size || h > size {
 		if w >= h {
-			w, h = Size, max(1, h*Size/b.Dx())
+			w, h = size, max(1, h*size/b.Dx())
 		} else {
-			w, h = max(1, w*Size/b.Dy()), Size
+			w, h = max(1, w*size/b.Dy()), size
 		}
 	}
 	dst := image.NewRGBA(image.Rect(0, 0, w, h))
@@ -354,10 +379,10 @@ func encode(img image.Image) ([]byte, error) {
 		image.Point{}, draw.Src)
 	xdraw.CatmullRom.Scale(dst, dst.Bounds(), img, b, xdraw.Over, nil)
 	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, dst, &jpeg.Options{Quality: 82}); err != nil {
-		return nil, err
+	if err := jpeg.Encode(&buf, dst, &jpeg.Options{Quality: quality}); err != nil {
+		return nil, 0, 0, err
 	}
-	return buf.Bytes(), nil
+	return buf.Bytes(), w, h, nil
 }
 
 // Pending returns models of a root that have no thumbnail and were not tried yet.
