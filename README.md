@@ -20,7 +20,16 @@ no server, no cloud. The concept and all requirements are in
   variants, supports. Detection can be corrected; corrections survive rescans.
 - Duplicates, models without a backup, files both extracted and archived,
   broken archives, silently changed files (full check).
-- Tags with suggestions, favorites, notes, print status, bulk editing.
+- Tags with suggestions, favorites, notes, print status, bulk editing of
+  tags and fields (print status, supports, creator, origin, license).
+- Collections (own ordered lists) and saved searches in the sidebar.
+- Print log per model (date, result, printer, settings, notes); the newest
+  print sets the print status.
+- Storage statistics: size per folder, creator, kind and file type, the
+  largest models and how much is stored more than once.
+- Sync of the cataloging work between PCs through a shared folder (NAS or
+  Dropbox): a three-way merge, so removed tags and changed fields carry over
+  too. A backup is made before the first sync of a day.
 - Sidebar with views (all, to catalog, favorites, recently added), creators,
   tags and locations; search, filter chips, grid with three tile sizes or
   list, keyboard navigation; detail view with picture gallery, rotatable 3D
