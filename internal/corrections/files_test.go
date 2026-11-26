@@ -27,7 +27,7 @@ func (f *fx) locs(ps ...string) []int64 {
 // image adds a supplementary file (not content).
 func (f *fx) image(p string) {
 	if _, err := f.db.Exec(`INSERT INTO location (root_id, path, ext, category, size, mtime, first_seen_at)
-		VALUES (?, ?, 'png', 'image', 1, 0, 0)`, f.root, p); err != nil {
+		VALUES (?, ?, 'png', 'supplementary', 1, 0, 0)`, f.root, p); err != nil {
 		f.t.Fatal(err)
 	}
 }
