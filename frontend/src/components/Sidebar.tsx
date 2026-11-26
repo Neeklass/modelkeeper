@@ -5,29 +5,14 @@ import {main, scanner} from '../../wailsjs/go/models'
 import {EventsOn} from '../../wailsjs/runtime/runtime'
 import {formatDuration, formatNumber} from '../format'
 import {Library} from '../library'
-import {emptyQuery, Query} from './FilterPanel'
+import {emptyQuery, Query} from '../query'
 import {useEta} from './RootsPanel'
 
 export type View = 'library' | 'folders' | 'settings' | 'help'
 
-type LibraryView = 'all' | 'untagged' | 'favorites' | 'newest' | 'waiting'
-
-/** The view of the library a query shows (sidebar entries). */
-export function libraryView(q: Query): LibraryView {
-    if (q.waiting) return 'waiting'
-    if (q.untagged) return 'untagged'
-    if (q.favorites) return 'favorites'
-    if (q.sort === 'newest') return 'newest'
-    return 'all'
-}
-
-const VIEW_QUERY: Record<LibraryView, Partial<Query>> = {
-    all: {},
-    untagged: {untagged: true},
-    favorites: {favorites: true},
-    newest: {sort: 'newest'},
-    waiting: {waiting: true},
-}
+export {libraryView, VIEW_QUERY} from '../query'
+export type {LibraryView} from '../query'
+import {libraryView, LibraryView, VIEW_QUERY} from '../query'
 
 /** Navigation: library views, creators, tags, locations, and the app's state at the bottom. */
 export function Sidebar({view, onView, query, onQuery, library, status}: {

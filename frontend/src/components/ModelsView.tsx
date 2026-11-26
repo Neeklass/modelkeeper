@@ -332,7 +332,7 @@ export function ModelsView({query, onQuery, library, scopeLabel}: {
                         <span className="segmented" role="group" aria-label={t('views.label')}>
                             {(['grid', 'list'] as ViewMode[]).map(v => (
                                 <button key={v} className={view === v ? 'active' : ''} aria-pressed={view === v}
-                                        title={t(`views.${v}`)} onClick={() => changeView(v)}>
+                                        title={t(`views.${v}`)} aria-label={t(`views.${v}`)} onClick={() => changeView(v)}>
                                     {v === 'grid' ? '▦' : '☰'}
                                 </button>
                             ))}

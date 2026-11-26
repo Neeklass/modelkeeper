@@ -3,58 +3,9 @@ import {useTranslation} from 'react-i18next'
 import {GetFilterOptions, ListRoots} from '../../wailsjs/go/main/App'
 import {catalog} from '../../wailsjs/go/models'
 
-/** All list criteria (H1, H2, G4); mirrors catalog.ModelQuery. */
-export interface Query {
-    text: string
-    untagged: boolean
-    favorites: boolean
-    tagId: number
-    creatorId: number
-    rootId: number
-    ext: string
-    supports: string
-    printStatus: string
-    duplicates: boolean
-    singleLocation: boolean
-    offline: boolean
-    brokenArchives: boolean
-    extractedAndArchive: boolean
-    missing: boolean
-    inactive: boolean
-    /** Models without files in the catalog yet (imported, J7). */
-    waiting: boolean
-    orphanedBy: number
-    /** "" = by name, "newest" = most recently added first. */
-    sort: string
-}
-
-export const emptyQuery: Query = {
-    text: '', untagged: false, favorites: false, tagId: 0, creatorId: 0, rootId: 0, ext: '', supports: '', printStatus: '',
-    duplicates: false, singleLocation: false, offline: false, brokenArchives: false,
-    extractedAndArchive: false, missing: false, inactive: false, waiting: false, orphanedBy: 0, sort: '',
-}
-
-export const FLAGS = ['duplicates', 'singleLocation', 'offline', 'brokenArchives', 'extractedAndArchive',
-    'missing', 'inactive'] as const
-
-/** Fields that choose the view (sidebar) rather than filter it. */
-const VIEW_FIELDS = new Set(['text', 'favorites', 'untagged', 'sort', 'orphanedBy', 'waiting'])
-
-/** Number of active filters, not counting the search text and the view (favorites, to catalog, sort). */
-export function activeFilters(q: Query): number {
-    let n = 0
-    for (const [k, v] of Object.entries(q)) {
-        if (!VIEW_FIELDS.has(k) && v !== (emptyQuery as unknown as Record<string, unknown>)[k]) n++
-    }
-    return n
-}
-
-/** The query without its filters; the search text and the view stay. */
-export function clearFilters(q: Query): Query {
-    const next = {...emptyQuery} as unknown as Record<string, unknown>
-    for (const k of VIEW_FIELDS) next[k] = (q as unknown as Record<string, unknown>)[k]
-    return next as unknown as Query
-}
+export {activeFilters, clearFilters, emptyQuery, FLAGS} from '../query'
+export type {Query} from '../query'
+import {activeFilters, clearFilters, emptyQuery, FLAGS, Query} from '../query'
 
 export function FilterPanel({query, onChange, allTags, version}: {
     query: Query

@@ -25,3 +25,16 @@ func TestRisk(t *testing.T) {
 		}
 	}
 }
+
+func TestUsable(t *testing.T) {
+	dir := t.TempDir()
+	if !usable(filepath.Join(dir, "data")) {
+		t.Error("a new folder in a writable folder is usable")
+	}
+	if usable(filepath.Join(dir, "missing", "deeper", "data")) {
+		t.Error("a folder whose parent does not exist is not usable")
+	}
+	if got := userDataDir(); !filepath.IsAbs(got) || filepath.Base(got) != "modelkeeper" {
+		t.Errorf("user data dir %q", got)
+	}
+}
