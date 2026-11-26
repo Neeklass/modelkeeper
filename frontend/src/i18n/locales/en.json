@@ -627,6 +627,22 @@
         ]
       },
       {
+        "id": "care",
+        "title": "Safety, maintenance and other devices",
+        "body": [
+          "**Restore on a new PC**: in the first-run guide choose **Take over the work from another PC**, or in Settings → General → Backups **Restore from another folder…**, and pick the backup folder of the old PC (e.g. on the NAS or in Dropbox). The backup is checked, copied and restored at the next start.",
+          "**Undo a sync or import**: each sync with another PC and each import is one entry in the history (Settings → Tags → History) and can be undone like any change.",
+          "**Health check** (Settings → Maintenance): checks the catalog for damage, compacts it, puts thumbnails no model uses aside (deleted after 30 days) and warns when the drive is nearly full. Runs weekly by itself.",
+          "**Diagnostics**: Settings → Maintenance → **Export diagnostics…** writes a zip with the log and settings – without your catalog – to send along with a problem. Also on the error screen at the start.",
+          "**Photos of prints**: in the print log, **+ Photo** adds pictures of the result; **As cover** makes one the model's picture. Photos are part of the backups and the sync.",
+          "**Tag aliases and groups** (Settings → Tags): an alias like \"elves\" adds the tag \"elf\" when typed; a group (\"Race\", \"Scale\") sorts tags in the sidebar. Similar tags (plural, hyphen) are offered for merging.",
+          "**Print information**: for sliced files (.ctb, .gcode, .3mf) the file list in the detail view shows print time, layers and material on request.",
+          "**Collection as zip**: in a collection, **Export as zip…** copies all its files into one zip file (the originals are only read).",
+          "**Phone and tablet** (Settings → Maintenance): turns on a read-only view in the home network. Open the link shown there on the phone; nothing can be changed and no model file downloaded.",
+          "**Updates**: modelkeeper asks GitHub at the start whether a new version exists (can be turned off). Replace the program files; the data folder stays."
+        ]
+      },
+      {
         "id": "multi",
         "title": "Several models at once",
         "body": [

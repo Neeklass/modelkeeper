@@ -627,6 +627,22 @@
         ]
       },
       {
+        "id": "care",
+        "title": "Sicherheit, Wartung und andere Geräte",
+        "body": [
+          "**Auf einem neuen PC wiederherstellen**: Im Einstiegs-Assistenten **Arbeit von einem anderen PC übernehmen** wählen, oder in Einstellungen → Allgemein → Sicherungen **Aus einem anderen Ordner wiederherstellen…**, und den Sicherungsordner des alten PCs wählen (z. B. auf dem NAS oder in Dropbox). Die Sicherung wird geprüft, kopiert und beim nächsten Start wiederhergestellt.",
+          "**Abgleich oder Import rückgängig machen**: Jeder Abgleich mit einem anderen PC und jeder Import ist ein Eintrag im Verlauf (Einstellungen → Tags → Verlauf) und lässt sich wie jede Änderung rückgängig machen.",
+          "**Zustandsprüfung** (Einstellungen → Wartung): prüft den Katalog auf Schäden, verkleinert ihn, legt ungenutzte Vorschaubilder beiseite (nach 30 Tagen gelöscht) und warnt, wenn das Laufwerk fast voll ist. Läuft wöchentlich von selbst.",
+          "**Diagnose**: Einstellungen → Wartung → **Diagnose exportieren…** schreibt eine Zip-Datei mit Protokoll und Einstellungen – ohne deinen Katalog – zum Mitschicken bei einem Problem. Auch auf dem Fehlerbildschirm beim Start.",
+          "**Fotos von Drucken**: Im Druckprotokoll fügt **+ Foto** Bilder des Ergebnisses hinzu; **Als Titelbild** macht eines zum Bild des Modells. Fotos sind Teil der Sicherungen und des Abgleichs.",
+          "**Tag-Aliase und -Gruppen** (Einstellungen → Tags): Ein Alias wie „Elfen“ fügt beim Tippen den Tag „Elf“ hinzu; eine Gruppe („Volk“, „Maßstab“) sortiert Tags in der Seitenleiste. Ähnliche Tags (Mehrzahl, Bindestrich) werden zum Zusammenführen angeboten.",
+          "**Druckinformationen**: Für Slicer-Dateien (.ctb, .gcode, .3mf) zeigt die Dateiliste in der Detailansicht auf Wunsch Druckzeit, Schichten und Material.",
+          "**Sammlung als Zip**: In einer Sammlung kopiert **Als Zip exportieren…** alle ihre Dateien in eine Zip-Datei (die Originale werden nur gelesen).",
+          "**Handy und Tablet** (Einstellungen → Wartung): schaltet eine Nur-Lese-Ansicht im Heimnetz ein. Den dort gezeigten Link auf dem Handy öffnen; ändern lässt sich nichts, und keine Modelldatei kann heruntergeladen werden.",
+          "**Updates**: modelkeeper fragt beim Start bei GitHub, ob es eine neue Version gibt (abschaltbar). Programmdateien ersetzen; der Datenordner bleibt."
+        ]
+      },
+      {
         "id": "multi",
         "title": "Mehrere Modelle auf einmal",
         "body": [

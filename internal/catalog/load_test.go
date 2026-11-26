@@ -87,7 +87,7 @@ func TestLoad(t *testing.T) {
 	}
 	t.Logf("%d models, %d files inserted in %v", models, n, time.Since(start))
 
-	measure := func(what string, fn func() error) {
+	measureWithin := func(what string, max time.Duration, fn func() error) {
 		t.Helper()
 		s := time.Now()
 		if err := fn(); err != nil {
@@ -95,13 +95,17 @@ func TestLoad(t *testing.T) {
 		}
 		d := time.Since(s)
 		t.Logf("%-28s %v", what, d.Round(time.Millisecond))
-		if d > limit {
-			t.Errorf("%s took %v (limit %v)", what, d, limit)
+		if d > max {
+			t.Errorf("%s took %v (limit %v)", what, d, max)
 		}
 	}
+	measure := func(what string, fn func() error) { t.Helper(); measureWithin(what, limit, fn) }
+	// Detection runs in the background after a scan; it may take longer than
+	// a query the UI waits for (about 0.3 ms per file on a CI runner).
 	rules := detect.Rules{PartNames: settings.Defaults().PartNames, SizeTokens: settings.Defaults().SizeTokens}
-	measure("detection root 1", func() error { _, err := detect.Apply(ctx, conn, 1, rules); return err })
-	measure("detection root 2", func() error { _, err := detect.Apply(ctx, conn, 2, rules); return err })
+	perRoot := time.Duration(n/2) * time.Millisecond
+	measureWithin("detection root 1", perRoot, func() error { _, err := detect.Apply(ctx, conn, 1, rules); return err })
+	measureWithin("detection root 2", perRoot, func() error { _, err := detect.Apply(ctx, conn, 2, rules); return err })
 	var count int
 	conn.QueryRow(`SELECT count(*) FROM model`).Scan(&count)
 	if count < models*9/10 {

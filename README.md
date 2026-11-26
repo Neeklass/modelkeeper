@@ -30,6 +30,20 @@ no server, no cloud. The concept and all requirements are in
 - Sync of the cataloging work between PCs through a shared folder (NAS or
   Dropbox): a three-way merge, so removed tags and changed fields carry over
   too. A backup is made before the first sync of a day.
+  Each sync and import is one undoable entry in the history.
+- Restore from the external backup folder or any other one (e.g. the old
+  PC's on a new one), also from the first-run guide.
+- Weekly health check (integrity, compacting, unused thumbnails, disk space)
+  and a diagnostics zip without catalog data.
+- Photos of printed results (stored in the catalog, part of backups and
+  sync), usable as cover.
+- Tag aliases ("elves" adds "elf"), tag groups in the sidebar, similar tags
+  offered for merging.
+- Thumbnails also from OBJ files and 3MF meshes; print information (time,
+  layers, material) from .ctb, G-code and 3MF files.
+- A collection's files as one zip; a read-only view for phone and tablet in
+  the home network (off by default, access key, never serves model files);
+  update check against GitHub releases.
 - Sidebar with views (all, to catalog, favorites, recently added), creators,
   tags and locations; search, filter chips, grid with three tile sizes or
   list, keyboard navigation; detail view with picture gallery, rotatable 3D
@@ -182,6 +196,8 @@ go test ./...
 `internal/scanner` includes crash tests (the scan process is killed and
 resumed) and, if 7-Zip is installed, 7z fixtures. Opt-in performance tests:
 `MODELKEEPER_SCALE=10000 go test -run TestScale -v ./internal/scanner`.
+The UI queries on a large catalog: `go test -run TestLoad -v ./internal/catalog`
+(5,000 models; `MODELKEEPER_LOAD=full` for 20,000 models with 200,000 files).
 
 ## Layout
 
