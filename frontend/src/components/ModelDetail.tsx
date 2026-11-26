@@ -293,7 +293,7 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
 
             <section className="detail-section">
                 <h3>{t('models.notes')}</h3>
-                <Notes key={d.id} modelId={d.id} notes={d.notes} onSaved={onChanged}/>
+                <Notes key={d.id} modelId={d.id} notes={d.notes}/>
             </section>
 
             <details className="detail-section">
@@ -514,17 +514,17 @@ function EditableName({name, disabled, onSave}: { name: string; disabled: boolea
 /**
  * Notes are saved while typing (shortly after the last key), when leaving the
  * field, when another model is opened and when the window closes, so nothing
- * typed is lost. The field never locks while it saves.
+ * typed is lost. The field never locks while it saves, and the library is not
+ * reloaded for it (notes are not shown in the list; search is updated by the
+ * catalog itself).
  */
-function Notes({modelId, notes, onSaved}: { modelId: number; notes: string; onSaved: () => void }) {
+function Notes({modelId, notes}: { modelId: number; notes: string }) {
     const {t} = useTranslation()
     const [value, setValue] = useState(notes)
     const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
     const saved = useRef(notes)   // the text the catalog has
     const latest = useRef(notes)  // the text in the field
     const focused = useRef(false)
-    const savedCb = useRef(onSaved)
-    savedCb.current = onSaved
 
     // Changed elsewhere (undo, import) while not being edited: show it.
     useEffect(() => {
@@ -542,7 +542,6 @@ function Notes({modelId, notes, onSaved}: { modelId: number; notes: string; onSa
         UpdateModel(modelId, catalog.ModelUpdate.createFrom({notes: v})).then(() => {
             saved.current = v
             setState(latest.current === v ? 'saved' : 'saving')
-            savedCb.current()
         }).catch(() => setState('error'))
     }, [modelId])
 

@@ -212,8 +212,7 @@ func JournalCorrection(ctx context.Context, tx *sql.Tx, action string, params ma
 		time.Now().UnixMilli(), action, p, len(cms), string(b)); err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `DELETE FROM journal WHERE id <= (SELECT max(id) FROM journal) - ?`, journalKeep)
-	return err
+	return pruneJournal(ctx, tx)
 }
 
 func sortRows(rows []overrideRow) {
