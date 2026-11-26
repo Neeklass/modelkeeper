@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react'
+import {AppIcon} from './AppIcon'
 import {useTranslation} from 'react-i18next'
 import {CreateCollection, DeleteSavedSearch, GetScanProgress, PauseScan} from '../../wailsjs/go/main/App'
 import {main, scanner} from '../../wailsjs/go/models'
@@ -46,7 +47,7 @@ export function Sidebar({view, onView, query, onQuery, library, status}: {
 
     return (
         <nav className="sidebar" aria-label={t('nav.label')}>
-            <div className="brand">{t('app.title')}</div>
+            <div className="brand"><AppIcon/>{t('app.title')}</div>
 
             <div className="side-section">
                 <SideItem icon="▦" label={t('nav.all')} count={library.counts.all}

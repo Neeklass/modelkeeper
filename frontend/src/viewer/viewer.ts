@@ -9,8 +9,8 @@ import {ThreeMFLoader} from 'three/examples/jsm/loaders/3MFLoader.js'
 import {upAxis, orientMatrix} from './orient'
 
 // Same look as rendered thumbnails (internal/thumbs/render.go).
-const BACKGROUND = 0x3a3c44
-const MODEL_COLOR = 0xc9cdd6
+const BACKGROUND = 0x343434
+const MODEL_COLOR = 0xd0d0d0
 // Initial view: turned 30° and looking down 20°, like the thumbnails.
 const YAW = 30 * Math.PI / 180
 const PITCH = 20 * Math.PI / 180
@@ -52,7 +52,7 @@ export class Viewer {
         this.renderer.setClearColor(BACKGROUND)
         host.appendChild(this.renderer.domElement)
 
-        this.scene.add(new THREE.HemisphereLight(0xffffff, 0x50525a, 1.6))
+        this.scene.add(new THREE.HemisphereLight(0xffffff, 0x505050, 1.6))
         const key = new THREE.DirectionalLight(0xffffff, 2.2)
         key.position.set(-0.5, 1, 1) // relative to the camera: upper left, like the thumbnails
         this.camera.add(key)

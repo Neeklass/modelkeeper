@@ -31,7 +31,7 @@ func main() {
 			Assets:  assets,
 			Handler: assetHandler{app}, // serves /thumbs/ and /files/
 		},
-		BackgroundColour: &options.RGBA{R: 24, G: 24, B: 27, A: 1},
+		BackgroundColour: &options.RGBA{R: 20, G: 20, B: 20, A: 1}, // --bg of the Graphit theme
 		// One instance per data folder: a second start (a double click while
 		// it is open) brings the open window to the front instead of running
 		// two programs on the same catalog. Two installations with different
