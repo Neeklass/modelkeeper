@@ -204,3 +204,28 @@ func TestApplyGarbageCollects(t *testing.T) {
 		t.Errorf("fts rows = %d, want 1", n)
 	}
 }
+
+// A subfolder renamed inside a model (found in the release test): the old
+// paths are missing, the same content is present in the same model again, so
+// nothing counts as missing. A file really gone still does.
+func TestRenamedSubfolderIsNotMissing(t *testing.T) {
+	f := newFixture(t)
+	r := f.root(`C:\models`)
+	old := f.file(r, "Creator/Orc/Supported/orc_sup.stl", "orc-sup")
+	gone := f.file(r, "Creator/Orc/Unsupported/orc.stl", "orc")
+	f.file(r, "Creator/Orc/Unsupported/orc_base.stl", "orc-base")
+	f.apply(r)
+	orc := f.modelOf(old)
+	f.exec(`UPDATE location SET present = 0 WHERE id IN (?, ?)`, old, gone)
+	n := f.file(r, "Creator/Orc/Presupported/orc_sup.stl", "orc-sup")
+	f.apply(r)
+	if f.modelOf(n) != orc {
+		t.Fatalf("renamed subfolder left the model")
+	}
+	if f.modelOf(old) != 0 {
+		t.Errorf("moved file still counts as missing")
+	}
+	if f.modelOf(gone) != orc {
+		t.Errorf("a file really gone must stay missing in its model")
+	}
+}
