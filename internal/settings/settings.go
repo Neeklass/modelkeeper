@@ -53,6 +53,8 @@ type Settings struct {
 	LANKey  string `json:"lanKey,omitempty"`
 	// UpdateCheck: look for a new release at the start ("" = on, "off").
 	UpdateCheck string `json:"updateCheck,omitempty"`
+	// WelcomeDone: the first-run guide was finished or skipped.
+	WelcomeDone bool `json:"welcomeDone,omitempty"`
 }
 
 // Defaults returns the built-in settings.

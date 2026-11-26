@@ -477,3 +477,7 @@ export function SetUpdateCheck(arg1) {
 export function OpenReleasePage() {
   return window['go']['main']['App']['OpenReleasePage']();
 }
+
+export function FinishWelcome() {
+  return window['go']['main']['App']['FinishWelcome']();
+}

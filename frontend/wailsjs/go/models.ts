@@ -861,6 +861,7 @@ export namespace main {
 	    externalBackupDir: string;
 	    lastRestoreTest?: backup.RestoreCheck;
 	    starting: boolean;
+	    showWelcome: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppStatus(source);
@@ -883,6 +884,7 @@ export namespace main {
 	        this.externalBackupDir = source["externalBackupDir"];
 	        this.lastRestoreTest = this.convertValues(source["lastRestoreTest"], backup.RestoreCheck);
 	        this.starting = source["starting"];
+	        this.showWelcome = source["showWelcome"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

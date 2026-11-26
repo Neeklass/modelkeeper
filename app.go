@@ -329,6 +329,8 @@ type AppStatus struct {
 	LastRestoreTest *backup.RestoreCheck `json:"lastRestoreTest,omitempty"`
 	// Starting: the start is still running; nothing else is set yet.
 	Starting bool `json:"starting"`
+	// ShowWelcome: a new installation (no root folder yet, guide not done).
+	ShowWelcome bool `json:"showWelcome"`
 }
 
 // BackupInfo describes a snapshot.
@@ -441,11 +443,28 @@ func (a *App) GetStatus() AppStatus {
 		st := a.settings.Get()
 		s.Language, s.NASRescanHours = st.Language, st.NASRescanHours
 		s.SlicerPath, s.ExternalBackupDir = st.SlicerPath, st.ExternalBackupDir
+		if !st.WelcomeDone && a.db != nil && a.startupErr == nil {
+			var roots int
+			if a.db.QueryRow(`SELECT count(*) FROM root`).Scan(&roots) == nil && roots == 0 {
+				s.ShowWelcome = true
+			}
+		}
 	}
 	if a.layout.Root != "" {
 		s.LastRestoreTest = backup.LastRestoreCheck(a.layout.Root)
 	}
 	return s
+}
+
+// FinishWelcome marks the first-run guide as done (it is not shown again).
+func (a *App) FinishWelcome() error {
+	if !a.started() || a.settings == nil {
+		return msg.Wrap(nil, "error.notReady")
+	}
+	if err := a.settings.Update(func(s *settings.Settings) { s.WelcomeDone = true }); err != nil {
+		return msg.Wrap(err, "error.settingsSave")
+	}
+	return nil
 }
 
 // SetLanguage stores the UI language ("" = follow system locale).

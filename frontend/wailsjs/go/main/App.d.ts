@@ -249,3 +249,5 @@ export function CheckForUpdateNow():Promise<main.UpdateStatus>;
 export function SetUpdateCheck(arg1:boolean):Promise<void>;
 
 export function OpenReleasePage():Promise<void>;
+
+export function FinishWelcome():Promise<void>;

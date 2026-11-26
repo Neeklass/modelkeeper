@@ -671,3 +671,7 @@ details.detail-section[open] summary h3::before { content: '▾ '; }
 .group-input { width: 8em; }
 .slicer-info { color: var(--fg-muted, inherit); margin-top: 2px; }
 .selectable { user-select: text; -webkit-user-select: text; }
+.welcome { max-width: 640px; }
+.welcome-choices { display: grid; gap: 8px; margin: 12px 0; }
+.welcome-choice { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 12px 14px; }
+.welcome-tour li { margin: 6px 0; }

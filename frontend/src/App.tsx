@@ -24,6 +24,7 @@ import {TagManagerPanel} from './components/TagManager'
 import {ConfigTransferPanel, MovedBanner} from './components/ConfigTransfer'
 import {StatsView} from './components/StatsView'
 import {SyncPanel} from './components/SyncPanel'
+import {Welcome} from './components/Welcome'
 import {DiagnosticsButton, DiagnosticsPanel, HealthPanel, LANPanel, UpdatePanel, useHealth} from './components/Maintenance'
 
 /** Sections of the settings page. */
@@ -112,6 +113,12 @@ function App() {
 
     if (status.startupError) {
         return <StartupError status={status} onStarted={setStatus}/>
+    }
+    if (status.showWelcome) {
+        return <Welcome status={status} onDone={() => {
+            GetStatus().then(setStatus).catch(() => setStatus(main.AppStatus.createFrom({...status, showWelcome: false})))
+            library.reload()
+        }}/>
     }
 
     return (
