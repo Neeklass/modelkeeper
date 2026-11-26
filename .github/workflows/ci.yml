@@ -46,6 +46,9 @@ jobs:
           go run github.com/wailsapp/wails/v2/cmd/wails@v2.17.1 generate module
           if ! git diff --quiet -- frontend/wailsjs; then
             git diff --stat -- frontend/wailsjs
+            echo "----- BEGIN BINDINGS PATCH -----"
+            git diff --no-color -- frontend/wailsjs
+            echo "----- END BINDINGS PATCH -----"
             echo "::error::frontend/wailsjs differs from the generated bindings (see the artifact 'wailsjs')"
             exit 1
           fi
