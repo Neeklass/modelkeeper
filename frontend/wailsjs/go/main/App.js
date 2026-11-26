@@ -122,6 +122,10 @@ export function DetachAnchor(arg1, arg2, arg3) {
   return window['go']['main']['App']['DetachAnchor'](arg1, arg2, arg3);
 }
 
+export function DetachFiles(arg1, arg2) {
+  return window['go']['main']['App']['DetachFiles'](arg1, arg2);
+}
+
 export function DismissMoved() {
   return window['go']['main']['App']['DismissMoved']();
 }
@@ -276,6 +280,10 @@ export function MarkFolderNotModel(arg1, arg2) {
 
 export function MergeModels(arg1, arg2) {
   return window['go']['main']['App']['MergeModels'](arg1, arg2);
+}
+
+export function MoveFilesToModel(arg1, arg2, arg3) {
+  return window['go']['main']['App']['MoveFilesToModel'](arg1, arg2, arg3);
 }
 
 export function MoveInCollection(arg1, arg2, arg3) {
@@ -480,12 +488,4 @@ export function UpdateModels(arg1, arg2) {
 
 export function UsePhotoAsThumbnail(arg1) {
   return window['go']['main']['App']['UsePhotoAsThumbnail'](arg1);
-}
-
-export function MoveFilesToModel(arg1,arg2,arg3) {
-  return window['go']['main']['App']['MoveFilesToModel'](arg1,arg2,arg3);
-}
-
-export function DetachFiles(arg1,arg2) {
-  return window['go']['main']['App']['DetachFiles'](arg1,arg2);
 }

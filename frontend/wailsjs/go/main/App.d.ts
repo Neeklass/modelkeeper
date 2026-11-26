@@ -71,6 +71,8 @@ export function DeleteTag(arg1:string):Promise<number>;
 
 export function DetachAnchor(arg1:number,arg2:number,arg3:string):Promise<void>;
 
+export function DetachFiles(arg1:number,arg2:Array<number>):Promise<void>;
+
 export function DismissMoved():Promise<void>;
 
 export function DismissNotice():Promise<void>;
@@ -148,6 +150,8 @@ export function MarkFolderModel(arg1:number,arg2:string):Promise<void>;
 export function MarkFolderNotModel(arg1:number,arg2:string):Promise<void>;
 
 export function MergeModels(arg1:number,arg2:Array<number>):Promise<void>;
+
+export function MoveFilesToModel(arg1:number,arg2:number,arg3:Array<number>):Promise<void>;
 
 export function MoveInCollection(arg1:number,arg2:number,arg3:number):Promise<void>;
 
@@ -250,7 +254,3 @@ export function UpdateModel(arg1:number,arg2:catalog.ModelUpdate):Promise<void>;
 export function UpdateModels(arg1:Array<number>,arg2:catalog.ModelUpdate):Promise<void>;
 
 export function UsePhotoAsThumbnail(arg1:number):Promise<void>;
-
-export function MoveFilesToModel(arg1:number,arg2:number,arg3:Array<number>):Promise<void>;
-
-export function DetachFiles(arg1:number,arg2:Array<number>):Promise<void>;
