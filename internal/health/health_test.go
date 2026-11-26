@@ -33,7 +33,7 @@ func TestCheck(t *testing.T) {
 	for _, n := range []string{"u1.jpg", "gone.jpg", "notes.txt"} {
 		os.WriteFile(filepath.Join(thumbs, n), []byte("x"), 0o644)
 	}
-	now := time.Now()
+	now := time.Now().Add(2 * time.Hour) // the files are older than an hour by then
 	r, err := health.Check(ctx, conn, file, health.Options{DataDir: dir, ThumbDir: thumbs, Now: now})
 	if err != nil {
 		t.Fatal(err)
@@ -78,8 +78,28 @@ func TestCheckLeavesThumbnailsWithoutCatalog(t *testing.T) {
 	thumbs := filepath.Join(dir, "thumbnails")
 	os.MkdirAll(thumbs, 0o755)
 	os.WriteFile(filepath.Join(thumbs, "a.jpg"), []byte("x"), 0o644)
-	r, err := health.Check(context.Background(), conn, file, health.Options{ThumbDir: thumbs})
+	r, err := health.Check(context.Background(), conn, file, health.Options{ThumbDir: thumbs, Now: time.Now().Add(2 * time.Hour)})
 	if err != nil || r.Orphaned != 0 {
+		t.Errorf("%+v %v", r, err)
+	}
+}
+
+// A thumbnail written in the last hour is never moved aside.
+func TestCheckKeepsFreshThumbnails(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "catalog.db")
+	conn, err := db.Open(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close(conn)
+	conn.Exec(`INSERT INTO model (uid, name, thumb_file, thumb_source, created_at, updated_at) VALUES ('a', 'a', 'a.jpg', 'manual', 0, 0)`)
+	thumbs := filepath.Join(dir, "thumbnails")
+	os.MkdirAll(thumbs, 0o755)
+	os.WriteFile(filepath.Join(thumbs, "a.jpg"), []byte("x"), 0o644)
+	os.WriteFile(filepath.Join(thumbs, "new.jpg"), []byte("x"), 0o644)
+	r, err := health.Check(context.Background(), conn, file, health.Options{ThumbDir: thumbs})
+	if err != nil || r.Orphaned != 0 || r.Thumbnails != 2 {
 		t.Errorf("%+v %v", r, err)
 	}
 }

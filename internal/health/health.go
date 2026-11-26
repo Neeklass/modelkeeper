@@ -169,11 +169,15 @@ func thumbnails(ctx context.Context, db *sql.DB, o Options, r *Report) error {
 		if e.IsDir() || !strings.EqualFold(filepath.Ext(name), ".jpg") {
 			continue
 		}
-		if used[strings.ToLower(name)] || !safe {
+		fi, err := e.Info()
+		if err != nil {
+			continue
+		}
+		// Used, or written just now (a thumbnail being saved while the check
+		// runs): kept.
+		if used[strings.ToLower(name)] || !safe || o.Now.Sub(fi.ModTime()) < time.Hour {
 			r.Thumbnails++
-			if fi, err := e.Info(); err == nil {
-				r.ThumbnailBytes += fi.Size()
-			}
+			r.ThumbnailBytes += fi.Size()
 			continue
 		}
 		if err := os.MkdirAll(aside, 0o755); err != nil {
