@@ -94,7 +94,7 @@ type Watcher struct {
 	db    *sql.DB
 	scans Scanner
 	opts  Options
-	fs    *fsnotify.Watcher
+	fs    backend
 
 	mu      sync.Mutex
 	roots   map[int64]*root
@@ -112,7 +112,7 @@ type Watcher struct {
 
 // New creates a watcher and starts its event loop. Call Sync to pick up roots.
 func New(db *sql.DB, scans Scanner, opts Options) (*Watcher, error) {
-	fw, err := fsnotify.NewBufferedWatcher(4096)
+	fw, err := newBackend()
 	if err != nil {
 		return nil, err
 	}
@@ -236,6 +236,9 @@ func (w *Watcher) watchTree(top string) error {
 	} else if !fi.IsDir() {
 		return errors.New("not a folder")
 	}
+	if w.fs.Recursive() { // one watch for the whole tree (Windows)
+		return w.fs.Add(top)
+	}
 	var firstErr error
 	filepath.WalkDir(top, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -293,12 +296,12 @@ func (w *Watcher) loop(t tickers) {
 		select {
 		case <-w.quit:
 			return
-		case ev, ok := <-w.fs.Events:
+		case ev, ok := <-w.fs.Events():
 			if !ok {
 				return
 			}
 			w.handle(ev)
-		case err, ok := <-w.fs.Errors:
+		case err, ok := <-w.fs.Errors():
 			if !ok {
 				return
 			}
@@ -332,9 +335,12 @@ func (w *Watcher) handle(ev fsnotify.Event) {
 	if ev.Has(fsnotify.Create) {
 		if fi, err := os.Stat(ev.Name); err == nil && fi.IsDir() {
 			isDir = true
-			// Files created inside before the watch was added are found by the scan.
-			if err := w.watchTree(ev.Name); err != nil {
-				log.Printf("watch %s: %v", ev.Name, err)
+			// Files created inside before the watch was added are found by
+			// the scan. A recursive watch covers new folders already.
+			if !w.fs.Recursive() {
+				if err := w.watchTree(ev.Name); err != nil {
+					log.Printf("watch %s: %v", ev.Name, err)
+				}
 			}
 		}
 	}

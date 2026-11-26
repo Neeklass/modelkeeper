@@ -15,15 +15,23 @@ export function TagInput({allTags, placeholder, buttonLabel, disabled, autoFocus
 }) {
     const [value, setValue] = useState('')
     const listId = useId()
+    // The field stays usable while a tag is saved: what is typed meanwhile is
+    // kept (found in the release test: keystrokes right after Enter were lost).
     const submit = async () => {
-        const names = value.split(',').map(s => s.trim()).filter(Boolean)
+        if (disabled) return
+        const sent = value
+        const names = sent.split(',').map(s => s.trim()).filter(Boolean)
         if (names.length === 0) return
-        await onSubmit(names)
         setValue('')
+        try {
+            await onSubmit(names)
+        } catch {
+            setValue(v => v || sent)
+        }
     }
     return (
         <span className="row tag-input">
-            <input list={listId} value={value} placeholder={placeholder} disabled={disabled} autoFocus={autoFocus}
+            <input list={listId} value={value} placeholder={placeholder} aria-busy={disabled} autoFocus={autoFocus}
                    onChange={e => setValue(e.target.value)}
                    onKeyDown={e => {
                        if (e.key === 'Enter') {

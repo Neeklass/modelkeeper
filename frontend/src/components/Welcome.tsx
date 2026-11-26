@@ -2,7 +2,7 @@ import {useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
     AddRoot, ChooseExternalBackupDir, FinishWelcome, ListBackupsIn, PickBackupFolder, PickFolder, Quit, RestoreFrom,
-    SetLanguage, SetSyncDir,
+    SetLanguage, SetSyncDir, StartScan,
 } from '../../wailsjs/go/main/App'
 import {main} from '../../wailsjs/go/models'
 import i18n, {languages, resolveLanguage, systemLanguage} from '../i18n'
@@ -141,8 +141,9 @@ export function Welcome({status, onDone}: { status: main.AppStatus; onDone: () =
                     <button disabled={busy} onClick={() => run(async () => {
                         const path = await PickFolder()
                         if (!path) return
-                        await AddRoot(path)
+                        const r = await AddRoot(path)
                         setFolders(fs => [...fs, path])
+                        await StartScan(r.id) // reading starts right away, in the background
                     })}>+ {t('welcome.addFolder')}</button>
                     <p className="small muted">{t('welcome.foldersHint')}</p>
                     <div className="row modal-actions">
