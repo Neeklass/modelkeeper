@@ -31,46 +31,6 @@ export namespace backup {
 
 export namespace catalog {
 	
-	export class Print {
-	    id: number;
-	    modelId: number;
-	    printedAt: number;
-	    result: string;
-	    printer: string;
-	    settings: string;
-	    notes: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new Print(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.modelId = source["modelId"];
-	        this.printedAt = source["printedAt"];
-	        this.result = source["result"];
-	        this.printer = source["printer"];
-	        this.settings = source["settings"];
-	        this.notes = source["notes"];
-	    }
-	}
-	
-	export class CollectionRef {
-	    id: number;
-	    name: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new CollectionRef(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.name = source["name"];
-	    }
-	}
-	
 	export class Collection {
 	    id: number;
 	    name: string;
@@ -87,43 +47,20 @@ export namespace catalog {
 	        this.models = source["models"];
 	    }
 	}
-	
-	export class SavedSearch {
+	export class CollectionRef {
 	    id: number;
 	    name: string;
-	    query: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new SavedSearch(source);
+	        return new CollectionRef(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.name = source["name"];
-	        this.query = source["query"];
 	    }
 	}
-	
-	export class SizeCount {
-	    key: string;
-	    id?: number;
-	    files: number;
-	    bytes: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new SizeCount(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.key = source["key"];
-	        this.id = source["id"];
-	        this.files = source["files"];
-	        this.bytes = source["bytes"];
-	    }
-	}
-	
 	export class DuplicateGroup {
 	    hash: string;
 	    path: string;
@@ -144,75 +81,6 @@ export namespace catalog {
 	        this.extra = source["extra"];
 	    }
 	}
-	
-	export class ModelSize {
-	    id: number;
-	    name: string;
-	    bytes: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new ModelSize(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.name = source["name"];
-	        this.bytes = source["bytes"];
-	    }
-	}
-	
-	export class Stats {
-	    files: number;
-	    bytes: number;
-	    unhashed: number;
-	    roots: SizeCount[];
-	    creators: SizeCount[];
-	    categories: SizeCount[];
-	    exts: SizeCount[];
-	    models: ModelSize[];
-	    dupFiles: number;
-	    dupExtra: number;
-	    duplicates: DuplicateGroup[];
-	
-	    static createFrom(source: any = {}) {
-	        return new Stats(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.files = source["files"];
-	        this.bytes = source["bytes"];
-	        this.unhashed = source["unhashed"];
-	        this.roots = this.convertValues(source["roots"], SizeCount);
-	        this.creators = this.convertValues(source["creators"], SizeCount);
-	        this.categories = this.convertValues(source["categories"], SizeCount);
-	        this.exts = this.convertValues(source["exts"], SizeCount);
-	        this.models = this.convertValues(source["models"], ModelSize);
-	        this.dupFiles = source["dupFiles"];
-	        this.dupExtra = source["dupExtra"];
-	        this.duplicates = this.convertValues(source["duplicates"], DuplicateGroup);
-	    }
-
-	convertValues(a: any, classs: any, asMap: boolean = false): any {
-	    if (!a) {
-	        return a;
-	    }
-	    if (a.slice && a.map) {
-	        return (a as any[]).map(elem => this.convertValues(elem, classs));
-	    } else if ("object" === typeof a) {
-	        if (asMap) {
-	            for (const key of Object.keys(a)) {
-	                a[key] = new classs(a[key]);
-	            }
-	            return a;
-	        }
-	        return new classs(a);
-	    }
-	    return a;
-	}
-	}
-	
 	export class FileTypesChange {
 	    removed: number;
 	    recategorized: number;
@@ -281,7 +149,7 @@ export namespace catalog {
 	    id: number;
 	    at: number;
 	    action: string;
-	    params?: {[key: string]: any};
+	    params?: Record<string, any>;
 	    models: number;
 	    undone: boolean;
 	
@@ -299,7 +167,6 @@ export namespace catalog {
 	        this.undone = source["undone"];
 	    }
 	}
-	
 	export class Issue {
 	    id: number;
 	    kind: string;
@@ -360,6 +227,30 @@ export namespace catalog {
 	        this.rootRemoved = source["rootRemoved"];
 	        this.path = source["path"];
 	        this.kind = source["kind"];
+	    }
+	}
+	export class Print {
+	    id: number;
+	    modelId: number;
+	    printedAt: number;
+	    result: string;
+	    printer: string;
+	    settings: string;
+	    notes: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Print(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.modelId = source["modelId"];
+	        this.printedAt = source["printedAt"];
+	        this.result = source["result"];
+	        this.printer = source["printer"];
+	        this.settings = source["settings"];
+	        this.notes = source["notes"];
 	    }
 	}
 	export class ModelFile {
@@ -598,6 +489,22 @@ export namespace catalog {
 	    }
 	}
 	
+	export class ModelSize {
+	    id: number;
+	    name: string;
+	    bytes: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelSize(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.bytes = source["bytes"];
+	    }
+	}
 	export class ModelUpdate {
 	    name?: string;
 	    notes?: string;
@@ -625,6 +532,7 @@ export namespace catalog {
 	    }
 	}
 	
+	
 	export class RelocateCheck {
 	    path: string;
 	    sampled: number;
@@ -647,7 +555,6 @@ export namespace catalog {
 	        this.total = source["total"];
 	    }
 	}
-	
 	export class RemovedRoot {
 	    id: number;
 	    path: string;
@@ -657,6 +564,7 @@ export namespace catalog {
 	    lastScanAt?: number;
 	    removedAt?: number;
 	    live: boolean;
+	    scanPaused: boolean;
 	    reactivated?: boolean;
 	    files: number;
 	    orphaned: number;
@@ -675,6 +583,7 @@ export namespace catalog {
 	        this.lastScanAt = source["lastScanAt"];
 	        this.removedAt = source["removedAt"];
 	        this.live = source["live"];
+	        this.scanPaused = source["scanPaused"];
 	        this.reactivated = source["reactivated"];
 	        this.files = source["files"];
 	        this.orphaned = source["orphaned"];
@@ -740,11 +649,111 @@ export namespace catalog {
 	        this.duplicateFiles = source["duplicateFiles"];
 	    }
 	}
+	export class SavedSearch {
+	    id: number;
+	    name: string;
+	    query: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SavedSearch(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.query = source["query"];
+	    }
+	}
+	export class SizeCount {
+	    key: string;
+	    id?: number;
+	    files: number;
+	    bytes: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SizeCount(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.key = source["key"];
+	        this.id = source["id"];
+	        this.files = source["files"];
+	        this.bytes = source["bytes"];
+	    }
+	}
+	export class Stats {
+	    files: number;
+	    bytes: number;
+	    unhashed: number;
+	    roots: SizeCount[];
+	    creators: SizeCount[];
+	    categories: SizeCount[];
+	    exts: SizeCount[];
+	    models: ModelSize[];
+	    dupFiles: number;
+	    dupExtra: number;
+	    duplicates: DuplicateGroup[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Stats(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.files = source["files"];
+	        this.bytes = source["bytes"];
+	        this.unhashed = source["unhashed"];
+	        this.roots = this.convertValues(source["roots"], SizeCount);
+	        this.creators = this.convertValues(source["creators"], SizeCount);
+	        this.categories = this.convertValues(source["categories"], SizeCount);
+	        this.exts = this.convertValues(source["exts"], SizeCount);
+	        this.models = this.convertValues(source["models"], ModelSize);
+	        this.dupFiles = source["dupFiles"];
+	        this.dupExtra = source["dupExtra"];
+	        this.duplicates = this.convertValues(source["duplicates"], DuplicateGroup);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class TagCount {
+	    id: number;
+	    name: string;
+	    models: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new TagCount(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.models = source["models"];
+	    }
+	}
 	export class UndoResult {
 	    id: number;
 	    at: number;
 	    action: string;
-	    params?: {[key: string]: any};
+	    params?: Record<string, any>;
 	    models: number;
 	    undone: boolean;
 	    restored: number;
@@ -764,23 +773,6 @@ export namespace catalog {
 	        this.undone = source["undone"];
 	        this.restored = source["restored"];
 	        this.skipped = source["skipped"];
-	    }
-	}
-	
-	export class TagCount {
-	    id: number;
-	    name: string;
-	    models: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new TagCount(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.name = source["name"];
-	        this.models = source["models"];
 	    }
 	}
 
@@ -808,100 +800,6 @@ export namespace hashshare {
 }
 
 export namespace main {
-	
-	export class ConfigApply {
-	    detection: boolean;
-	    program: boolean;
-	    machine: boolean;
-	    roots: string[];
-	
-	    static createFrom(source: any = {}) {
-	        return new ConfigApply(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.detection = source["detection"];
-	        this.program = source["program"];
-	        this.machine = source["machine"];
-	        this.roots = source["roots"];
-	    }
-	}
-	
-	export class ConfigOutcome {
-	    rootsAdded: number;
-	    skipped: string[];
-	
-	    static createFrom(source: any = {}) {
-	        return new ConfigOutcome(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.rootsAdded = source["rootsAdded"];
-	        this.skipped = source["skipped"];
-	    }
-	}
-	
-	export class ConfigRootPreview {
-	    path: string;
-	    kind?: string;
-	    creatorLevel: boolean;
-	    exists: boolean;
-	    added: boolean;
-	
-	    static createFrom(source: any = {}) {
-	        return new ConfigRootPreview(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.path = source["path"];
-	        this.kind = source["kind"];
-	        this.creatorLevel = source["creatorLevel"];
-	        this.exists = source["exists"];
-	        this.added = source["added"];
-	    }
-	}
-	
-	export class ConfigPreview {
-	    file: string;
-	    settings: settings.Settings;
-	    roots: ConfigRootPreview[];
-	    exported: string;
-	    version: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new ConfigPreview(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.file = source["file"];
-	        this.settings = this.convertValues(source["settings"], settings.Settings);
-	        this.roots = this.convertValues(source["roots"], ConfigRootPreview);
-	        this.exported = source["exported"];
-	        this.version = source["version"];
-	    }
-
-	convertValues(a: any, classs: any, asMap: boolean = false): any {
-	    if (!a) {
-	        return a;
-	    }
-	    if (a.slice && a.map) {
-	        return (a as any[]).map(elem => this.convertValues(elem, classs));
-	    } else if ("object" === typeof a) {
-	        if (asMap) {
-	            for (const key of Object.keys(a)) {
-	                a[key] = new classs(a[key]);
-	            }
-	            return a;
-	        }
-	        return new classs(a);
-	    }
-	    return a;
-	}
-	}
 	
 	export class BackupInfo {
 	    name: string;
@@ -967,6 +865,97 @@ export namespace main {
 	        this.externalBackupDir = source["externalBackupDir"];
 	        this.lastRestoreTest = this.convertValues(source["lastRestoreTest"], backup.RestoreCheck);
 	        this.starting = source["starting"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class ConfigApply {
+	    detection: boolean;
+	    program: boolean;
+	    machine: boolean;
+	    roots: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigApply(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.detection = source["detection"];
+	        this.program = source["program"];
+	        this.machine = source["machine"];
+	        this.roots = source["roots"];
+	    }
+	}
+	export class ConfigOutcome {
+	    rootsAdded: number;
+	    skipped: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigOutcome(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rootsAdded = source["rootsAdded"];
+	        this.skipped = source["skipped"];
+	    }
+	}
+	export class ConfigRootPreview {
+	    path: string;
+	    kind?: string;
+	    creatorLevel: boolean;
+	    exists: boolean;
+	    added: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigRootPreview(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.kind = source["kind"];
+	        this.creatorLevel = source["creatorLevel"];
+	        this.exists = source["exists"];
+	        this.added = source["added"];
+	    }
+	}
+	export class ConfigPreview {
+	    file: string;
+	    settings: settings.Settings;
+	    roots: ConfigRootPreview[];
+	    exported: string;
+	    version: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigPreview(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.file = source["file"];
+	        this.settings = this.convertValues(source["settings"], settings.Settings);
+	        this.roots = this.convertValues(source["roots"], ConfigRootPreview);
+	        this.exported = source["exported"];
+	        this.version = source["version"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1074,13 +1063,15 @@ export namespace main {
 	        this.path = source["path"];
 	    }
 	}
-	
 	export class ImportOutcome {
 	    match: userexport.Counts;
 	    tags: number;
 	    overrides: number;
 	    overridesSkipped: number;
 	    thumbnails: number;
+	    prints: number;
+	    collections: number;
+	    tagsRemoved: number;
 	    rootsAdded: number[];
 	    rootsChanged: number[];
 	    backup: string;
@@ -1097,31 +1088,33 @@ export namespace main {
 	        this.overrides = source["overrides"];
 	        this.overridesSkipped = source["overridesSkipped"];
 	        this.thumbnails = source["thumbnails"];
+	        this.prints = source["prints"];
+	        this.collections = source["collections"];
+	        this.tagsRemoved = source["tagsRemoved"];
 	        this.rootsAdded = source["rootsAdded"];
 	        this.rootsChanged = source["rootsChanged"];
 	        this.backup = source["backup"];
 	        this.settingsImported = source["settingsImported"];
 	    }
-
-	convertValues(a: any, classs: any, asMap: boolean = false): any {
-	    if (!a) {
-	        return a;
-	    }
-	    if (a.slice && a.map) {
-	        return (a as any[]).map(elem => this.convertValues(elem, classs));
-	    } else if ("object" === typeof a) {
-	        if (asMap) {
-	            for (const key of Object.keys(a)) {
-	                a[key] = new classs(a[key]);
-	            }
-	            return a;
-	        }
-	        return new classs(a);
-	    }
-	    return a;
-	}
-	}
 	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ImportPreview {
 	    file: string;
 	    plan: userexport.Plan;
@@ -1137,26 +1130,25 @@ export namespace main {
 	        this.plan = this.convertValues(source["plan"], userexport.Plan);
 	        this.roots = this.convertValues(source["roots"], catalog.Root);
 	    }
-
-	convertValues(a: any, classs: any, asMap: boolean = false): any {
-	    if (!a) {
-	        return a;
-	    }
-	    if (a.slice && a.map) {
-	        return (a as any[]).map(elem => this.convertValues(elem, classs));
-	    } else if ("object" === typeof a) {
-	        if (asMap) {
-	            for (const key of Object.keys(a)) {
-	                a[key] = new classs(a[key]);
-	            }
-	            return a;
-	        }
-	        return new classs(a);
-	    }
-	    return a;
-	}
-	}
 	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ImportResult {
 	    files: number;
 	    archives: number;
@@ -1181,7 +1173,6 @@ export namespace main {
 	        this.scanStarted = source["scanStarted"];
 	    }
 	}
-
 	export class RootMove {
 	    rootId: number;
 	    from: string;
@@ -1198,7 +1189,6 @@ export namespace main {
 	        this.to = source["to"];
 	    }
 	}
-
 	export class SyncPeer {
 	    name: string;
 	    modified: number;
@@ -1217,7 +1207,6 @@ export namespace main {
 	        this.error = source["error"];
 	    }
 	}
-	
 	export class SyncStatus {
 	    dir: string;
 	    own: string;
@@ -1243,24 +1232,24 @@ export namespace main {
 	        this.waiting = source["waiting"];
 	        this.exported = source["exported"];
 	    }
-
-	convertValues(a: any, classs: any, asMap: boolean = false): any {
-	    if (!a) {
-	        return a;
-	    }
-	    if (a.slice && a.map) {
-	        return (a as any[]).map(elem => this.convertValues(elem, classs));
-	    } else if ("object" === typeof a) {
-	        if (asMap) {
-	            for (const key of Object.keys(a)) {
-	                a[key] = new classs(a[key]);
-	            }
-	            return a;
-	        }
-	        return new classs(a);
-	    }
-	    return a;
-	}
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 
 }
@@ -1395,7 +1384,6 @@ export namespace settings {
 	        this.supplementary = source["supplementary"];
 	    }
 	}
-
 	export class Settings {
 	    version: number;
 	    language: string;
@@ -1406,6 +1394,8 @@ export namespace settings {
 	    slicerPath?: string;
 	    externalBackupDir?: string;
 	    dataDir?: string;
+	    syncDir?: string;
+	    syncId?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Settings(source);
@@ -1422,25 +1412,27 @@ export namespace settings {
 	        this.slicerPath = source["slicerPath"];
 	        this.externalBackupDir = source["externalBackupDir"];
 	        this.dataDir = source["dataDir"];
+	        this.syncDir = source["syncDir"];
+	        this.syncId = source["syncId"];
 	    }
-
-	convertValues(a: any, classs: any, asMap: boolean = false): any {
-	    if (!a) {
-	        return a;
-	    }
-	    if (a.slice && a.map) {
-	        return (a as any[]).map(elem => this.convertValues(elem, classs));
-	    } else if ("object" === typeof a) {
-	        if (asMap) {
-	            for (const key of Object.keys(a)) {
-	                a[key] = new classs(a[key]);
-	            }
-	            return a;
-	        }
-	        return new classs(a);
-	    }
-	    return a;
-	}
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 
 }
@@ -1490,7 +1482,6 @@ export namespace userexport {
 	        this.notesKept = source["notesKept"];
 	    }
 	}
-	
 	export class RootChoice {
 	    key: string;
 	    action: string;
@@ -1509,7 +1500,6 @@ export namespace userexport {
 	        this.path = source["path"];
 	    }
 	}
-	
 	export class RootPlan {
 	    key: string;
 	    path: string;
@@ -1535,26 +1525,25 @@ export namespace userexport {
 	        this.suggested = this.convertValues(source["suggested"], RootChoice);
 	        this.exists = source["exists"];
 	    }
-
-	convertValues(a: any, classs: any, asMap: boolean = false): any {
-	    if (!a) {
-	        return a;
-	    }
-	    if (a.slice && a.map) {
-	        return (a as any[]).map(elem => this.convertValues(elem, classs));
-	    } else if ("object" === typeof a) {
-	        if (asMap) {
-	            for (const key of Object.keys(a)) {
-	                a[key] = new classs(a[key]);
-	            }
-	            return a;
-	        }
-	        return new classs(a);
-	    }
-	    return a;
-	}
-	}
 	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class Plan {
 	    appVersion: string;
 	    exportedAt: string;
@@ -1582,25 +1571,26 @@ export namespace userexport {
 	        this.roots = this.convertValues(source["roots"], RootPlan);
 	        this.match = this.convertValues(source["match"], Counts);
 	    }
-
-	convertValues(a: any, classs: any, asMap: boolean = false): any {
-	    if (!a) {
-	        return a;
-	    }
-	    if (a.slice && a.map) {
-	        return (a as any[]).map(elem => this.convertValues(elem, classs));
-	    } else if ("object" === typeof a) {
-	        if (asMap) {
-	            for (const key of Object.keys(a)) {
-	                a[key] = new classs(a[key]);
-	            }
-	            return a;
-	        }
-	        return new classs(a);
-	    }
-	    return a;
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
-	}
+	
 
 }
 
