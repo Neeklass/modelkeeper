@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 // EnvOverride lets developers and tests point the app at another data folder.
@@ -35,12 +36,51 @@ func Resolve() (Layout, error) {
 			exe = resolved
 		}
 		dir = filepath.Join(filepath.Dir(exe), "data")
+		// Portable by default: data next to the program. On Linux the program
+		// may be installed where it cannot write (/usr/bin, /opt, an AppImage
+		// mounted read-only); then the data goes to the user's data folder.
+		// Windows keeps the portable rule (Program Files is refused by Ensure
+		// with a clear message).
+		if runtime.GOOS != "windows" && !usable(dir) {
+			dir = userDataDir()
+		}
 	}
 	abs, err := filepath.Abs(dir)
 	if err != nil {
 		return Layout{}, err
 	}
 	return NewLayout(abs), nil
+}
+
+// usable reports whether dir exists and is writable, or can be created.
+func usable(dir string) bool {
+	if fi, err := os.Stat(dir); err == nil {
+		return fi.IsDir() && writable(dir)
+	}
+	return writable(filepath.Dir(dir))
+}
+
+func writable(dir string) bool {
+	f, err := os.CreateTemp(dir, ".write-probe-*")
+	if err != nil {
+		return false
+	}
+	name := f.Name()
+	f.Close()
+	os.Remove(name)
+	return true
+}
+
+// userDataDir is $XDG_DATA_HOME/modelkeeper, else ~/.local/share/modelkeeper.
+func userDataDir() string {
+	if x := os.Getenv("XDG_DATA_HOME"); x != "" && filepath.IsAbs(x) {
+		return filepath.Join(x, "modelkeeper")
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return filepath.Join(os.TempDir(), "modelkeeper")
+	}
+	return filepath.Join(home, ".local", "share", "modelkeeper")
 }
 
 // NewLayout builds the layout for a given data folder.

@@ -135,13 +135,21 @@ func (e *env) fence() {
 // virtual time) and checks which roots were started (in any order).
 func (e *env) expectStarts(what string, want ...int64) {
 	e.t.Helper()
-	e.fence()
-	e.clock.Advance(quiet + quiet/2) // the quiet period plus a tick to notice it
-	e.w.flush()
 	var got []int64
-	for _, id := range e.scan.take() {
-		if id != e.sentinel {
-			got = append(got, id)
+	// Linux reports one change as several events (and a new folder's files
+	// once it is watched); a late one moves the quiet period on. So when
+	// starts are expected, settle a few rounds until they came.
+	for round := 0; round < 4; round++ {
+		e.fence()
+		e.clock.Advance(quiet + quiet/2) // the quiet period plus a tick to notice it
+		e.w.flush()
+		for _, id := range e.scan.take() {
+			if id != e.sentinel {
+				got = append(got, id)
+			}
+		}
+		if len(want) == 0 || len(got) >= len(want) {
+			break
 		}
 	}
 	slices.Sort(got)

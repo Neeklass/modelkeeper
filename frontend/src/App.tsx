@@ -22,6 +22,8 @@ import {CATALOG_CHANGED, useToast} from './components/Toast'
 import {DataTransferPanel, HistoryPanel} from './components/DataTransfer'
 import {TagManagerPanel} from './components/TagManager'
 import {ConfigTransferPanel, MovedBanner} from './components/ConfigTransfer'
+import {StatsView} from './components/StatsView'
+import {SyncPanel} from './components/SyncPanel'
 
 /** Sections of the settings page. */
 const SETTINGS_SECTIONS = ['general', 'transfer', 'tags', 'detection'] as const
@@ -156,6 +158,7 @@ function App() {
                             i18n.changeLanguage(resolveLanguage(s.language))
                             setStatus(s)
                         }).catch(() => undefined)}/>
+                        <SyncPanel/>
                     </>}
                     {settingsSection === 'tags' && <>
                         <TagManagerPanel/>
@@ -163,6 +166,7 @@ function App() {
                     </>}
                     {settingsSection === 'detection' && <DetectionSettingsPanel/>}
                 </main>}
+                {view === 'stats' && <StatsView onShowModels={q => showModels(q)}/>}
                 {view === 'help' && <HelpView/>}
             </div>
         </div>

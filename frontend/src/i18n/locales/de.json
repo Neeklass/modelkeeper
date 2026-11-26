@@ -208,21 +208,48 @@
     "eta": "noch etwa {{time}}"
   },
   "stats": {
-    "files": "Dateien",
+    "files": "{{n}} Dateien",
     "size": "Größe",
-    "duplicates": "Doppelte Inhalte",
+    "duplicates": "Mehrfach gespeichert",
     "archives": "Archive",
     "archiveMembers": "Dateien in Archiven",
     "archivesBroken": "Beschädigte Archive",
     "archivesEncrypted": "Passwortgeschützt",
     "missing": "Fehlend",
-    "pending": "Noch nicht verarbeitet"
+    "pending": "Noch nicht verarbeitet",
+    "loading": "Wird gezählt…",
+    "refresh": "Aktualisieren",
+    "total": "Gespeichert",
+    "dupFiles": "{{n}} Dateien mit Kopien",
+    "share": "Anteil der Kopien",
+    "shareHint": "an der gespeicherten Größe",
+    "unhashed": "{{n}} Dateien haben noch keinen Fingerabdruck; ihre Kopien zählen erst, wenn ein Scan sie gelesen hat.",
+    "byRoot": "Nach Ordner",
+    "byCreator": "Nach Ersteller (größte 25)",
+    "byCategory": "Nach Art",
+    "byExt": "Nach Dateityp (größte 15)",
+    "largest": "Größte Modelle",
+    "dupTitle": "Größte Kopien",
+    "dupHint": "Derselbe Dateiinhalt (Fingerabdruck) an mehreren Orten. modelkeeper zeigt das nur an; es löscht nie etwas.",
+    "noDuplicates": "Keine Datei ist mehrfach gespeichert.",
+    "file": "Datei (einer der Orte)",
+    "copies": "Kopien",
+    "extra": "Zusätzlicher Platz",
+    "showDuplicates": "Modelle mit Kopien anzeigen",
+    "barTitle": "{{name}}: {{files}} Dateien",
+    "category": {
+      "model": "3D-Modelle",
+      "slicer": "Slicer-Dateien",
+      "archive": "Archive",
+      "supplementary": "Bilder und andere Dateien"
+    }
   },
   "tabs": {
     "models": "Modelle",
     "folders": "Ordner",
     "settings": "Einstellungen",
-    "help": "Hilfe"
+    "help": "Hilfe",
+    "stats": "Statistik"
   },
   "models": {
     "searchPlaceholder": "Name, Ersteller, Pfad suchen…",
@@ -472,7 +499,8 @@
       "preRestore": "Stand vor einer Wiederherstellung",
       "preImport": "vor einem Import",
       "preRelocate": "vor einer Pfadänderung",
-      "preForget": "vor dem Entfernen von Modellen"
+      "preForget": "vor dem Entfernen von Modellen",
+      "preSync": "vor einem Abgleich"
     },
     "total_one": "{{n}} Backup, zusammen {{size}}.",
     "total_other": "{{n}} Backups, zusammen {{size}}.",
@@ -575,6 +603,18 @@
           "Vorschaubilder erzeugt modelkeeper selbst: aus einem Bild im Modellordner, der Vorschau einer 3MF-Datei oder gerendert aus der STL. Über **Vorschaubild ändern** wählst du ein anderes Bild aus dem Modell, ein eigenes Bild (**Bild auswählen…**) oder kehrst mit **Wieder automatisch** zurück.",
           "**3D-Vorschau** zeigt das Modell drehbar: Ziehen dreht, rechte Maustaste verschiebt, das Mausrad zoomt. **Ansicht als Vorschaubild** speichert die aktuelle Ansicht als Vorschaubild.",
           "**Im Slicer öffnen** öffnet die wahrscheinlich richtige Datei (zuerst ein Slicer-Projekt, sonst die Hauptdatei); über ▾ wählst du eine andere. Der Slicer bekommt immer eine schreibgeschützte Kopie, nie das Original – er kann in deiner Sammlung nichts überschreiben. Welches Programm verwendet wird, stellst du unter Einstellungen → **Slicer** ein. Speichere Slicer-Projekte an einem eigenen Ort; die Kopien werden nach 7 Tagen entfernt."
+        ]
+      },
+      {
+        "id": "organize",
+        "title": "Sammlungen, Drucke, Statistik, Abgleich",
+        "body": [
+          "**Sammlungen**: eigene Listen in selbst gewählter Reihenfolge („D&D-Kampagne“, „Als Nächstes drucken“). Mit + in der Seitenleiste anlegen, Modelle über die Auswahl (Strg/Umschalt+Klick) → **Hinzufügen zu** aufnehmen. In einer Sammlung kann die Auswahl Modelle entfernen oder eines nach oben und unten schieben.",
+          "**Gespeicherte Suchen**: Eine Suche mit ihren Filtern wird mit **Suche speichern** in der Werkzeugleiste behalten und in der Seitenleiste angezeigt.",
+          "**Felder bearbeiten** für mehrere Modelle auf einmal (Druckstatus, Supports, Ersteller, Herkunft, Lizenz) in der Auswahlleiste – rückgängig machbar.",
+          "**Druckprotokoll**: In der Detailansicht **Druck eintragen** mit Datum, Ergebnis, Drucker, Einstellungen und Notizen. Der neueste Druck setzt den Druckstatus.",
+          "**Statistik** (Seitenleiste unten): Größe pro Ordner, Ersteller und Dateityp, die größten Modelle und wie viel mehrfach gespeichert ist. modelkeeper löscht Kopien nie selbst.",
+          "**Mit anderen PCs abgleichen**: Einstellungen → Export & Konfiguration → auf jedem PC denselben gemeinsamen Ordner (NAS oder Dropbox) wählen. Alle 30 Minuten, beim Start und beim Schließen schreibt jeder PC seine Datei und übernimmt die Änderungen der anderen – auch entfernte Tags und geänderte Felder. Ordner werden über den Pfad zugeordnet; ein Abgleich fügt nie Ordner hinzu."
         ]
       },
       {
@@ -732,7 +772,9 @@
     "showAll": "Alle {{n}} anzeigen",
     "showLess": "Weniger anzeigen",
     "waiting": "Warten auf Dateien",
-    "waitingHint": "Modelle aus einem Import, deren Dateien noch nicht gefunden wurden. Ein Scan, der sie findet, verknüpft sie."
+    "waitingHint": "Modelle aus einem Import, deren Dateien noch nicht gefunden wurden. Ein Scan, der sie findet, verknüpft sie.",
+    "collections": "Sammlungen",
+    "savedSearches": "Gespeicherte Suchen"
   },
   "sort": {
     "label": "Sortieren",
@@ -844,7 +886,9 @@
       "merge_one": "{{count}} Modell mit {{name}} zusammengeführt",
       "merge_other": "{{count}} Modelle mit {{name}} zusammengeführt",
       "reset": "Korrekturen von {{name}} zurückgesetzt"
-    }
+    },
+    "modelsEdited_one": "{{count}} Modell bearbeitet",
+    "modelsEdited_other": "{{count}} Modelle bearbeitet"
   },
   "tagManager": {
     "title": "Tags",
@@ -898,5 +942,86 @@
     "transfer": "Export & Konfiguration",
     "tags": "Tags & Verlauf",
     "detection": "Erkennung"
+  },
+  "collections": {
+    "title": "Sammlungen",
+    "new": "Neue Sammlung",
+    "newPrompt": "Name der Sammlung",
+    "newOption": "Neue Sammlung…",
+    "emptyHint": "Eigene Listen wie „D&D-Kampagne“ oder „Als Nächstes drucken“ – Modelle über die Auswahl hinzufügen.",
+    "addTo": "Hinzufügen zu",
+    "addButton": "Hinzufügen",
+    "added_one": "{{count}} Modell zu {{name}} hinzugefügt.",
+    "added_other": "{{count}} Modelle zu {{name}} hinzugefügt.",
+    "removeSelected": "Aus dieser Sammlung entfernen",
+    "removed_one": "{{count}} Modell aus der Sammlung entfernt.",
+    "removed_other": "{{count}} Modelle aus der Sammlung entfernt.",
+    "removeFrom": "Aus {{name}} entfernen",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten",
+    "rename": "Sammlung umbenennen",
+    "delete": "Löschen",
+    "confirmDelete": "Die Sammlung {{name}} löschen?\n\nDie Modelle bleiben im Katalog; nur die Liste wird entfernt.",
+    "invalidName": "Bitte einen Namen eingeben (höchstens 100 Zeichen).",
+    "exists": "Es gibt schon eine Sammlung namens {{name}}.",
+    "notFound": "Die Sammlung gibt es nicht mehr."
+  },
+  "savedSearch": {
+    "save": "Suche speichern",
+    "saveHint": "Diese Suche mit ihren Filtern in der Seitenleiste behalten",
+    "namePlaceholder": "Name der Suche",
+    "saved": "Gespeichert",
+    "delete": "Gespeicherte Suche {{name}} löschen"
+  },
+  "bulk": {
+    "button": "Felder bearbeiten",
+    "title_one": "{{count}} Modell bearbeiten",
+    "title_other": "{{count}} Modelle bearbeiten",
+    "intro": "Nur die Felder, die du änderst, werden gesetzt; alles andere bleibt bei jedem Modell, wie es ist. Lässt sich rückgängig machen.",
+    "keep": "nicht ändern",
+    "emptyClears": "leer = löschen",
+    "apply": "Übernehmen",
+    "done_one": "{{count}} Modell bearbeitet.",
+    "done_other": "{{count}} Modelle bearbeitet."
+  },
+  "prints": {
+    "title_one": "Drucke ({{count}})",
+    "title_other": "Drucke ({{count}})",
+    "add": "Druck eintragen",
+    "date": "Datum",
+    "result": "Ergebnis",
+    "ok": "Erfolgreich",
+    "failed": "Fehlgeschlagen",
+    "printer": "Drucker",
+    "printerPlaceholder": "z. B. Saturn 4",
+    "settings": "Einstellungen",
+    "settingsPlaceholder": "z. B. Resin, Schichthöhe, Belichtung",
+    "notesPlaceholder": "Wie ist er geworden?",
+    "save": "Speichern",
+    "delete": "Eintrag löschen",
+    "confirmDelete": "Diesen Eintrag aus dem Druckprotokoll löschen?"
+  },
+  "sync": {
+    "title": "Mit anderen PCs abgleichen",
+    "intro": "Eine Katalogisierung auf mehreren PCs, z. B. deinem und dem deiner Partnerin. Jeder PC legt seine Arbeit als Datei in einen gemeinsamen Ordner (auf dem NAS oder in Dropbox) und übernimmt, was die anderen geändert haben – auch entfernte Tags. Der Katalog selbst bleibt auf jedem PC.",
+    "choose": "Gemeinsamen Ordner wählen",
+    "change": "Anderer Ordner",
+    "off": "Ausschalten",
+    "now": "Jetzt abgleichen",
+    "folder": "Gemeinsamer Ordner",
+    "running": "Wird abgeglichen…",
+    "lastRun": "Letzter Abgleich: {{when}}",
+    "never": "Noch nicht abgeglichen",
+    "waiting": "wartet, bis der laufende Scan fertig ist",
+    "peers": "Andere PCs",
+    "noPeers": "Noch kein anderer PC hat in diesen Ordner geschrieben. Wähle auf dem anderen PC denselben Ordner.",
+    "peerFile": "Datei vom {{when}}",
+    "peerApplied": "übernommen am {{when}}",
+    "peerNew": "noch nicht übernommen",
+    "howItWorks": "Gleicht alle 30 Minuten ab, beim Start und beim Schließen. Ordner werden durch den Abgleich nicht hinzugefügt: Die Ordner des anderen PCs werden über den Pfad zugeordnet; Modelle anderswo werden über ihre Dateien gefunden. Vor dem ersten Abgleich eines Tages wird eine Sicherung gemacht.",
+    "notAFolder": "{{path}} ist kein Ordner.",
+    "unreachable": "Der gemeinsame Ordner {{path}} ist nicht erreichbar (NAS aus? Dropbox läuft nicht?).",
+    "writeFailed": "Die Datei dieses PCs konnte nicht nach {{path}} geschrieben werden.",
+    "failed": "Abgleich fehlgeschlagen: {{error}}"
   }
 }

@@ -24,6 +24,10 @@ jobs:
           npm ci
           npm run build
 
+      - name: Frontend tests
+        working-directory: frontend
+        run: npm test
+
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
@@ -33,6 +37,27 @@ jobs:
 
       - name: Test
         run: go test ./...
+
+      # The bindings in frontend/wailsjs must match the Go methods (they are
+      # generated; a hand edit that drifts would only show in the running app).
+      - name: Bindings up to date
+        shell: bash
+        run: |
+          go run github.com/wailsapp/wails/v2/cmd/wails@v2.17.1 generate module
+          if ! git diff --quiet -- frontend/wailsjs; then
+            git diff --stat -- frontend/wailsjs
+            echo "----- BEGIN BINDINGS PATCH -----"
+            git diff --no-color -- frontend/wailsjs
+            echo "----- END BINDINGS PATCH -----"
+            echo "::error::frontend/wailsjs differs from the generated bindings (see the artifact 'wailsjs')"
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: wailsjs
+          path: frontend/wailsjs
 
       - name: gofmt
         shell: bash
@@ -61,9 +86,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: System packages (WebKitGTK for Wails)
+        # Ubuntu's mirrors sometimes answer 404 for a package that was just
+        # replaced; a fresh package list and another try fixes that.
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev p7zip-full
+          for i in 1 2 3; do
+            sudo apt-get update && sudo apt-get install -y --no-install-recommends --fix-missing \
+              libgtk-3-dev libwebkit2gtk-4.1-dev p7zip-full && exit 0
+            echo "apt failed (try $i), retrying in 20 s"; sleep 20
+          done
+          exit 1
 
       - uses: actions/setup-node@v4
         with:
@@ -76,6 +107,10 @@ jobs:
         run: |
           npm ci
           npm run build
+
+      - name: Frontend tests
+        working-directory: frontend
+        run: npm test
 
       - uses: actions/setup-go@v5
         with:

@@ -1,14 +1,14 @@
 import {useCallback, useEffect, useRef, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
-    AddTags, DetachAnchor, DismissSuggestion, ForgetWaitingModels, GetModel, ListThumbnailCandidates, MarkFolderModel, MarkFolderNotModel,
+    AddPrint, AddTags, DeletePrint, DetachAnchor, DismissSuggestion, RemoveFromCollection, ForgetWaitingModels, GetModel, ListThumbnailCandidates, MarkFolderModel, MarkFolderNotModel,
     OpenInSlicer, PickThumbnailFile, RemoveTag, ResetCorrections, ResetThumbnail, SetThumbnail, SetThumbnailFromView,
     ShowInExplorer, SplitModel, UpdateModel,
 } from '../../wailsjs/go/main/App'
 import {catalog, thumbs} from '../../wailsjs/go/models'
 import {Thumb} from './Thumb'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
-import {formatBytes, formatNumber} from '../format'
+import {formatBytes, formatDateTime, formatNumber} from '../format'
 import {TagInput} from './TagInput'
 import {FavoriteStar} from './FavoriteStar'
 import {canPreview, defaultPreviewFile, Preview3D} from './Preview3D'
@@ -296,6 +296,28 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
                 <Notes key={d.id} modelId={d.id} notes={d.notes}/>
             </section>
 
+            {d.collections.length > 0 && (
+                <section className="detail-section">
+                    <h3>{t('collections.title')}</h3>
+                    <div className="chips">
+                        {d.collections.map(c => (
+                            <span key={c.id} className="chip">
+                                {c.name}
+                                <button className="chip-x" disabled={busy} aria-label={t('collections.removeFrom', {name: c.name})}
+                                        title={t('collections.removeFrom', {name: c.name})}
+                                        onClick={() => act(() => RemoveFromCollection(c.id, [d.id]))}>✕</button>
+                            </span>
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            <PrintLog key={`p${d.id}`} modelId={d.id} prints={d.prints} busy={busy}
+                      onAdd={p => act(async () => {
+                          await AddPrint(p)
+                      })}
+                      onDelete={id => act(() => DeletePrint(id), t('prints.confirmDelete'))}/>
+
             <details className="detail-section">
                 <summary><h3>{t('models.filesTitle', {n: d.files.length})}</h3></summary>
                 {[...groups.entries()].map(([variant, files]) => (
@@ -579,6 +601,75 @@ function Notes({modelId, notes}: { modelId: number; notes: string }) {
                     : state === 'error' ? t('models.notesError') : '\u00a0'}
             </span>
         </>
+    )
+}
+
+/** The print log (L1): when, how it went, printer and settings; the newest sets the status. */
+function PrintLog({modelId, prints, busy, onAdd, onDelete}: {
+    modelId: number
+    prints: catalog.Print[]
+    busy: boolean
+    onAdd: (p: catalog.Print) => void
+    onDelete: (id: number) => void
+}) {
+    const {t} = useTranslation()
+    const today = new Date().toISOString().slice(0, 10)
+    const [open, setOpen] = useState(false)
+    const [day, setDay] = useState(today)
+    const [result, setResult] = useState('ok')
+    const [printer, setPrinter] = useState(() => prints[0]?.printer ?? '')
+    const [settings, setSettings] = useState(() => prints[0]?.settings ?? '')
+    const [notes, setNotes] = useState('')
+    const save = () => {
+        const at = Date.parse(day + 'T12:00:00')
+        onAdd(catalog.Print.createFrom({modelId, printedAt: Number.isNaN(at) ? Date.now() : at, result, printer, settings, notes}))
+        setOpen(false)
+        setNotes('')
+    }
+    return (
+        <section className="detail-section">
+            <div className="row spread">
+                <h3>{t('prints.title', {count: prints.length})}</h3>
+                {!open && <button className="link small" disabled={busy} onClick={() => setOpen(true)}>+ {t('prints.add')}</button>}
+            </div>
+            {open && (
+                <div className="print-form">
+                    <label className="small">{t('prints.date')}
+                        <input type="date" value={day} onChange={e => setDay(e.target.value)}/></label>
+                    <label className="small">{t('prints.result')}
+                        <select value={result} onChange={e => setResult(e.target.value)}>
+                            <option value="ok">{t('prints.ok')}</option>
+                            <option value="failed">{t('prints.failed')}</option>
+                        </select></label>
+                    <label className="small">{t('prints.printer')}
+                        <input value={printer} onChange={e => setPrinter(e.target.value)} placeholder={t('prints.printerPlaceholder')}/></label>
+                    <label className="small">{t('prints.settings')}
+                        <input value={settings} onChange={e => setSettings(e.target.value)} placeholder={t('prints.settingsPlaceholder')}/></label>
+                    <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('prints.notesPlaceholder')}/>
+                    <div className="row full">
+                        <button className="primary small" disabled={busy} onClick={save}>{t('prints.save')}</button>
+                        <button className="small" onClick={() => setOpen(false)}>{t('confirm.cancel')}</button>
+                    </div>
+                </div>
+            )}
+            {prints.length > 0 && (
+                <ul className="plain print-list small">
+                    {prints.map(p => (
+                        <li key={p.id} className="row spread">
+                            <span>
+                                <span className={p.result === 'ok' ? 'ok-text' : 'error'}>{p.result === 'ok' ? '✓' : '✗'}</span>{' '}
+                                {formatDateTime(p.printedAt).split(',')[0]}
+                                {p.printer && <> · {p.printer}</>}
+                                {p.settings && <> · <span className="muted">{p.settings}</span></>}
+                                {p.notes && <div className="muted">{p.notes}</div>}
+                            </span>
+                            <button className="chip-x" disabled={busy} aria-label={t('prints.delete')} title={t('prints.delete')}
+                                    onClick={() => onDelete(p.id)}>✕</button>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </section>
     )
 }
 

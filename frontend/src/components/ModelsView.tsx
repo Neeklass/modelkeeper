@@ -12,6 +12,7 @@ import {activeFilters, clearFilters, FilterPanel, FLAGS, Query} from './FilterPa
 import {FavoriteStar} from './FavoriteStar'
 import {useConfirm} from './ConfirmDialog'
 import {useToast} from './Toast'
+import {CollectionActions, CollectionHeader, EditFieldsDialog, SaveSearchButton} from './CollectionsUI'
 import {libraryView} from './Sidebar'
 
 const ROW_HEIGHT = 64
@@ -82,6 +83,7 @@ export function ModelsView({query, onQuery, library, scopeLabel}: {
     const [anchorIndex, setAnchorIndex] = useState<number | null>(null)
     const [error, setError] = useState<Msg | null>(null)
     const refresh = library.reload
+    const collection = query.collectionId ? library.collections.find(c => c.id === query.collectionId) : undefined
     const version = library.version
     const set = (q: Partial<Query>) => onQuery({...query, ...q})
 
@@ -297,7 +299,13 @@ export function ModelsView({query, onQuery, library, scopeLabel}: {
             <div className="models-list">
                 <div className="toolbar">
                     <div className="toolbar-title">
-                        <h1>{t(`nav.${lv}`)}</h1>
+                        {collection
+                            ? <CollectionHeader collection={collection} onChanged={refresh}
+                                                onDeleted={() => {
+                                                    refresh()
+                                                    onQuery(clearFilters({...query, collectionId: 0}))
+                                                }}/>
+                            : <h1>{t(`nav.${lv}`)}</h1>}
                         <span className="muted small nowrap">
                             {loaded ? t('models.count', {count: total, n: formatNumber(total)}) : t('app.loading')}
                         </span>
@@ -320,6 +328,7 @@ export function ModelsView({query, onQuery, library, scopeLabel}: {
                                 onClick={() => setShowFilters(s => !s)} aria-expanded={showFilters}>
                             ⚲ {t('filters.button')}{nFilters > 0 && ` (${nFilters})`}
                         </button>
+                        <SaveSearchButton query={query} onSaved={refresh}/>
                         {lv !== 'newest' && (
                             <label className="sort small">
                                 <span className="muted">{t('sort.label')}</span>
@@ -332,7 +341,7 @@ export function ModelsView({query, onQuery, library, scopeLabel}: {
                         <span className="segmented" role="group" aria-label={t('views.label')}>
                             {(['grid', 'list'] as ViewMode[]).map(v => (
                                 <button key={v} className={view === v ? 'active' : ''} aria-pressed={view === v}
-                                        title={t(`views.${v}`)} onClick={() => changeView(v)}>
+                                        title={t(`views.${v}`)} aria-label={t(`views.${v}`)} onClick={() => changeView(v)}>
                                     {v === 'grid' ? '▦' : '☰'}
                                 </button>
                             ))}
@@ -364,6 +373,7 @@ export function ModelsView({query, onQuery, library, scopeLabel}: {
                 {showFilters && <FilterPanel query={query} onChange={onQuery} allTags={library.tags} version={version}/>}
                 {multi.size > 1 && (
                     <SelectionBar selection={multi} allTags={library.tags} onChanged={refresh}
+                                  collections={library.collections} collectionId={query.collectionId}
                                   onMerged={target => {
                                       setMulti(new Map())
                                       setSelected(target)
@@ -463,9 +473,11 @@ function EmptyState({query, library, onQuery}: { query: Query; library: Library;
 }
 
 /** Actions for several selected models: tags (G2) and merge (F4d). */
-function SelectionBar({selection, allTags, onChanged, onMerged, onClear}: {
+function SelectionBar({selection, allTags, onChanged, onMerged, onClear, collections, collectionId}: {
     selection: Map<number, string>
     allTags: catalog.TagCount[]
+    collections: catalog.Collection[]
+    collectionId: number
     onChanged: () => void
     onMerged: (target: number) => void
     onClear: () => void
@@ -477,6 +489,7 @@ function SelectionBar({selection, allTags, onChanged, onMerged, onClear}: {
     const [error, setError] = useState<Msg | null>(null)
     const [busy, setBusy] = useState(false)
     const [done, setDone] = useState<string | null>(null)
+    const [editing, setEditing] = useState(false)
     useEffect(() => {
         if (!selection.has(target)) setTarget(ids[0])
     }, [selection]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -543,7 +556,19 @@ function SelectionBar({selection, allTags, onChanged, onMerged, onClear}: {
                     </select>
                 </label>
                 <button onClick={merge} disabled={busy}>{t('corrections.merge')}</button>
+                <button disabled={busy} onClick={() => setEditing(true)}>{t('bulk.button')}…</button>
             </div>
+            <CollectionActions ids={ids} collections={collections} current={collectionId} disabled={busy}
+                               onChanged={text => {
+                                   onChanged()
+                                   if (text) setDone(text)
+                               }}/>
+            {editing && <EditFieldsDialog ids={ids} onClose={() => setEditing(false)} onDone={text => {
+                setEditing(false)
+                setDone(text)
+                toast.show({text, undo: true})
+                onChanged()
+            }}/>}
             {error && <p className="error">{translateMsg(error)}</p>}
         </div>
     )

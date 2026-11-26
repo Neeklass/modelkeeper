@@ -182,6 +182,25 @@ func UpdateModel(ctx context.Context, db *sql.DB, id int64, u ModelUpdate) error
 	})
 }
 
+// UpdateModels applies the same change to many models (print status,
+// supports, creator, origin, link, license – not name or notes) as one
+// undoable action.
+func UpdateModels(ctx context.Context, db *sql.DB, ids []int64, u ModelUpdate) error {
+	if u.Name != nil || u.Notes != nil {
+		return msg.Wrap(nil, "error.invalidValue")
+	}
+	return inTx(ctx, db, func(tx *sql.Tx) error {
+		return journaled(ctx, tx, "history.modelsEdited", map[string]any{"count": len(ids)}, ids, func() error {
+			for _, id := range ids {
+				if err := updateModel(ctx, tx, id, u); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+	})
+}
+
 func updateModel(ctx context.Context, tx *sql.Tx, id int64, u ModelUpdate) error {
 	now := time.Now().UnixMilli()
 	exec := func(q string, args ...any) error {

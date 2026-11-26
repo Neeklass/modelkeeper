@@ -76,6 +76,8 @@ type App struct {
 	imports pendingImport
 	// configs holds the configuration file chosen for import.
 	configs pendingConfig
+	// peers: the sync with other PCs (J9).
+	peers peerSync
 	// movedFrom: the data folder was there at the last start (the app folder
 	// was moved, M); "" if not moved or the note was dismissed.
 	movedFrom string
@@ -239,6 +241,7 @@ func (a *App) startServices() error {
 
 	a.stop = make(chan struct{})
 	go a.runDailyTicker(a.stop)
+	go a.runPeerSync(a.stop)
 
 	w, err := watch.New(conn, scans, watch.Options{
 		Exclude: layout.Root,
@@ -277,7 +280,8 @@ func (a *App) shutdown(ctx context.Context) {
 	if a.stop != nil {
 		close(a.stop)
 	}
-	a.bg.Wait() // a running snapshot finishes
+	a.bg.Wait()           // a running snapshot finishes
+	a.peerExportOnClose() // the other PCs get the newest work (J9)
 	if a.watch != nil {
 		a.watch.Close() // before the scanner, so no new scan starts
 	}

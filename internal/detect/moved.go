@@ -28,6 +28,8 @@ import (
 const UserDataCond = `(m.notes <> '' OR m.name_manual = 1 OR m.creator_manual = 1 OR m.supports_manual = 1
 	OR m.print_status <> 'not_printed' OR coalesce(m.thumb_source, '') = 'manual' OR m.favorite = 1
 	OR coalesce(m.origin, '') <> '' OR coalesce(m.origin_url, '') <> '' OR coalesce(m.license, '') <> ''
+	OR EXISTS (SELECT 1 FROM print_log p WHERE p.model_id = m.id)
+	OR EXISTS (SELECT 1 FROM collection_model cm WHERE cm.model_id = m.id)
 	OR EXISTS (SELECT 1 FROM model_tag t WHERE t.model_id = m.id)
 	OR EXISTS (SELECT 1 FROM override o WHERE o.model_id = m.id))`
 
