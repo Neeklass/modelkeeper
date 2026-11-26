@@ -101,9 +101,11 @@ func TestLoad(t *testing.T) {
 	}
 	measure := func(what string, fn func() error) { t.Helper(); measureWithin(what, limit, fn) }
 	// Detection runs in the background after a scan; it may take longer than
-	// a query the UI waits for (about 0.3 ms per file on a CI runner).
+	// a query the UI waits for. About 0.3 ms per file on a CI runner, but
+	// Windows runners vary up to 1 ms (seen: 25 s for 25,000 files), so the
+	// limit is 2 ms per file: it catches a real slowdown, not a slow runner.
 	rules := detect.Rules{PartNames: settings.Defaults().PartNames, SizeTokens: settings.Defaults().SizeTokens}
-	perRoot := time.Duration(n/2) * time.Millisecond
+	perRoot := time.Duration(n) * time.Millisecond
 	measureWithin("detection root 1", perRoot, func() error { _, err := detect.Apply(ctx, conn, 1, rules); return err })
 	measureWithin("detection root 2", perRoot, func() error { _, err := detect.Apply(ctx, conn, 2, rules); return err })
 	var count int
