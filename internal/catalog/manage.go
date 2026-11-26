@@ -30,7 +30,7 @@ func tagModels(ctx context.Context, tx *sql.Tx, tagID int64) ([]int64, error) {
 	return ids, rows.Err()
 }
 
-func tagByName(ctx context.Context, tx *sql.Tx, name string) (int64, string, error) {
+func tagByName(ctx context.Context, tx queryer, name string) (int64, string, error) {
 	var id int64
 	var stored string
 	err := tx.QueryRowContext(ctx, `SELECT id, name FROM tag WHERE name = ?`, name).Scan(&id, &stored)
@@ -69,6 +69,9 @@ func RenameTag(ctx context.Context, db *sql.DB, from, to string) (int, error) {
 		}
 		params := map[string]any{"from": oldName, "to": name, "count": len(ids)}
 		return journaled(ctx, tx, action, params, ids, func() error {
+			if err := renameTagMeta(ctx, tx, oldName, name, targetID != 0 && targetID != oldID); err != nil {
+				return err
+			}
 			switch {
 			case targetID == oldID: // same tag, other spelling (case is ignored)
 				_, err := tx.ExecContext(ctx, `UPDATE tag SET name = ? WHERE id = ?`, name, oldID)

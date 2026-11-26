@@ -119,9 +119,15 @@ export function Sidebar({view, onView, query, onQuery, library, status}: {
             <SideList title={t('nav.creators')} items={library.creators.map(c => ({id: c.id, name: c.name, count: c.models}))}
                       active={view === 'library' ? query.creatorId : 0} limit={8}
                       onPick={id => onQuery({...query, creatorId: query.creatorId === id ? 0 : id})}/>
-            <SideList title={t('nav.tags')} items={library.tags.map(x => ({id: x.id, name: x.name, count: x.models}))}
+            {/* Tags without a group first, then one list per tag group (G1). */}
+            <SideList title={t('nav.tags')} items={library.tags.filter(x => !x.group).map(x => ({id: x.id, name: x.name, count: x.models}))}
                       active={view === 'library' ? query.tagId : 0} limit={12} sortByCount
                       onPick={id => onQuery({...query, tagId: query.tagId === id ? 0 : id})}/>
+            {[...new Set(library.tags.map(x => x.group).filter(Boolean))].sort((x, y) => x.localeCompare(y)).map(g => (
+                <SideList key={g} title={g} items={library.tags.filter(x => x.group === g).map(x => ({id: x.id, name: x.name, count: x.models}))}
+                          active={view === 'library' ? query.tagId : 0} limit={8} sortByCount
+                          onPick={id => onQuery({...query, tagId: query.tagId === id ? 0 : id})}/>
+            ))}
 
             {library.roots.length > 0 && (
                 <div className="side-section">

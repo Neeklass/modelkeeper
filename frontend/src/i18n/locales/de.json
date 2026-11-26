@@ -364,7 +364,9 @@
     "invalid": "Tags dürfen nicht leer sein und höchstens {{max}} Zeichen haben.",
     "acceptAll": "Alle übernehmen",
     "dismissed": "Vorschlag {{name}} verworfen.",
-    "notFound": "Es gibt keinen Tag {{name}}."
+    "notFound": "Es gibt keinen Tag {{name}}.",
+    "aliasSame": "Ein Alias muss sich vom Tag unterscheiden.",
+    "groupInvalid": "Ein Gruppenname hat höchstens {{max}} Zeichen."
   },
   "printStatus": {
     "not_printed": "Nicht gedruckt",
@@ -763,7 +765,21 @@
     "openHint": "Öffnet eine schreibgeschützte Kopie im Slicer. Das Original bleibt unberührt.",
     "chooseFile": "Andere Datei wählen",
     "opened": "{{name}} wurde als Kopie im Slicer geöffnet. Speichere Slicer-Projekte an einem eigenen Ort.",
-    "copying": "{{name}} wird für den Slicer kopiert…"
+    "copying": "{{name}} wird für den Slicer kopiert…",
+    "showInfo": "Druckinformationen anzeigen",
+    "loading": "Wird gelesen…",
+    "noInfo": "Keine Druckinformationen in dieser Datei.",
+    "unreadable": "Die Datei konnte nicht gelesen werden.",
+    "none": "Keine Druckinformationen in dieser Datei.",
+    "time": "⏱ {{time}}",
+    "layerHeight": "{{mm}} mm Schichten",
+    "layers_one": "{{n}} Schicht",
+    "layers_other": "{{n}} Schichten",
+    "ml": "{{ml}} ml",
+    "grams": "{{g}} g",
+    "metres": "{{m}} m Filament",
+    "nozzle": "{{mm}} mm Düse",
+    "exposure": "Belichtung {{s}} s (Boden {{bottom}} s)"
   },
   "nav": {
     "label": "Navigation",
@@ -917,7 +933,24 @@
     "merged_other": "{{from}} mit {{to}} zusammengeführt ({{count}} Modelle).",
     "deleted_one": "Tag {{name}} von {{count}} Modell entfernt.",
     "deleted_other": "Tag {{name}} von {{count}} Modellen entfernt.",
-    "more": "{{n}} weitere – grenze den Filter ein."
+    "more": "{{n}} weitere – grenze den Filter ein.",
+    "similarIntro": "Diese Tags sehen nach demselben aus. Beim Zusammenführen bleibt der meistgenutzte; die anderen werden zu Aliasen, sodass sie später diesen hinzufügen.",
+    "mergeInto": "In {{to}} zusammenführen",
+    "mergeSimilarHint": "In {{to}} zusammenführen und die anderen Schreibweisen als Aliase behalten",
+    "confirmMergeSimilar": "{{tags}} in {{to}} zusammenführen? Die anderen Schreibweisen werden Aliase. Lässt sich rückgängig machen.",
+    "mergedSimilar_one": "In {{to}} zusammengeführt ({{count}} Modell).",
+    "mergedSimilar_other": "In {{to}} zusammengeführt ({{count}} Modelle).",
+    "alias": "Alias",
+    "addAliasHint": "Andere Schreibweise: Wer sie eintippt, bekommt diesen Tag",
+    "aliasPlaceholder": "z. B. Elfen",
+    "aliasHint": "{{alias}} fügt {{tag}} hinzu",
+    "removeAlias": "Alias {{alias}} entfernen",
+    "confirmAliasMerge_one": "{{alias}} ist ein Tag an {{n}} Modell. In {{tag}} zusammenführen und als Alias behalten?",
+    "confirmAliasMerge_other": "{{alias}} ist ein Tag an {{n}} Modellen. In {{tag}} zusammenführen und als Alias behalten?",
+    "aliasAdded_one": "{{alias}} fügt jetzt {{tag}} hinzu ({{count}} Modell geändert).",
+    "aliasAdded_other": "{{alias}} fügt jetzt {{tag}} hinzu ({{count}} Modelle geändert).",
+    "group": "Gruppe",
+    "groupOf": "Gruppe von {{tag}}"
   },
   "config": {
     "title": "Konfiguration",

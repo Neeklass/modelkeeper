@@ -741,6 +741,10 @@ func addTags(ctx context.Context, tx *sql.Tx, id int64, names []string) (int, er
 		if name == "" {
 			continue
 		}
+		name, err := catalog.ResolveTag(ctx, tx, name) // an alias here adds its tag
+		if err != nil {
+			return n, err
+		}
 		var tagID int64
 		if err := tx.QueryRowContext(ctx, `INSERT INTO tag (name) VALUES (?)
 			ON CONFLICT (name) DO UPDATE SET name = name RETURNING id`, name).Scan(&tagID); err != nil {
@@ -900,6 +904,25 @@ func importExtras(ctx context.Context, tx *sql.Tx, e *Export, localOf map[string
 			if n, _ := r.RowsAffected(); n > 0 {
 				res.Collections++
 			}
+		}
+	}
+	for _, a := range e.TagAliases {
+		alias, target := strings.Join(strings.Fields(a.Alias), " "), strings.Join(strings.Fields(a.Target), " ")
+		if alias == "" || target == "" || strings.EqualFold(alias, target) {
+			continue
+		}
+		if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO tag_alias (alias, target, created_at) VALUES (?, ?, ?)`,
+			alias, target, now); err != nil {
+			return err
+		}
+	}
+	for _, g := range e.TagGroups {
+		tag, grp := strings.Join(strings.Fields(g.Tag), " "), strings.Join(strings.Fields(g.Group), " ")
+		if tag == "" || grp == "" {
+			continue
+		}
+		if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO tag_group (tag, grp) VALUES (?, ?)`, tag, grp); err != nil {
+			return err
 		}
 	}
 	for _, ss := range e.SavedSearches {

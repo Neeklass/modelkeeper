@@ -125,3 +125,38 @@ func (a *App) DeleteSavedSearch(id int64) error {
 	}
 	return wrapDB(catalog.DeleteSavedSearch(a.ctx, a.db, id))
 }
+
+// AddTagAlias makes alias another spelling of tag (a tag named like the alias
+// is merged into it, undoable). Returns the number of models changed.
+func (a *App) AddTagAlias(alias, tag string) (int, error) {
+	if err := a.ready(); err != nil {
+		return 0, err
+	}
+	n, err := catalog.AddTagAlias(a.ctx, a.db, alias, tag)
+	return n, wrapDB(err)
+}
+
+// RemoveTagAlias removes an alias.
+func (a *App) RemoveTagAlias(alias string) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	return wrapDB(catalog.RemoveTagAlias(a.ctx, a.db, alias))
+}
+
+// SetTagGroup puts a tag into a group ("" = none).
+func (a *App) SetTagGroup(tag, group string) error {
+	if err := a.ready(); err != nil {
+		return err
+	}
+	return wrapDB(catalog.SetTagGroup(a.ctx, a.db, tag, group))
+}
+
+// FindSimilarTags returns tags that look like the same one (to merge).
+func (a *App) FindSimilarTags() ([]catalog.SimilarTags, error) {
+	if err := a.ready(); err != nil {
+		return nil, err
+	}
+	s, err := catalog.FindSimilarTags(a.ctx, a.db)
+	return s, wrapDB(err)
+}

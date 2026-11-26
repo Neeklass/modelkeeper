@@ -417,3 +417,23 @@ export function DeletePrintPhoto(arg1) {
 export function UsePhotoAsThumbnail(arg1) {
   return window['go']['main']['App']['UsePhotoAsThumbnail'](arg1);
 }
+
+export function AddTagAlias(arg1,arg2) {
+  return window['go']['main']['App']['AddTagAlias'](arg1,arg2);
+}
+
+export function RemoveTagAlias(arg1) {
+  return window['go']['main']['App']['RemoveTagAlias'](arg1);
+}
+
+export function SetTagGroup(arg1,arg2) {
+  return window['go']['main']['App']['SetTagGroup'](arg1,arg2);
+}
+
+export function FindSimilarTags() {
+  return window['go']['main']['App']['FindSimilarTags']();
+}
+
+export function GetSlicerInfo(arg1) {
+  return window['go']['main']['App']['GetSlicerInfo'](arg1);
+}

@@ -364,7 +364,9 @@
     "invalid": "Tags must not be empty and can have at most {{max}} characters.",
     "acceptAll": "Accept all",
     "dismissed": "Suggestion {{name}} dismissed.",
-    "notFound": "There is no tag {{name}}."
+    "notFound": "There is no tag {{name}}.",
+    "aliasSame": "An alias must differ from the tag.",
+    "groupInvalid": "A group name has at most {{max}} characters."
   },
   "printStatus": {
     "not_printed": "Not printed",
@@ -763,7 +765,21 @@
     "openHint": "Opens a read-only copy in the slicer. The original stays untouched.",
     "chooseFile": "Choose another file",
     "opened": "{{name}} was opened in the slicer as a copy. Save slicer projects somewhere of your own.",
-    "copying": "Copying {{name}} for the slicer…"
+    "copying": "Copying {{name}} for the slicer…",
+    "showInfo": "Show print information",
+    "loading": "Reading…",
+    "noInfo": "No print information in this file.",
+    "unreadable": "The file could not be read.",
+    "none": "No print information in this file.",
+    "time": "⏱ {{time}}",
+    "layerHeight": "{{mm}} mm layers",
+    "layers_one": "{{n}} layer",
+    "layers_other": "{{n}} layers",
+    "ml": "{{ml}} ml",
+    "grams": "{{g}} g",
+    "metres": "{{m}} m filament",
+    "nozzle": "{{mm}} mm nozzle",
+    "exposure": "exposure {{s}} s (bottom {{bottom}} s)"
   },
   "nav": {
     "label": "Navigation",
@@ -917,7 +933,24 @@
     "merged_other": "{{from}} merged into {{to}} ({{count}} models).",
     "deleted_one": "Tag {{name}} removed from {{count}} model.",
     "deleted_other": "Tag {{name}} removed from {{count}} models.",
-    "more": "{{n}} more – narrow the filter."
+    "more": "{{n}} more – narrow the filter.",
+    "similarIntro": "These tags look like the same one. Merging keeps the most used one; the others become its aliases, so typing them later adds it.",
+    "mergeInto": "Merge into {{to}}",
+    "mergeSimilarHint": "Merge into {{to}} and keep the other spellings as aliases",
+    "confirmMergeSimilar": "Merge {{tags}} into {{to}}? The other spellings become aliases. This can be undone.",
+    "mergedSimilar_one": "Merged into {{to}} ({{count}} model).",
+    "mergedSimilar_other": "Merged into {{to}} ({{count}} models).",
+    "alias": "alias",
+    "addAliasHint": "Another spelling: typing it adds this tag",
+    "aliasPlaceholder": "e.g. elves",
+    "aliasHint": "Typing {{alias}} adds {{tag}}",
+    "removeAlias": "Remove alias {{alias}}",
+    "confirmAliasMerge_one": "{{alias}} is a tag on {{n}} model. Merge it into {{tag}} and keep it as alias?",
+    "confirmAliasMerge_other": "{{alias}} is a tag on {{n}} models. Merge it into {{tag}} and keep it as alias?",
+    "aliasAdded_one": "{{alias}} now adds {{tag}} ({{count}} model changed).",
+    "aliasAdded_other": "{{alias}} now adds {{tag}} ({{count}} models changed).",
+    "group": "Group",
+    "groupOf": "Group of {{tag}}"
   },
   "config": {
     "title": "Configuration",

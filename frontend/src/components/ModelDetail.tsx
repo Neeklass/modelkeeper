@@ -1,14 +1,14 @@
 import {useCallback, useEffect, useRef, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
-    AddPrint, AddPrintPhotos, AddTags, DeletePrint, DeletePrintPhoto, UsePhotoAsThumbnail, DetachAnchor, DismissSuggestion, RemoveFromCollection, ForgetWaitingModels, GetModel, ListThumbnailCandidates, MarkFolderModel, MarkFolderNotModel,
+    AddPrint, AddPrintPhotos, GetSlicerInfo, AddTags, DeletePrint, DeletePrintPhoto, UsePhotoAsThumbnail, DetachAnchor, DismissSuggestion, RemoveFromCollection, ForgetWaitingModels, GetModel, ListThumbnailCandidates, MarkFolderModel, MarkFolderNotModel,
     OpenInSlicer, PickThumbnailFile, RemoveTag, ResetCorrections, ResetThumbnail, SetThumbnail, SetThumbnailFromView,
     ShowInExplorer, SplitModel, UpdateModel,
 } from '../../wailsjs/go/main/App'
-import {catalog, thumbs} from '../../wailsjs/go/models'
+import {catalog, slicer, thumbs} from '../../wailsjs/go/models'
 import {Thumb} from './Thumb'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
-import {formatBytes, formatDateTime, formatNumber} from '../format'
+import {formatBytes, formatDateTime, formatDuration, formatNumber} from '../format'
 import {TagInput} from './TagInput'
 import {FavoriteStar} from './FavoriteStar'
 import {canPreview, defaultPreviewFile, Preview3D} from './Preview3D'
@@ -361,6 +361,7 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
                                         {f.archiveStatus && f.archiveStatus !== 'ok' &&
                                             <span className="warn-text">{t(`archiveStatus.${f.archiveStatus}`)}</span>}
                                     </div>
+                                    {f.present && SLICER_INFO_EXTS.has(f.ext) && <SlicerInfoLine locationId={f.locationId}/>}
                                 </li>
                             ))}
                         </ul>
@@ -700,6 +701,47 @@ function PrintLog({modelId, prints, busy, onAdd, onDelete, onAddPhotos, onDelete
             {box && <Lightbox images={box.photos.map(ph => ({src: `/photos/${ph}.jpg`, label: ''}))} index={box.index}
                               onIndex={i => setBox({...box, index: i})} onClose={() => setBox(null)}/>}
         </section>
+    )
+}
+
+/** File types with print information (internal/slicer). */
+const SLICER_INFO_EXTS = new Set(['ctb', 'cbddlp', 'photon', 'gcode', 'gco', '3mf'])
+
+/** Print time, layers, material of a sliced file (L2), read when asked. */
+function SlicerInfoLine({locationId}: { locationId: number }) {
+    const {t} = useTranslation()
+    const [info, setInfo] = useState<slicer.Info | null>(null)
+    const [state, setState] = useState<'idle' | 'loading' | 'none' | 'error'>('idle')
+    const load = async () => {
+        setState('loading')
+        try {
+            setInfo(await GetSlicerInfo(locationId))
+            setState('idle')
+        } catch (e) {
+            setState(toMsg(e).key === 'slicer.none' ? 'none' : 'error')
+        }
+    }
+    if (!info) {
+        return <div className="small muted">
+            {state === 'none' ? t('slicer.noInfo') : state === 'error' ? t('slicer.unreadable')
+                : <button className="link small" disabled={state === 'loading'} onClick={load}>
+                    {state === 'loading' ? t('slicer.loading') : t('slicer.showInfo')}</button>}
+        </div>
+    }
+    const parts: string[] = []
+    if (info.printSeconds) parts.push(t('slicer.time', {time: formatDuration(info.printSeconds)}))
+    if (info.layerHeight) parts.push(t('slicer.layerHeight', {mm: formatNumber(info.layerHeight)}))
+    if (info.layers) parts.push(t('slicer.layers', {count: info.layers, n: formatNumber(info.layers)}))
+    if (info.materialMl) parts.push(t('slicer.ml', {ml: formatNumber(info.materialMl)}))
+    if (info.materialG) parts.push(t('slicer.grams', {g: formatNumber(info.materialG)}))
+    if (info.materialM) parts.push(t('slicer.metres', {m: formatNumber(info.materialM)}))
+    if (info.material) parts.push(info.material)
+    if (info.nozzle) parts.push(t('slicer.nozzle', {mm: formatNumber(info.nozzle)}))
+    if (info.exposure) parts.push(t('slicer.exposure', {s: formatNumber(info.exposure), bottom: formatNumber(info.bottomExposure)}))
+    return (
+        <div className="small slicer-info" title={info.slicer || info.format}>
+            {parts.join(' · ')}
+        </div>
     )
 }
 

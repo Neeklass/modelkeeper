@@ -735,10 +735,24 @@ export namespace catalog {
 		    return a;
 		}
 	}
+	export class SimilarTags {
+	    tags: TagCount[];
+	
+	    static createFrom(source: any = {}) {
+	        return new SimilarTags(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.tags = (source["tags"] ?? []).map((x: any) => TagCount.createFrom(x));
+	    }
+	}
 	export class TagCount {
 	    id: number;
 	    name: string;
 	    models: number;
+	    group: string;
+	    aliases: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new TagCount(source);
@@ -749,6 +763,8 @@ export namespace catalog {
 	        this.id = source["id"];
 	        this.name = source["name"];
 	        this.models = source["models"];
+	        this.group = source["group"];
+	        this.aliases = source["aliases"];
 	    }
 	}
 	export class UndoResult {
@@ -1634,6 +1650,53 @@ export namespace health {
 	        this.freeBytes = source["freeBytes"];
 	        this.totalBytes = source["totalBytes"];
 	        this.lowSpace = source["lowSpace"];
+	    }
+	}
+
+}
+
+export namespace slicer {
+	
+	export class Info {
+	    format: string;
+	    slicer: string;
+	    printSeconds: number;
+	    layerHeight: number;
+	    layers: number;
+	    heightMm: number;
+	    materialMl: number;
+	    materialG: number;
+	    materialM: number;
+	    exposure: number;
+	    bottomExposure: number;
+	    bottomLayers: number;
+	    material: string;
+	    nozzle: number;
+	    resolutionX: number;
+	    resolutionY: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Info(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.format = source["format"];
+	        this.slicer = source["slicer"];
+	        this.printSeconds = source["printSeconds"];
+	        this.layerHeight = source["layerHeight"];
+	        this.layers = source["layers"];
+	        this.heightMm = source["heightMm"];
+	        this.materialMl = source["materialMl"];
+	        this.materialG = source["materialG"];
+	        this.materialM = source["materialM"];
+	        this.exposure = source["exposure"];
+	        this.bottomExposure = source["bottomExposure"];
+	        this.bottomLayers = source["bottomLayers"];
+	        this.material = source["material"];
+	        this.nozzle = source["nozzle"];
+	        this.resolutionX = source["resolutionX"];
+	        this.resolutionY = source["resolutionY"];
 	    }
 	}
 

@@ -14,28 +14,46 @@ import (
 
 // TagCount is a tag with the number of models carrying it.
 type TagCount struct {
-	ID     int64  `json:"id"`
-	Name   string `json:"name"`
-	Models int    `json:"models"`
+	ID      int64    `json:"id"`
+	Name    string   `json:"name"`
+	Models  int      `json:"models"`
+	Group   string   `json:"group"`   // "" = no group (G1)
+	Aliases []string `json:"aliases"` // other spellings that add this tag
 }
 
 // ListTags returns all tags with usage counts, sorted by name.
 func ListTags(ctx context.Context, db *sql.DB) ([]TagCount, error) {
-	rows, err := db.QueryContext(ctx, `SELECT t.id, t.name, count(mt.model_id) FROM tag t
-		LEFT JOIN model_tag mt ON mt.tag_id = t.id GROUP BY t.id ORDER BY t.name COLLATE NOCASE`)
+	rows, err := db.QueryContext(ctx, `SELECT t.id, t.name, count(mt.model_id), coalesce(g.grp, '') FROM tag t
+		LEFT JOIN model_tag mt ON mt.tag_id = t.id LEFT JOIN tag_group g ON g.tag = t.name
+		GROUP BY t.id ORDER BY t.name COLLATE NOCASE`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	out := []TagCount{}
+	index := map[string]int{}
 	for rows.Next() {
-		var t TagCount
-		if err := rows.Scan(&t.ID, &t.Name, &t.Models); err != nil {
+		t := TagCount{Aliases: []string{}}
+		if err := rows.Scan(&t.ID, &t.Name, &t.Models, &t.Group); err != nil {
 			return nil, err
 		}
+		index[strings.ToLower(t.Name)] = len(out)
 		out = append(out, t)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	aliases, err := ListTagAliases(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	for _, a := range aliases {
+		if i, ok := index[strings.ToLower(a.Target)]; ok {
+			out[i].Aliases = append(out[i].Aliases, a.Alias)
+		}
+	}
+	return out, nil
 }
 
 // maxTagLength bounds tag names (characters).
@@ -62,6 +80,13 @@ func AddTags(ctx context.Context, db *sql.DB, modelIDs []int64, names []string) 
 		clean = append(clean, name)
 	}
 	return inTx(ctx, db, func(tx *sql.Tx) error {
+		for i, name := range clean { // an alias adds its tag (G1)
+			t, err := ResolveTag(ctx, tx, name)
+			if err != nil {
+				return err
+			}
+			clean[i] = t
+		}
 		params := map[string]any{"tags": strings.Join(clean, ", "), "count": len(modelIDs)}
 		return journaled(ctx, tx, "history.tagsAdded", params, modelIDs, func() error {
 			for _, name := range clean {

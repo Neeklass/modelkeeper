@@ -69,7 +69,7 @@ func Candidates(ctx context.Context, db *sql.DB, modelID int64) ([]Candidate, er
 	rows, err := db.QueryContext(ctx, `SELECT l.id, r.path, l.path, coalesce(a.path, ''), l.ext, l.size
 		FROM location l JOIN root r ON r.id = l.root_id LEFT JOIN location a ON a.id = l.archive_id
 		WHERE l.model_id = ? AND l.present = 1 AND r.status <> 'offline'
-		  AND l.ext IN ('jpg', 'jpeg', 'png', 'webp', '3mf', 'stl')`, modelID)
+		  AND l.ext IN ('jpg', 'jpeg', 'png', 'webp', '3mf', 'stl', 'obj')`, modelID)
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +99,11 @@ func Candidates(ctx context.Context, db *sql.DB, modelID int64) ([]Candidate, er
 				continue
 			}
 			c.Kind, c.score = KindEmbedded, 2000
+		case c.ext == "obj":
+			if c.Size > maxModelBytes {
+				continue
+			}
+			c.Kind, c.score = KindRendered, 900 // after STL: OBJ is often a second export
 		case c.ext == "stl":
 			if c.Size > maxModelBytes {
 				continue
@@ -260,8 +265,23 @@ func load(c Candidate) (image.Image, error) {
 		img, _, err := image.Decode(bytes.NewReader(data))
 		return img, err
 	case KindEmbedded:
-		return embedded3MF(data)
+		img, err := embedded3MF(data)
+		if errors.Is(err, errNoSource) { // a 3MF without a preview: draw its mesh
+			tris, err := parse3MF(data)
+			if err != nil {
+				return nil, err
+			}
+			return renderMesh(tris, Size)
+		}
+		return img, err
 	case KindRendered:
+		if c.ext == "obj" {
+			tris, err := parseOBJ(data)
+			if err != nil {
+				return nil, err
+			}
+			return renderMesh(tris, Size)
+		}
 		return renderSTL(data, Size)
 	}
 	return nil, errNoSource

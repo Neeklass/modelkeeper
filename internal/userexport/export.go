@@ -32,6 +32,7 @@ import (
 	"strings"
 	"time"
 
+	"modelkeeper/internal/catalog"
 	"modelkeeper/internal/detect"
 )
 
@@ -61,6 +62,9 @@ type Export struct {
 	// Collections in their order (G6) and saved searches.
 	Collections   []Collection  `json:"collections,omitempty"`
 	SavedSearches []SavedSearch `json:"savedSearches,omitempty"`
+	// Tag aliases and groups (G1).
+	TagAliases []catalog.TagAlias `json:"tagAliases,omitempty"`
+	TagGroups  []catalog.TagGroup `json:"tagGroups,omitempty"`
 }
 
 // Collection is a collection with its models (uids) in order.
@@ -425,6 +429,20 @@ func Build(ctx context.Context, db *sql.DB, o Options) (*Export, error) {
 		return nil
 	}); err != nil {
 		return nil, err
+	}
+	aliases, err := catalog.ListTagAliases(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	groups, err := catalog.ListTagGroups(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	if len(aliases) > 0 {
+		e.TagAliases = aliases
+	}
+	if len(groups) > 0 {
+		e.TagGroups = groups
 	}
 	for i, p := range ids {
 		m := &e.Models[i]
