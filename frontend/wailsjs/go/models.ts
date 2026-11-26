@@ -237,6 +237,7 @@ export namespace catalog {
 	    printer: string;
 	    settings: string;
 	    notes: string;
+	    photos: number[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Print(source);
@@ -251,6 +252,7 @@ export namespace catalog {
 	        this.printer = source["printer"];
 	        this.settings = source["settings"];
 	        this.notes = source["notes"];
+	        this.photos = source["photos"];
 	    }
 	}
 	export class ModelFile {

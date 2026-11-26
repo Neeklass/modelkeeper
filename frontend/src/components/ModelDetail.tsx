@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
-    AddPrint, AddTags, DeletePrint, DetachAnchor, DismissSuggestion, RemoveFromCollection, ForgetWaitingModels, GetModel, ListThumbnailCandidates, MarkFolderModel, MarkFolderNotModel,
+    AddPrint, AddPrintPhotos, AddTags, DeletePrint, DeletePrintPhoto, UsePhotoAsThumbnail, DetachAnchor, DismissSuggestion, RemoveFromCollection, ForgetWaitingModels, GetModel, ListThumbnailCandidates, MarkFolderModel, MarkFolderNotModel,
     OpenInSlicer, PickThumbnailFile, RemoveTag, ResetCorrections, ResetThumbnail, SetThumbnail, SetThumbnailFromView,
     ShowInExplorer, SplitModel, UpdateModel,
 } from '../../wailsjs/go/main/App'
@@ -316,7 +316,12 @@ export function ModelDetailPanel({id, version, allTags, onChanged, onClose, onPr
                       onAdd={p => act(async () => {
                           await AddPrint(p)
                       })}
-                      onDelete={id => act(() => DeletePrint(id), t('prints.confirmDelete'))}/>
+                      onDelete={id => act(() => DeletePrint(id), t('prints.confirmDelete'))}
+                      onAddPhotos={pid => act(async () => {
+                          await AddPrintPhotos(pid)
+                      })}
+                      onDeletePhoto={pid => act(() => DeletePrintPhoto(pid), t('prints.confirmDeletePhoto'))}
+                      onCover={pid => act(() => UsePhotoAsThumbnail(pid))}/>
 
             <details className="detail-section">
                 <summary><h3>{t('models.filesTitle', {n: d.files.length})}</h3></summary>
@@ -605,14 +610,18 @@ function Notes({modelId, notes}: { modelId: number; notes: string }) {
 }
 
 /** The print log (L1): when, how it went, printer and settings; the newest sets the status. */
-function PrintLog({modelId, prints, busy, onAdd, onDelete}: {
+function PrintLog({modelId, prints, busy, onAdd, onDelete, onAddPhotos, onDeletePhoto, onCover}: {
     modelId: number
     prints: catalog.Print[]
     busy: boolean
     onAdd: (p: catalog.Print) => void
     onDelete: (id: number) => void
+    onAddPhotos: (printId: number) => void
+    onDeletePhoto: (photoId: number) => void
+    onCover: (photoId: number) => void
 }) {
     const {t} = useTranslation()
+    const [box, setBox] = useState<{photos: number[]; index: number} | null>(null)
     const today = new Date().toISOString().slice(0, 10)
     const [open, setOpen] = useState(false)
     const [day, setDay] = useState(today)
@@ -662,6 +671,25 @@ function PrintLog({modelId, prints, busy, onAdd, onDelete}: {
                                 {p.printer && <> · {p.printer}</>}
                                 {p.settings && <> · <span className="muted">{p.settings}</span></>}
                                 {p.notes && <div className="muted">{p.notes}</div>}
+                                <div className="print-photos">
+                                    {(p.photos ?? []).map((ph, i) => (
+                                        <span key={ph} className="print-photo">
+                                            <button className="plain-button" onClick={() => setBox({photos: p.photos, index: i})}
+                                                    aria-label={t('prints.showPhoto')}>
+                                                <img src={`/photos/${ph}.jpg`} alt="" loading="lazy"/>
+                                            </button>
+                                            <span className="print-photo-actions">
+                                                <button className="link small" disabled={busy} title={t('prints.asCoverHint')}
+                                                        onClick={() => onCover(ph)}>{t('prints.asCover')}</button>
+                                                <button className="chip-x" disabled={busy} aria-label={t('prints.deletePhoto')}
+                                                        title={t('prints.deletePhoto')} onClick={() => onDeletePhoto(ph)}>✕</button>
+                                            </span>
+                                        </span>
+                                    ))}
+                                    <button className="link small" disabled={busy} onClick={() => onAddPhotos(p.id)}>
+                                        + {t('prints.addPhoto')}
+                                    </button>
+                                </div>
                             </span>
                             <button className="chip-x" disabled={busy} aria-label={t('prints.delete')} title={t('prints.delete')}
                                     onClick={() => onDelete(p.id)}>✕</button>
@@ -669,6 +697,8 @@ function PrintLog({modelId, prints, busy, onAdd, onDelete}: {
                     ))}
                 </ul>
             )}
+            {box && <Lightbox images={box.photos.map(ph => ({src: `/photos/${ph}.jpg`, label: ''}))} index={box.index}
+                              onIndex={i => setBox({...box, index: i})} onClose={() => setBox(null)}/>}
         </section>
     )
 }

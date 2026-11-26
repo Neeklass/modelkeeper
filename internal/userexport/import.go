@@ -3,10 +3,12 @@ package userexport
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"image"
 	"image/jpeg"
 	"os"
 	"path/filepath"
@@ -86,6 +88,7 @@ type Result struct {
 	OverridesSkipped int    `json:"overridesSkipped"` // root skipped or a local correction decides
 	Thumbnails       int    `json:"thumbnails"`
 	Prints           int    `json:"prints"`      // print log entries added
+	Photos           int    `json:"photos"`      // print photos added
 	Collections      int    `json:"collections"` // collection memberships added
 	TagsRemoved      int    `json:"tagsRemoved"` // sync: tags the other PC removed
 	Changed          int    `json:"changed"`     // existing models whose user data changed (journaled)
@@ -847,6 +850,30 @@ func importExtras(ctx context.Context, tx *sql.Tx, e *Export, localOf map[string
 			}
 			if n, _ := r.RowsAffected(); n > 0 {
 				res.Prints++
+			}
+			if len(p.Photos) == 0 {
+				continue
+			}
+			var pid int64
+			if err := tx.QueryRowContext(ctx, `SELECT id FROM print_log WHERE model_id = ?1 AND printed_at = ?2
+				AND result = ?3 AND printer = ?4 AND settings = ?5 AND notes = ?6 ORDER BY id LIMIT 1`,
+				id, p.PrintedAt, p.Result, p.Printer, p.Settings, p.Notes).Scan(&pid); err != nil {
+				return err
+			}
+			for _, ph := range p.Photos {
+				cfg, _, err := image.DecodeConfig(bytes.NewReader(ph))
+				if err != nil {
+					continue // not an image: skipped
+				}
+				sum := sha256.Sum256(ph)
+				r, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO print_photo (print_id, data, sha256, width, height, created_at)
+					VALUES (?, ?, ?, ?, ?, ?)`, pid, ph, sum[:], cfg.Width, cfg.Height, now)
+				if err != nil {
+					return err
+				}
+				if n, _ := r.RowsAffected(); n > 0 {
+					res.Photos++
+				}
 			}
 		}
 	}

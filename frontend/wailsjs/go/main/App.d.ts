@@ -211,3 +211,9 @@ export function GetHealth():Promise<health.Report>;
 export function CheckHealthNow():Promise<health.Report>;
 
 export function ExportDiagnostics():Promise<string>;
+
+export function AddPrintPhotos(arg1:number):Promise<number>;
+
+export function DeletePrintPhoto(arg1:number):Promise<void>;
+
+export function UsePhotoAsThumbnail(arg1:number):Promise<void>;

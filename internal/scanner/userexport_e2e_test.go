@@ -110,8 +110,12 @@ func userData(t *testing.T, e *env, thumbDir string) {
 	if err := catalog.SetFavorite(ctx, e.db, []int64{elf}, true); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := catalog.AddPrint(ctx, e.db, catalog.Print{ModelID: orc, PrintedAt: 1_700_000_000_000, Result: "ok",
-		Printer: "Saturn 4", Settings: "2.4 s", Notes: "perfect"}); err != nil {
+	pr, err := catalog.AddPrint(ctx, e.db, catalog.Print{ModelID: orc, PrintedAt: 1_700_000_000_000, Result: "ok",
+		Printer: "Saturn 4", Settings: "2.4 s", Notes: "perfect"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := catalog.AddPrintPhoto(ctx, e.db, pr.ID, testJPEG(t), 8, 8); err != nil {
 		t.Fatal(err)
 	}
 	col, err := catalog.CreateCollection(ctx, e.db, "Campaign")

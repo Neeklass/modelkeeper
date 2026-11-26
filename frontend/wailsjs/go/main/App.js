@@ -405,3 +405,15 @@ export function CheckHealthNow() {
 export function ExportDiagnostics() {
   return window['go']['main']['App']['ExportDiagnostics']();
 }
+
+export function AddPrintPhotos(arg1) {
+  return window['go']['main']['App']['AddPrintPhotos'](arg1);
+}
+
+export function DeletePrintPhoto(arg1) {
+  return window['go']['main']['App']['DeletePrintPhoto'](arg1);
+}
+
+export function UsePhotoAsThumbnail(arg1) {
+  return window['go']['main']['App']['UsePhotoAsThumbnail'](arg1);
+}

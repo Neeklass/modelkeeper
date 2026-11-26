@@ -337,16 +337,21 @@ func embedded3MF(data []byte) (image.Image, error) {
 // encode scales the image to fit Size x Size and writes a JPEG; transparent
 // areas get the render background.
 func encode(img image.Image) ([]byte, error) {
+	data, _, _, err := encodeMax(img, Size, 82)
+	return data, err
+}
+
+func encodeMax(img image.Image, size, quality int) ([]byte, int, int, error) {
 	b := img.Bounds()
 	if b.Empty() {
-		return nil, errors.New("empty image")
+		return nil, 0, 0, errors.New("empty image")
 	}
 	w, h := b.Dx(), b.Dy()
-	if w > Size || h > Size {
+	if w > size || h > size {
 		if w >= h {
-			w, h = Size, max(1, h*Size/b.Dx())
+			w, h = size, max(1, h*size/b.Dx())
 		} else {
-			w, h = max(1, w*Size/b.Dy()), Size
+			w, h = max(1, w*size/b.Dy()), size
 		}
 	}
 	dst := image.NewRGBA(image.Rect(0, 0, w, h))
@@ -354,10 +359,10 @@ func encode(img image.Image) ([]byte, error) {
 		image.Point{}, draw.Src)
 	xdraw.CatmullRom.Scale(dst, dst.Bounds(), img, b, xdraw.Over, nil)
 	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, dst, &jpeg.Options{Quality: 82}); err != nil {
-		return nil, err
+	if err := jpeg.Encode(&buf, dst, &jpeg.Options{Quality: quality}); err != nil {
+		return nil, 0, 0, err
 	}
-	return buf.Bytes(), nil
+	return buf.Bytes(), w, h, nil
 }
 
 // Pending returns models of a root that have no thumbnail and were not tried yet.

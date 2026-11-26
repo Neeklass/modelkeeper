@@ -1197,6 +1197,10 @@ func (h assetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.serveThumb(w, r, name)
 		return
 	}
+	if name, ok := strings.CutPrefix(r.URL.Path, "/photos/"); ok {
+		h.servePhoto(w, r, name)
+		return
+	}
 	if id, ok := strings.CutPrefix(r.URL.Path, "/files/"); ok {
 		h.serveFile(w, r, id)
 		return

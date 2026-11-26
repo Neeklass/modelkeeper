@@ -1011,7 +1011,16 @@
     "notesPlaceholder": "How did it turn out?",
     "save": "Save",
     "delete": "Delete entry",
-    "confirmDelete": "Delete this entry of the print log?"
+    "confirmDelete": "Delete this entry of the print log?",
+    "addPhoto": "Photo",
+    "showPhoto": "Show photo",
+    "asCover": "As cover",
+    "asCoverHint": "Use this photo as the picture of the model",
+    "deletePhoto": "Delete photo",
+    "confirmDeletePhoto": "Delete this photo?",
+    "notFound": "The print log entry no longer exists.",
+    "tooManyPhotos": "At most {{max}} photos per print.",
+    "photoUnreadable": "{{file}} could not be read as a picture."
   },
   "sync": {
     "title": "Sync with other PCs",

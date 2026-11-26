@@ -1011,7 +1011,16 @@
     "notesPlaceholder": "Wie ist er geworden?",
     "save": "Speichern",
     "delete": "Eintrag löschen",
-    "confirmDelete": "Diesen Eintrag aus dem Druckprotokoll löschen?"
+    "confirmDelete": "Diesen Eintrag aus dem Druckprotokoll löschen?",
+    "addPhoto": "Foto",
+    "showPhoto": "Foto anzeigen",
+    "asCover": "Als Titelbild",
+    "asCoverHint": "Dieses Foto als Bild des Modells verwenden",
+    "deletePhoto": "Foto löschen",
+    "confirmDeletePhoto": "Dieses Foto löschen?",
+    "notFound": "Den Eintrag im Druckprotokoll gibt es nicht mehr.",
+    "tooManyPhotos": "Höchstens {{max}} Fotos pro Druck.",
+    "photoUnreadable": "{{file}} konnte nicht als Bild gelesen werden."
   },
   "sync": {
     "title": "Mit anderen PCs abgleichen",

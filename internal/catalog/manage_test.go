@@ -204,3 +204,44 @@ func TestStats(t *testing.T) {
 		t.Errorf("creators %+v", st.Creators)
 	}
 }
+
+// Photos of a print: stored once, bounded, removed with the entry.
+func TestPrintPhotos(t *testing.T) {
+	ctx := context.Background()
+	conn, _ := testCatalog(t, "C/Orc/o.stl")
+	orc := modelID(t, conn, "Orc")
+	p, err := AddPrint(ctx, conn, Print{ModelID: orc, Result: "ok"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := AddPrintPhoto(ctx, conn, p.ID, []byte("jpeg one"), 10, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := AddPrintPhoto(ctx, conn, p.ID, []byte("jpeg one"), 10, 10); b != a {
+		t.Errorf("duplicate stored again: %d %d", a, b)
+	}
+	for i := 1; i < MaxPhotosPerPrint; i++ {
+		if _, err := AddPrintPhoto(ctx, conn, p.ID, []byte{byte(i)}, 1, 1); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := AddPrintPhoto(ctx, conn, p.ID, []byte("one more"), 1, 1); err == nil {
+		t.Error("limit not enforced")
+	}
+	d, _ := GetModel(ctx, conn, orc)
+	if len(d.Prints) != 1 || len(d.Prints[0].Photos) != MaxPhotosPerPrint || d.Prints[0].Photos[0] != a {
+		t.Errorf("prints %+v", d.Prints)
+	}
+	if data, m, err := PrintPhoto(ctx, conn, a); err != nil || string(data) != "jpeg one" || m != orc {
+		t.Errorf("photo %q %d %v", data, m, err)
+	}
+	if err := DeletePrint(ctx, conn, p.ID); err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	conn.QueryRow(`SELECT count(*) FROM print_photo`).Scan(&n)
+	if n != 0 {
+		t.Errorf("%d photos left", n)
+	}
+}
