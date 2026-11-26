@@ -126,3 +126,53 @@ func TestUndo(t *testing.T) {
 		t.Errorf("search after undo: %+v, %v", page, err)
 	}
 }
+
+// The journal is bounded by size too; the newest action always stays.
+func TestJournalSizeLimit(t *testing.T) {
+	ctx := context.Background()
+	conn, _ := testCatalog(t, "Creator/Orc/o.stl", "Creator/Elf/e.stl")
+	orc, elf := modelID(t, conn, "Orc"), modelID(t, conn, "Elf")
+	old := journalMaxBytes
+	journalMaxBytes = 1 // every older row is too much
+	defer func() { journalMaxBytes = old }()
+	for _, tag := range []string{"a", "b", "c"} {
+		if err := AddTags(ctx, conn, []int64{orc, elf}, []string{tag}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	h, err := ListHistory(ctx, conn, 0)
+	if err != nil || len(h) != 1 || h[0].Params["tags"] != "c" {
+		t.Fatalf("history %+v, %v", h, err)
+	}
+	if _, err := Undo(ctx, conn, nil); err != nil {
+		t.Fatalf("newest action not undoable: %v", err)
+	}
+}
+
+// The bulk capture reads exactly what the single one does.
+func TestCaptureMatchesCaptureOne(t *testing.T) {
+	ctx := context.Background()
+	conn, _ := testCatalog(t, "Creator/Orc/o.stl", "Creator/Elf/e.stl", "Creator/Troll/t.stl")
+	ids := []int64{modelID(t, conn, "Orc"), modelID(t, conn, "Elf"), modelID(t, conn, "Troll")}
+	AddTags(ctx, conn, ids[:2], []string{"x", "y"})
+	n := "note"
+	UpdateModel(ctx, conn, ids[0], ModelUpdate{Notes: &n})
+	tx, err := conn.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	all, err := capture(ctx, tx, append(ids, ids[0], 999999))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(all) != 3 {
+		t.Fatalf("captured %d", len(all))
+	}
+	for _, id := range ids {
+		one, ok, err := captureOne(ctx, tx, id)
+		if err != nil || !ok || !sameState(one, all[id]) {
+			t.Errorf("model %d: %+v vs %+v (%v)", id, one, all[id], err)
+		}
+	}
+}

@@ -19,8 +19,24 @@ import (
 // in another way (a merge, an import) is left as it is, so undo never throws
 // away newer work.
 
-// journalKeep is the number of journal rows kept.
+// journalKeep is the number of journal rows kept; journalMaxBytes bounds
+// their total size (a bulk action on 20,000 models stores some megabytes,
+// and the journal is part of every snapshot). The newest row always stays.
 const journalKeep = 500
+
+var journalMaxBytes = 50 << 20 // a variable for tests
+
+// pruneJournal drops the oldest rows beyond journalKeep or journalMaxBytes.
+func pruneJournal(ctx context.Context, tx *sql.Tx) error {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM journal WHERE id <= (SELECT max(id) FROM journal) - ?`, journalKeep); err != nil {
+		return err
+	}
+	_, err := tx.ExecContext(ctx, `DELETE FROM journal WHERE id IN (
+			SELECT id FROM (SELECT id, sum(length(state)) OVER (ORDER BY id DESC) AS total FROM journal)
+			WHERE total > ?)
+		AND id < (SELECT max(id) FROM journal)`, journalMaxBytes)
+	return err
+}
 
 // Edits of the same model within coalesceWindow are one action, so notes
 // saved while typing are undone as a whole.
@@ -95,22 +111,83 @@ func captureOne(ctx context.Context, tx *sql.Tx, id int64) (modelState, bool, er
 	return s, true, nil
 }
 
+// capture reads the states of many models with a few queries per 500
+// models (not per model: a bulk action may touch tens of thousands). The
+// result equals captureOne for each model.
 func capture(ctx context.Context, tx *sql.Tx, ids []int64) (map[int64]modelState, error) {
 	out := make(map[int64]modelState, len(ids))
+	seen := make(map[int64]bool, len(ids))
+	uniq := make([]int64, 0, len(ids))
 	for _, id := range ids {
-		if _, ok := out[id]; ok {
-			continue
+		if !seen[id] {
+			seen[id] = true
+			uniq = append(uniq, id)
 		}
-		s, ok, err := captureOne(ctx, tx, id)
+	}
+	for start := 0; start < len(uniq); start += captureChunk {
+		part := uniq[start:min(start+captureChunk, len(uniq))]
+		args := make([]any, len(part))
+		for i, id := range part {
+			args[i] = id
+		}
+		in := strings.TrimSuffix(strings.Repeat("?,", len(part)), ",")
+		rows, err := tx.QueryContext(ctx, `SELECT m.id, m.uid, m.name, m.name_manual, coalesce(c.name, ''), m.creator_manual,
+			m.notes, m.favorite, m.print_status, coalesce(m.supports, ''), m.supports_manual,
+			coalesce(m.origin, ''), coalesce(m.origin_url, ''), coalesce(m.license, '')
+			FROM model m LEFT JOIN creator c ON c.id = m.creator_id WHERE m.id IN (`+in+`)`, args...)
 		if err != nil {
 			return nil, err
 		}
-		if ok {
-			out[id] = s
+		for rows.Next() {
+			var id int64
+			var st modelState
+			if err := rows.Scan(&id, &st.UID, &st.Name, &st.NameManual, &st.Creator, &st.CreatorManual, &st.Notes,
+				&st.Favorite, &st.PrintStatus, &st.Supports, &st.SupportsManual, &st.Origin, &st.OriginURL, &st.License); err != nil {
+				rows.Close()
+				return nil, err
+			}
+			st.Tags, st.Dismissed = []string{}, []string{}
+			out[id] = st
+		}
+		rows.Close()
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+		add := func(q string, set func(st *modelState, v string)) error {
+			rows, err := tx.QueryContext(ctx, q, args...)
+			if err != nil {
+				return err
+			}
+			defer rows.Close()
+			for rows.Next() {
+				var id int64
+				var v string
+				if err := rows.Scan(&id, &v); err != nil {
+					return err
+				}
+				if st, ok := out[id]; ok {
+					set(&st, v)
+					out[id] = st
+				}
+			}
+			return rows.Err()
+		}
+		if err := add(`SELECT mt.model_id, t.name FROM model_tag mt JOIN tag t ON t.id = mt.tag_id
+			WHERE mt.model_id IN (`+in+`) ORDER BY mt.model_id, t.name`,
+			func(st *modelState, v string) { st.Tags = append(st.Tags, v) }); err != nil {
+			return nil, err
+		}
+		if err := add(`SELECT model_id, name FROM tag_suggestion WHERE state = 'dismissed'
+			AND model_id IN (`+in+`) ORDER BY model_id, name`,
+			func(st *modelState, v string) { st.Dismissed = append(st.Dismissed, v) }); err != nil {
+			return nil, err
 		}
 	}
 	return out, nil
 }
+
+// captureChunk is the number of models per capture query.
+const captureChunk = 500
 
 func sameState(a, b modelState) bool {
 	x, _ := json.Marshal(a)
@@ -187,8 +264,7 @@ func journaled(ctx context.Context, tx *sql.Tx, action string, params map[string
 		now, action, p, len(changes), string(state)); err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `DELETE FROM journal WHERE id <= (SELECT max(id) FROM journal) - ?`, journalKeep)
-	return err
+	return pruneJournal(ctx, tx)
 }
 
 // restoreState writes a model state back (the model is found by its uid).

@@ -155,6 +155,15 @@ commit with `-dirty` for uncommitted changes). Without `-ldflags`, plain
 The result is `build/bin/modelkeeper.exe`. Development with live reload:
 `wails dev` (Wails CLI v2.17).
 
+## Release
+
+Push a tag like `v0.11.0` (`git tag v0.11.0 && git push origin v0.11.0`): the
+Release workflow tests, builds and publishes
+`modelkeeper-v0.11.0-windows-amd64.zip` and `…-linux-amd64.tar.gz` as a GitHub
+release. Each unpacks to a folder `modelkeeper` with the program and a short
+readme (`build/dist/LIESMICH.txt`). "Run workflow" on the Actions page builds
+the packages without publishing.
+
 ## Test
 
 ```

@@ -1,0 +1,37 @@
+modelkeeper – 3D-Druck-Dateien verwalten
+=========================================
+
+Installieren
+  1. Diese ZIP-Datei entpacken (Rechtsklick → "Alle extrahieren…"), nicht aus
+     der ZIP heraus starten.
+  2. Den Ordner "modelkeeper" an einen dauerhaften Ort legen, z. B.
+     C:\Users\<Name>\modelkeeper – nicht in "Downloads" und nicht in einen
+     OneDrive- oder Dropbox-Ordner.
+  3. modelkeeper.exe starten. Daneben entsteht der Ordner "data" mit Katalog,
+     Vorschaubildern, Sicherungen und Einstellungen.
+
+Umziehen
+  modelkeeper schließen und den ganzen Ordner "modelkeeper" (Programm und
+  "data") verschieben oder kopieren – alles kommt mit. Sind Modellordner
+  mitgewandert (z. B. neuer Laufwerksbuchstabe), bietet modelkeeper beim
+  nächsten Start an, ihre Pfade anzupassen.
+
+Aktualisieren
+  modelkeeper schließen und nur modelkeeper.exe durch die neue Version
+  ersetzen. Der Ordner "data" bleibt; vor jeder Datenbank-Änderung wird
+  automatisch eine Sicherung angelegt.
+
+Hilfe: in der App unter "Hilfe".
+
+-----------------------------------------------------------------------------
+
+modelkeeper – manage 3D printing files
+
+Install: extract this zip (do not start it from inside the zip), put the
+"modelkeeper" folder somewhere permanent (not Downloads, not OneDrive or
+Dropbox) and start modelkeeper.exe. The "data" folder next to it holds the
+catalog, thumbnails, backups and settings.
+
+Move: close modelkeeper and move or copy the whole "modelkeeper" folder.
+Update: replace only modelkeeper.exe; "data" stays (a backup is made before
+any database change).

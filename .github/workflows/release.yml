@@ -1,0 +1,107 @@
+name: Release
+
+# A tag like v0.11.0 builds Windows and Linux packages and publishes a GitHub
+# release. "Run workflow" (manual) only builds them, as artifacts to try.
+#
+# Package layout (M): unzipping gives a folder "modelkeeper" with the program
+# and a short readme; the data folder is created next to the program on the
+# first start, so the whole folder can be moved as it is.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Test
+        shell: bash
+        run: |
+          (cd frontend && npm ci && npm run build)
+          go test ./...
+      - name: Build
+        shell: bash
+        run: |
+          go run github.com/wailsapp/wails/v2/cmd/wails@v2.17.1 build -platform windows/amd64 -trimpath \
+            -ldflags "-X main.version=$(git describe --tags --always --dirty)"
+      - name: Package
+        shell: pwsh
+        run: |
+          $v = git describe --tags --always
+          New-Item -ItemType Directory -Force pkg/modelkeeper | Out-Null
+          Copy-Item build/bin/modelkeeper.exe pkg/modelkeeper/
+          Copy-Item build/dist/LIESMICH.txt pkg/modelkeeper/
+          Compress-Archive -Path pkg/modelkeeper -DestinationPath "modelkeeper-$v-windows-amd64.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: modelkeeper-*-windows-amd64.zip
+
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: System packages (WebKitGTK for Wails)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev p7zip-full
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Test
+        run: |
+          (cd frontend && npm ci && npm run build)
+          go test -tags webkit2_41 ./...
+      - name: Build
+        run: |
+          go run github.com/wailsapp/wails/v2/cmd/wails@v2.17.1 build -platform linux/amd64 -trimpath -tags webkit2_41 \
+            -ldflags "-X main.version=$(git describe --tags --always --dirty)"
+      - name: Package
+        run: |
+          v=$(git describe --tags --always)
+          mkdir -p pkg/modelkeeper
+          cp build/bin/modelkeeper build/dist/LIESMICH.txt pkg/modelkeeper/
+          tar -C pkg -czf "modelkeeper-$v-linux-amd64.tar.gz" modelkeeper
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: modelkeeper-*-linux-amd64.tar.gz
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, linux]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/* --repo "${GITHUB_REPOSITORY}" \
+            --title "modelkeeper ${GITHUB_REF_NAME}" --generate-notes
