@@ -110,6 +110,20 @@ func userData(t *testing.T, e *env, thumbDir string) {
 	if err := catalog.SetFavorite(ctx, e.db, []int64{elf}, true); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := catalog.AddPrint(ctx, e.db, catalog.Print{ModelID: orc, PrintedAt: 1_700_000_000_000, Result: "ok",
+		Printer: "Saturn 4", Settings: "2.4 s", Notes: "perfect"}); err != nil {
+		t.Fatal(err)
+	}
+	col, err := catalog.CreateCollection(ctx, e.db, "Campaign")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := catalog.AddToCollection(ctx, e.db, col.ID, []int64{elf, orc}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := catalog.SaveSearch(ctx, e.db, "Orcs", `{"text":"orc"}`); err != nil {
+		t.Fatal(err)
+	}
 	// A correction: the bundle is one model.
 	if _, err := corrections.MarkModel(ctx, e.db, e.id, "Atlas/Bundle"); err != nil {
 		t.Fatal(err)

@@ -286,6 +286,11 @@ func moveUserData(ctx context.Context, tx *sql.Tx, src, dst int64) error {
 		// Corrections that pointed at the source now point at the target.
 		`UPDATE override SET model_id = ?2 WHERE model_id = ?1 AND kind = 'merge'`,
 		`DELETE FROM override WHERE model_id = ?1`,
+		// Prints and collection memberships go along.
+		`UPDATE print_log SET model_id = ?2 WHERE model_id = ?1`,
+		`INSERT OR IGNORE INTO collection_model (collection_id, model_id, position)
+			SELECT collection_id, ?2, position FROM collection_model WHERE model_id = ?1`,
+		`DELETE FROM collection_model WHERE model_id = ?1`,
 		// The emptied source is removed by detection's cleanup.
 		`DELETE FROM model_tag WHERE model_id = ?1`,
 		`UPDATE model SET notes = '', print_status = 'not_printed', name_manual = 0, creator_manual = 0,

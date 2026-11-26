@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"image/jpeg"
 	"os"
@@ -84,6 +85,8 @@ type Result struct {
 	Overrides        int    `json:"overrides"`        // corrections added
 	OverridesSkipped int    `json:"overridesSkipped"` // root skipped or a local correction decides
 	Thumbnails       int    `json:"thumbnails"`
+	Prints           int    `json:"prints"`      // print log entries added
+	Collections      int    `json:"collections"` // collection memberships added
 	// RootsAdded are new root folders (to be scanned); RootsChanged existing
 	// ones with new corrections or places (to be detected again).
 	RootsAdded   []int64 `json:"rootsAdded"`
@@ -521,6 +524,9 @@ func Apply(ctx context.Context, db *sql.DB, e *Export, choices []RootChoice, o A
 		}
 	}
 
+	if err := importExtras(ctx, tx, e, localOf, now, &res); err != nil {
+		return res, err
+	}
 	if err := refreshSearch(ctx, tx, touched); err != nil {
 		return res, err
 	}
@@ -752,4 +758,65 @@ func writeThumb(ctx context.Context, db *sql.DB, o ApplyOptions, modelID int64, 
 	_, err = db.ExecContext(ctx, `UPDATE model SET thumb_source = 'manual', thumb_file = ?, thumb_tried_at = ?, updated_at = ?
 		WHERE id = ?`, name, now, now, modelID)
 	return err == nil, err
+}
+
+// importExtras adds print log entries, collections and saved searches. Like
+// the rest of the import it only adds: an identical print is not added twice,
+// collection members are appended in the exported order, a saved search of
+// the same name here stays.
+func importExtras(ctx context.Context, tx *sql.Tx, e *Export, localOf map[string]int64, now int64, res *Result) error {
+	for _, m := range e.Models {
+		id, ok := localOf[m.UID]
+		if !ok {
+			continue
+		}
+		for _, p := range m.Prints {
+			r, err := tx.ExecContext(ctx, `INSERT INTO print_log (model_id, printed_at, result, printer, settings, notes, created_at)
+				SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7 WHERE NOT EXISTS (SELECT 1 FROM print_log
+					WHERE model_id = ?1 AND printed_at = ?2 AND result = ?3 AND printer = ?4 AND settings = ?5 AND notes = ?6)`,
+				id, p.PrintedAt, p.Result, p.Printer, p.Settings, p.Notes, now)
+			if err != nil {
+				return err
+			}
+			if n, _ := r.RowsAffected(); n > 0 {
+				res.Prints++
+			}
+		}
+	}
+	for _, c := range e.Collections {
+		name := strings.Join(strings.Fields(c.Name), " ")
+		if name == "" {
+			continue
+		}
+		var cid int64
+		if err := tx.QueryRowContext(ctx, `INSERT INTO collection (name, created_at) VALUES (?, ?)
+			ON CONFLICT (name) DO UPDATE SET name = collection.name RETURNING id`, name, now).Scan(&cid); err != nil {
+			return err
+		}
+		for _, uid := range c.Models {
+			id, ok := localOf[uid]
+			if !ok {
+				continue
+			}
+			r, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO collection_model (collection_id, model_id, position)
+				VALUES (?1, ?2, (SELECT coalesce(max(position), 0) + 1 FROM collection_model WHERE collection_id = ?1))`, cid, id)
+			if err != nil {
+				return err
+			}
+			if n, _ := r.RowsAffected(); n > 0 {
+				res.Collections++
+			}
+		}
+	}
+	for _, ss := range e.SavedSearches {
+		name := strings.Join(strings.Fields(ss.Name), " ")
+		if name == "" || !json.Valid(ss.Query) {
+			continue
+		}
+		if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO saved_search (name, query, created_at) VALUES (?, ?, ?)`,
+			name, string(ss.Query), now); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -58,6 +58,30 @@ type Export struct {
 	Tags      []string        `json:"tags"` // all tags with at least one model
 	Models    []Model         `json:"models"`
 	Overrides []Override      `json:"overrides"`
+	// Collections in their order (G6) and saved searches.
+	Collections   []Collection  `json:"collections,omitempty"`
+	SavedSearches []SavedSearch `json:"savedSearches,omitempty"`
+}
+
+// Collection is a collection with its models (uids) in order.
+type Collection struct {
+	Name   string   `json:"name"`
+	Models []string `json:"models"`
+}
+
+// SavedSearch is a named search (the frontend's query as JSON).
+type SavedSearch struct {
+	Name  string          `json:"name"`
+	Query json.RawMessage `json:"query"`
+}
+
+// Print is an entry of a model's print log (L1).
+type Print struct {
+	PrintedAt int64  `json:"printedAt"`
+	Result    string `json:"result"`
+	Printer   string `json:"printer,omitempty"`
+	Settings  string `json:"settings,omitempty"`
+	Notes     string `json:"notes,omitempty"`
 }
 
 // Root is a root folder of the exporting catalog.
@@ -90,6 +114,7 @@ type Model struct {
 	Anchors              []Anchor   `json:"anchors"`
 	Content              []string   `json:"content"` // SHA-256 (hex) of the content files
 	Thumbnail            *Thumbnail `json:"thumbnail,omitempty"`
+	Prints               []Print    `json:"prints,omitempty"`
 	CreatedAt            int64      `json:"createdAt"` // unix ms
 	UpdatedAt            int64      `json:"updatedAt"`
 }
@@ -323,6 +348,62 @@ func Build(ctx context.Context, db *sql.DB, o Options) (*Export, error) {
 	}); err != nil {
 		return nil, err
 	}
+	if err := each(`SELECT model_id, printed_at, result, printer, settings, notes FROM print_log
+		WHERE model_id IN (`+selected+`) ORDER BY model_id, printed_at, id`, func(_ int, rows *sql.Rows) error {
+		var id int64
+		var p Print
+		if err := rows.Scan(&id, &p.PrintedAt, &p.Result, &p.Printer, &p.Settings, &p.Notes); err != nil {
+			return err
+		}
+		if i, ok := index[id]; ok {
+			e.Models[i].Prints = append(e.Models[i].Prints, p)
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	colIndex := map[int64]int{}
+	if err := each(`SELECT id, name FROM collection ORDER BY name COLLATE NOCASE, id`, func(_ int, rows *sql.Rows) error {
+		var id int64
+		var c Collection
+		if err := rows.Scan(&id, &c.Name); err != nil {
+			return err
+		}
+		c.Models = []string{}
+		colIndex[id] = len(e.Collections)
+		e.Collections = append(e.Collections, c)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	if err := each(`SELECT cm.collection_id, m.uid FROM collection_model cm JOIN model m ON m.id = cm.model_id
+		ORDER BY cm.collection_id, cm.position, m.id`, func(_ int, rows *sql.Rows) error {
+		var id int64
+		var uid string
+		if err := rows.Scan(&id, &uid); err != nil {
+			return err
+		}
+		if i, ok := colIndex[id]; ok {
+			e.Collections[i].Models = append(e.Collections[i].Models, uid)
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	if err := each(`SELECT name, query FROM saved_search ORDER BY name COLLATE NOCASE, id`, func(_ int, rows *sql.Rows) error {
+		var ss SavedSearch
+		var q string
+		if err := rows.Scan(&ss.Name, &q); err != nil {
+			return err
+		}
+		if json.Valid([]byte(q)) {
+			ss.Query = json.RawMessage(q)
+			e.SavedSearches = append(e.SavedSearches, ss)
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
 	for i, p := range ids {
 		m := &e.Models[i]
 		sort.Strings(m.Content)
@@ -529,6 +610,11 @@ func (e *Export) check() error {
 		for _, c := range m.Content {
 			if b, err := hex.DecodeString(c); err != nil || len(b) != 32 {
 				return fmt.Errorf("model %s: content hash %q", m.UID, c)
+			}
+		}
+		for _, p := range m.Prints {
+			if p.Result != "ok" && p.Result != "failed" {
+				return fmt.Errorf("model %s: print result %q", m.UID, p.Result)
 			}
 		}
 	}

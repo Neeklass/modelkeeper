@@ -28,6 +28,8 @@ type ModelRow struct {
 	// Waiting: the model has no files in the catalog (yet): imported, or its
 	// root folder was deleted. A scan that finds its files links it up (J7).
 	Waiting bool `json:"waiting"`
+	// CollectionID: only models of this collection, in its order (G6).
+	CollectionID int64 `json:"collectionId"`
 }
 
 // waitingCond is true for a model "m" without any location.
@@ -101,6 +103,14 @@ func (q ModelQuery) where() (from, order string, args []any) {
 	}
 	if q.Sort == "newest" {
 		order = `ORDER BY m.created_at DESC, m.id DESC`
+	}
+	if q.CollectionID > 0 {
+		conds = append(conds, `EXISTS (SELECT 1 FROM collection_model cm WHERE cm.model_id = m.id AND cm.collection_id = ?)`)
+		args = append(args, q.CollectionID)
+		if q.Sort == "" && from == `FROM model m` {
+			order = fmt.Sprintf(`ORDER BY (SELECT position FROM collection_model WHERE collection_id = %d AND model_id = m.id), m.id`,
+				q.CollectionID)
+		}
 	}
 	if q.Untagged {
 		conds = append(conds, `NOT EXISTS (SELECT 1 FROM model_tag mt WHERE mt.model_id = m.id)`)
@@ -268,6 +278,10 @@ type ModelDetail struct {
 	Inactive bool `json:"inactive"`
 	// Waiting: no files in the catalog yet (see ModelRow.Waiting).
 	Waiting bool `json:"waiting"`
+	// Prints: the print log, newest first (L1).
+	Prints []Print `json:"prints"`
+	// Collections the model is in (G6).
+	Collections []CollectionRef `json:"collections"`
 }
 
 // ModelAnchor is a place where the model was detected.
@@ -351,6 +365,13 @@ func GetModel(ctx context.Context, db *sql.DB, id int64) (ModelDetail, error) {
 		return d, err
 	}
 
+	// Before the files query: rows must not stay open while others run.
+	if d.Prints, err = ListPrints(ctx, db, id); err != nil {
+		return d, err
+	}
+	if d.Collections, err = collectionsOf(ctx, db, id); err != nil {
+		return d, err
+	}
 	rows, err := db.QueryContext(ctx, `SELECT a.root_id, r.path, r.kind, r.creator_level, r.status <> 'offline',
 			r.removed_at IS NOT NULL, a.path, a.kind
 		FROM model_anchor a JOIN root r ON r.id = a.root_id WHERE a.model_id = ?
