@@ -24,9 +24,10 @@ import {TagManagerPanel} from './components/TagManager'
 import {ConfigTransferPanel, MovedBanner} from './components/ConfigTransfer'
 import {StatsView} from './components/StatsView'
 import {SyncPanel} from './components/SyncPanel'
+import {DiagnosticsButton, DiagnosticsPanel, HealthPanel, useHealth} from './components/Maintenance'
 
 /** Sections of the settings page. */
-const SETTINGS_SECTIONS = ['general', 'transfer', 'tags', 'detection'] as const
+const SETTINGS_SECTIONS = ['general', 'transfer', 'tags', 'detection', 'maintenance'] as const
 type SettingsSection = typeof SETTINGS_SECTIONS[number]
 
 /** Typing in a field: Ctrl+Z belongs to the field then. */
@@ -46,6 +47,7 @@ function App() {
     const [query, setQuery] = useState<Query>(emptyQuery)
     const [scopeLabel, setScopeLabel] = useState<string | undefined>()
     const library = useLibrary()
+    const healthReport = useHealth()
     const toast = useToast()
     const [settingsSection, setSettingsSection] = useState<SettingsSection>('general')
     // Opening the library from elsewhere with a query (e.g. the folders view).
@@ -123,6 +125,15 @@ function App() {
                     <MovedBanner from={status.movedFrom}
                                  onDone={() => setStatus(main.AppStatus.createFrom({...status, movedFrom: undefined}))}/>
                 )}
+                {healthReport && (!healthReport.integrityOk || healthReport.lowSpace) && (
+                    <div className="row notice-warn" role="alert">
+                        <span className="small">{t(!healthReport.integrityOk ? 'health.bannerIntegrity' : 'health.bannerSpace')}</span>
+                        <button className="link small" onClick={() => {
+                            setView('settings')
+                            setSettingsSection('maintenance')
+                        }}>{t('health.bannerOpen')}</button>
+                    </div>
+                )}
                 {status.locationWarning && (
                     <div className="row notice-warn" role="alert">
                         <span className="small">{translateMsg(status.locationWarning as Msg)}</span>
@@ -165,6 +176,10 @@ function App() {
                         <HistoryPanel/>
                     </>}
                     {settingsSection === 'detection' && <DetectionSettingsPanel/>}
+                    {settingsSection === 'maintenance' && <>
+                        <HealthPanel/>
+                        <DiagnosticsPanel/>
+                    </>}
                 </main>}
                 {view === 'stats' && <StatsView onShowModels={q => showModels(q)}/>}
                 {view === 'help' && <HelpView/>}
@@ -212,6 +227,8 @@ function StartupError({status, onStarted}: { status: main.AppStatus; onStarted: 
                         <p>{t('backup.restoreHint')}</p>
                     </details>
                 </>}
+                <h2>{t('diag.title')}</h2>
+                <DiagnosticsButton/>
                 {error && <p className="error">{translateMsg(error)}</p>}
             </section>
         </div>

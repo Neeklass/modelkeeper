@@ -381,3 +381,27 @@ export function UpdateModel(arg1, arg2) {
 export function UpdateModels(arg1, arg2) {
   return window['go']['main']['App']['UpdateModels'](arg1, arg2);
 }
+
+export function ListBackupsIn(arg1) {
+  return window['go']['main']['App']['ListBackupsIn'](arg1);
+}
+
+export function PickBackupFolder() {
+  return window['go']['main']['App']['PickBackupFolder']();
+}
+
+export function RestoreFrom(arg1,arg2) {
+  return window['go']['main']['App']['RestoreFrom'](arg1,arg2);
+}
+
+export function GetHealth() {
+  return window['go']['main']['App']['GetHealth']();
+}
+
+export function CheckHealthNow() {
+  return window['go']['main']['App']['CheckHealthNow']();
+}
+
+export function ExportDiagnostics() {
+  return window['go']['main']['App']['ExportDiagnostics']();
+}

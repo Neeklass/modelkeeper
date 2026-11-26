@@ -428,8 +428,9 @@ func Rotate(dir string, now time.Time) ([]string, error) {
 	}
 	var removed []string
 	daily := 0
+	pending, _ := PendingRestore(Target{Backups: dir})
 	for i, s := range list {
-		keep := i < KeepNewest
+		keep := i < KeepNewest || s.Name == pending // a requested restore is never deleted
 		if s.Manifest.Reason == ReasonDaily {
 			daily++
 			keep = keep || daily <= KeepDaily

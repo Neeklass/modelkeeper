@@ -76,3 +76,40 @@ func TestMirrorAndRestoreCheck(t *testing.T) {
 		t.Errorf("damaged copy: %+v", r)
 	}
 }
+
+// Fetch brings a snapshot of another backup folder (the external one, or one
+// picked on a new PC) into the local one, where it can be restored; a
+// damaged copy is refused and leaves nothing behind.
+func TestFetch(t *testing.T) {
+	e := newEnv(t)
+	ctx := context.Background()
+	now := time.Now()
+	e.create(backup.ReasonManual, now)
+	ext := t.TempDir()
+	target, copied, err := backup.Mirror(e.backups, ext, now)
+	if err != nil || len(copied) != 1 {
+		t.Fatal(copied, err)
+	}
+	if backup.ExternalDir(ext) != target {
+		t.Errorf("ExternalDir %s, Mirror %s", backup.ExternalDir(ext), target)
+	}
+	local := t.TempDir()
+	s, err := backup.Fetch(ctx, target, local, copied[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if filepath.Dir(s.Path) != local {
+		t.Errorf("fetched to %s", s.Path)
+	}
+	// Damaged in the external folder: refused.
+	other := t.TempDir()
+	if err := os.WriteFile(filepath.Join(target, copied[0], "settings.json"), []byte("{\"x\":1}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := backup.Fetch(ctx, target, other, copied[0]); err == nil {
+		t.Error("damaged copy fetched")
+	}
+	if list, _ := backup.List(other); len(list) != 0 {
+		t.Errorf("left behind: %v", list)
+	}
+}

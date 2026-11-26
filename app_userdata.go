@@ -178,6 +178,7 @@ func (a *App) ApplyImport(choices []userexport.RootChoice, importSettings bool) 
 		out.Backup = s.Path
 		res, err := userexport.Apply(ctx, a.db, exp, choices, userexport.ApplyOptions{
 			ThumbDir: a.layout.Thumbnails, SourceDir: filepath.Dir(file), DataDir: a.layout.Root,
+			Journal: "history.imported", JournalParams: map[string]any{"file": filepath.Base(file)},
 		})
 		out.Result = res
 		return err

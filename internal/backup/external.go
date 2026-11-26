@@ -265,3 +265,45 @@ func replaceFile(p string, b []byte) error {
 	}
 	return os.Rename(tmp, p)
 }
+
+// ExternalDir returns the folder Mirror writes into below ext.
+func ExternalDir(ext string) string { return filepath.Join(ext, ExternalSubdir) }
+
+// Fetch copies snapshot name from another backup folder (the external one,
+// or one picked on a new PC) into dir, so that it can be restored from
+// there. The copy is written to a temporary folder and renamed when
+// complete; its content hash is checked, so a damaged copy is refused. A
+// snapshot already in dir is kept as it is. Returns the local snapshot.
+func Fetch(ctx context.Context, from, dir, name string) (Snapshot, error) {
+	if s, err := Find(dir, name); err == nil {
+		return s, nil
+	}
+	src, err := Find(from, name)
+	if err != nil {
+		return Snapshot{}, err
+	}
+	if err := Verify(ctx, src); err != nil {
+		return Snapshot{}, fmt.Errorf("snapshot %s is damaged: %w", name, err)
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return Snapshot{}, err
+	}
+	tmp := filepath.Join(dir, tmpPrefix+name)
+	os.RemoveAll(tmp)
+	if err := copyTree(src.Path, tmp); err != nil {
+		os.RemoveAll(tmp)
+		return Snapshot{}, err
+	}
+	if h, err := contentHash(tmp); err != nil || (src.Manifest.ContentHash != "" && h != src.Manifest.ContentHash) {
+		os.RemoveAll(tmp)
+		if err == nil {
+			err = errors.New("the copy differs from the original")
+		}
+		return Snapshot{}, fmt.Errorf("copy of %s: %w", name, err)
+	}
+	if err := os.Rename(tmp, filepath.Join(dir, name)); err != nil {
+		os.RemoveAll(tmp)
+		return Snapshot{}, err
+	}
+	return Find(dir, name)
+}

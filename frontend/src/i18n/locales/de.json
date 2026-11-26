@@ -540,7 +540,14 @@
     "checkNone": "Noch kein Test gelaufen.",
     "checkNow": "Jetzt testen",
     "checking": "Wird getestet…",
-    "checkHint": "Einmal am Tag und nach jeder neuen Sicherung prüft modelkeeper die neueste Sicherung (bevorzugt die Kopie im zweiten Ordner): Die Dateien müssen unverändert sein, eine Kopie des Katalogs muss die vollständige Integritätsprüfung bestehen, und die Zahl der Modelle und Tags muss stimmen. Die Sicherung selbst wird dabei nur gelesen."
+    "checkHint": "Einmal am Tag und nach jeder neuen Sicherung prüft modelkeeper die neueste Sicherung (bevorzugt die Kopie im zweiten Ordner): Die Dateien müssen unverändert sein, eine Kopie des Katalogs muss die vollständige Integritätsprüfung bestehen, und die Zahl der Modelle und Tags muss stimmen. Die Sicherung selbst wird dabei nur gelesen.",
+    "fromExternal": "Sicherungen im externen Ordner anzeigen",
+    "fromFolder": "Aus einem anderen Ordner wiederherstellen…",
+    "otherFolder": "Sicherungen in {{path}}",
+    "externalList": "Sicherungen im externen Sicherungsordner",
+    "noExternal": "Es ist kein externer Sicherungsordner eingestellt.",
+    "externalUnreachable": "Der Sicherungsordner {{path}} ist nicht erreichbar.",
+    "fetchFailed": "Die Sicherung {{name}} konnte nicht aus {{path}} kopiert werden; sie ist vielleicht beschädigt. Es wurde nichts geändert."
   },
   "confirm": {
     "cancel": "Abbrechen",
@@ -888,7 +895,11 @@
       "reset": "Korrekturen von {{name}} zurückgesetzt"
     },
     "modelsEdited_one": "{{count}} Modell bearbeitet",
-    "modelsEdited_other": "{{count}} Modelle bearbeitet"
+    "modelsEdited_other": "{{count}} Modelle bearbeitet",
+    "synced_one": "Abgleich mit {{peer}}: {{count}} Modell geändert",
+    "synced_other": "Abgleich mit {{peer}}: {{count}} Modelle geändert",
+    "imported_one": "Import von {{file}}: {{count}} Modell geändert",
+    "imported_other": "Import von {{file}}: {{count}} Modelle geändert"
   },
   "tagManager": {
     "title": "Tags",
@@ -941,7 +952,8 @@
     "general": "Allgemein & Sicherung",
     "transfer": "Export & Konfiguration",
     "tags": "Tags & Verlauf",
-    "detection": "Erkennung"
+    "detection": "Erkennung",
+    "maintenance": "Wartung"
   },
   "collections": {
     "title": "Sammlungen",
@@ -1023,5 +1035,38 @@
     "unreachable": "Der gemeinsame Ordner {{path}} ist nicht erreichbar (NAS aus? Dropbox läuft nicht?).",
     "writeFailed": "Die Datei dieses PCs konnte nicht nach {{path}} geschrieben werden.",
     "failed": "Abgleich fehlgeschlagen: {{error}}"
+  },
+  "health": {
+    "title": "Zustandsprüfung",
+    "intro": "Prüft, ob der Katalog unbeschädigt ist, verkleinert ihn, legt Vorschaubilder beiseite, die kein Modell mehr nutzt, und schaut auf den freien Platz des Laufwerks. Modelldateien werden nie angefasst.",
+    "lastRun": "Letzte Prüfung: {{when}}",
+    "integrityOk": "Katalog unbeschädigt",
+    "integrityBad": "Der Katalog ist beschädigt",
+    "integrityHelp": "Stelle die neueste Sicherung wieder her (Einstellungen → Allgemein → Sicherungen) – bis dahin wird nichts verändert. Exportiere die Diagnose und schicke sie mit.",
+    "catalog": "Katalog: {{size}}",
+    "compacted": "verkleinert, {{size}} frei geworden",
+    "thumbnails_one": "{{n}} Vorschaubild ({{size}})",
+    "thumbnails_other": "{{n}} Vorschaubilder ({{size}})",
+    "orphaned_one": "{{count}} ungenutztes beiseitegelegt",
+    "orphaned_other": "{{count}} ungenutzte beiseitegelegt",
+    "purged_one": "{{count}} altes gelöscht",
+    "purged_other": "{{count}} alte gelöscht",
+    "disk": "Laufwerk des Datenordners: {{free}} frei von {{total}}",
+    "lowSpaceHelp": "Das Laufwerk ist fast voll. Sicherungen und der Katalog brauchen Platz: Schaffe Platz oder verschiebe den App-Ordner auf ein größeres Laufwerk.",
+    "never": "Noch nicht geprüft.",
+    "runNow": "Jetzt prüfen",
+    "running": "Wird geprüft…",
+    "weekly": "Läuft einmal pro Woche von selbst, wenn kein Scan läuft. Ungenutzte Vorschaubilder werden 30 Tage aufbewahrt, bevor sie gelöscht werden.",
+    "failed": "Die Zustandsprüfung ist fehlgeschlagen.",
+    "bannerIntegrity": "Die Zustandsprüfung hat einen Schaden im Katalog gefunden.",
+    "bannerSpace": "Das Laufwerk des Datenordners ist fast voll.",
+    "bannerOpen": "Details"
+  },
+  "diag": {
+    "title": "Diagnose",
+    "export": "Diagnose exportieren…",
+    "hint": "Eine Zip-Datei mit dem Protokoll, den Einstellungen und Systeminformationen, zum Mitschicken, wenn etwas schiefgeht. Sie enthält weder deinen Katalog noch Sicherungen oder Modelldateien.",
+    "done": "Gespeichert:",
+    "failed": "Die Diagnose konnte nicht geschrieben werden."
   }
 }

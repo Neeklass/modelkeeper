@@ -242,6 +242,7 @@ func (a *App) startServices() error {
 	a.stop = make(chan struct{})
 	go a.runDailyTicker(a.stop)
 	go a.runPeerSync(a.stop)
+	go a.runHealthTicker(a.stop)
 
 	w, err := watch.New(conn, scans, watch.Options{
 		Exclude: layout.Root,

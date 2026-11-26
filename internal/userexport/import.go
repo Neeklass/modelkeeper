@@ -88,6 +88,8 @@ type Result struct {
 	Prints           int    `json:"prints"`      // print log entries added
 	Collections      int    `json:"collections"` // collection memberships added
 	TagsRemoved      int    `json:"tagsRemoved"` // sync: tags the other PC removed
+	Changed          int    `json:"changed"`     // existing models whose user data changed (journaled)
+	Created          int    `json:"created"`     // models new in this catalog
 	// RootsAdded are new root folders (to be scanned); RootsChanged existing
 	// ones with new corrections or places (to be detected again).
 	RootsAdded   []int64 `json:"rootsAdded"`
@@ -368,6 +370,11 @@ type ApplyOptions struct {
 	// out of a collection) is applied; what it did not change does not
 	// overwrite this catalog. Without it the import only adds.
 	Base *Export
+	// Journal: message key under which the changes of existing models are
+	// recorded as one undoable action (e.g. "history.synced"); with
+	// JournalParams as its parameters. Empty: not recorded.
+	Journal       string
+	JournalParams map[string]any
 }
 
 // Apply imports the export into the catalog. Root folders to be added are
@@ -416,6 +423,10 @@ func Apply(ctx context.Context, db *sql.DB, e *Export, choices []RootChoice, o A
 	defer tx.Rollback()
 	now := time.Now().UnixMilli()
 	taken := map[int64]bool{}
+	var rec *catalog.Recorder
+	if o.Journal != "" {
+		rec = catalog.NewRecorder()
+	}
 	base := map[string]*Model{}
 	if o.Base != nil {
 		for i := range o.Base.Models {
@@ -430,8 +441,14 @@ func Apply(ctx context.Context, db *sql.DB, e *Export, choices []RootChoice, o A
 			return res, err
 		}
 		count(&res.Match, how)
+		if id != 0 && rec != nil {
+			if err := rec.Before(ctx, tx, id); err != nil {
+				return res, err
+			}
+		}
 		var localUID, thumbSource string
 		if id == 0 {
+			res.Created++
 			if id, err = createModel(ctx, tx, m, now); err != nil {
 				return res, fmt.Errorf("model %s: %w", m.UID, err)
 			}
@@ -569,6 +586,16 @@ func Apply(ctx context.Context, db *sql.DB, e *Export, choices []RootChoice, o A
 	}
 	if err := refreshSearch(ctx, tx, touched); err != nil {
 		return res, err
+	}
+	if rec != nil {
+		params := map[string]any{}
+		for k, v := range o.JournalParams {
+			params[k] = v
+		}
+		params["created"] = res.Created
+		if res.Changed, err = rec.Write(ctx, tx, o.Journal, params); err != nil {
+			return res, err
+		}
 	}
 	if err := tx.Commit(); err != nil {
 		return res, err

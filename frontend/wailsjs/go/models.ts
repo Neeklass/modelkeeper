@@ -1594,3 +1594,45 @@ export namespace userexport {
 
 }
 
+export namespace health {
+	
+	export class Report {
+	    time: number;
+	    durationMs: number;
+	    integrityOk: boolean;
+	    problem?: string;
+	    dbBytes: number;
+	    freed: number;
+	    compacted: boolean;
+	    thumbnails: number;
+	    thumbnailBytes: number;
+	    orphaned: number;
+	    purged: number;
+	    freeBytes: number;
+	    totalBytes: number;
+	    lowSpace: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Report(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.time = source["time"];
+	        this.durationMs = source["durationMs"];
+	        this.integrityOk = source["integrityOk"];
+	        this.problem = source["problem"];
+	        this.dbBytes = source["dbBytes"];
+	        this.freed = source["freed"];
+	        this.compacted = source["compacted"];
+	        this.thumbnails = source["thumbnails"];
+	        this.thumbnailBytes = source["thumbnailBytes"];
+	        this.orphaned = source["orphaned"];
+	        this.purged = source["purged"];
+	        this.freeBytes = source["freeBytes"];
+	        this.totalBytes = source["totalBytes"];
+	        this.lowSpace = source["lowSpace"];
+	    }
+	}
+
+}

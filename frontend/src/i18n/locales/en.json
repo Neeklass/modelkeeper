@@ -540,7 +540,14 @@
     "checkNone": "No test has run yet.",
     "checkNow": "Test now",
     "checking": "Testing…",
-    "checkHint": "Once a day and after every new backup, modelkeeper checks the newest backup (preferably the copy in the second folder): its files must be unchanged, a copy of the catalog must pass the full integrity check, and the numbers of models and tags must match. The backup itself is only read."
+    "checkHint": "Once a day and after every new backup, modelkeeper checks the newest backup (preferably the copy in the second folder): its files must be unchanged, a copy of the catalog must pass the full integrity check, and the numbers of models and tags must match. The backup itself is only read.",
+    "fromExternal": "Show backups in the external folder",
+    "fromFolder": "Restore from another folder…",
+    "otherFolder": "Backups in {{path}}",
+    "externalList": "Backups in the external backup folder",
+    "noExternal": "No external backup folder is set.",
+    "externalUnreachable": "The backup folder {{path}} cannot be reached.",
+    "fetchFailed": "The backup {{name}} could not be copied from {{path}}; it may be damaged. Nothing was changed."
   },
   "confirm": {
     "cancel": "Cancel",
@@ -888,7 +895,11 @@
       "reset": "corrections of {{name}} reset"
     },
     "modelsEdited_one": "{{count}} model edited",
-    "modelsEdited_other": "{{count}} models edited"
+    "modelsEdited_other": "{{count}} models edited",
+    "synced_one": "Sync with {{peer}}: {{count}} model changed",
+    "synced_other": "Sync with {{peer}}: {{count}} models changed",
+    "imported_one": "Import of {{file}}: {{count}} model changed",
+    "imported_other": "Import of {{file}}: {{count}} models changed"
   },
   "tagManager": {
     "title": "Tags",
@@ -941,7 +952,8 @@
     "general": "General & backups",
     "transfer": "Export & configuration",
     "tags": "Tags & history",
-    "detection": "Detection"
+    "detection": "Detection",
+    "maintenance": "Maintenance"
   },
   "collections": {
     "title": "Collections",
@@ -1023,5 +1035,38 @@
     "unreachable": "The shared folder {{path}} cannot be reached (NAS off? Dropbox not running?).",
     "writeFailed": "This PC's file could not be written into {{path}}.",
     "failed": "Sync failed: {{error}}"
+  },
+  "health": {
+    "title": "Health check",
+    "intro": "Checks that the catalog is intact, compacts it, puts thumbnails no model uses any more aside and looks at the free space of the drive. Model files are never touched.",
+    "lastRun": "Last check: {{when}}",
+    "integrityOk": "Catalog intact",
+    "integrityBad": "The catalog is damaged",
+    "integrityHelp": "Restore the newest backup (Settings → General → Backups) – nothing is changed until you do. Export the diagnostics and send them along.",
+    "catalog": "Catalog: {{size}}",
+    "compacted": "compacted, {{size}} freed",
+    "thumbnails_one": "{{n}} thumbnail ({{size}})",
+    "thumbnails_other": "{{n}} thumbnails ({{size}})",
+    "orphaned_one": "{{count}} unused put aside",
+    "orphaned_other": "{{count}} unused put aside",
+    "purged_one": "{{count}} old one deleted",
+    "purged_other": "{{count}} old ones deleted",
+    "disk": "Drive of the data folder: {{free}} free of {{total}}",
+    "lowSpaceHelp": "The drive is nearly full. Backups and the catalog need room: free some space, or move the app folder to a larger drive.",
+    "never": "Not checked yet.",
+    "runNow": "Check now",
+    "running": "Checking…",
+    "weekly": "Runs on its own once a week when no scan runs. Unused thumbnails are kept for 30 days before they are deleted.",
+    "failed": "The health check failed.",
+    "bannerIntegrity": "The health check found damage in the catalog.",
+    "bannerSpace": "The drive of the data folder is nearly full.",
+    "bannerOpen": "Details"
+  },
+  "diag": {
+    "title": "Diagnostics",
+    "export": "Export diagnostics…",
+    "hint": "A zip with the log, the settings and system information, to send along when something goes wrong. It does not contain your catalog, backups or any model file.",
+    "done": "Saved:",
+    "failed": "The diagnostics could not be written."
   }
 }

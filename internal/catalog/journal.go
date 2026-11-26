@@ -223,6 +223,11 @@ func journaled(ctx context.Context, tx *sql.Tx, action string, params map[string
 			changes = append(changes, stateChange{Before: b, After: a})
 		}
 	}
+	return writeJournal(ctx, tx, action, params, changes)
+}
+
+// writeJournal stores one action with its model changes (nothing if empty).
+func writeJournal(ctx context.Context, tx *sql.Tx, action string, params map[string]any, changes []stateChange) error {
 	if len(changes) == 0 {
 		return nil
 	}
@@ -265,6 +270,52 @@ func journaled(ctx context.Context, tx *sql.Tx, action string, params map[string
 		return err
 	}
 	return pruneJournal(ctx, tx)
+}
+
+// Recorder journals a change whose models are only known while it runs (an
+// import or a sync, J9): Before is called for each existing model before it is
+// changed, Write after the change records one undoable action. Models created
+// by the change are not recorded (undo keeps them; they come from files).
+type Recorder struct {
+	before map[int64]modelState
+	order  []int64
+}
+
+// NewRecorder returns an empty recorder.
+func NewRecorder() *Recorder { return &Recorder{before: map[int64]modelState{}} }
+
+// Before captures the user data of model id (once; later calls are ignored).
+func (r *Recorder) Before(ctx context.Context, tx *sql.Tx, id int64) error {
+	if _, ok := r.before[id]; ok {
+		return nil
+	}
+	s, ok, err := captureOne(ctx, tx, id)
+	if err != nil || !ok {
+		return err
+	}
+	r.before[id] = s
+	r.order = append(r.order, id)
+	return nil
+}
+
+// Write records the changed models as one action and returns their number.
+func (r *Recorder) Write(ctx context.Context, tx *sql.Tx, action string, params map[string]any) (int, error) {
+	after, err := capture(ctx, tx, r.order)
+	if err != nil {
+		return 0, err
+	}
+	var changes []stateChange
+	for _, id := range r.order {
+		a, ok := after[id]
+		if b := r.before[id]; ok && !sameState(b, a) {
+			changes = append(changes, stateChange{Before: b, After: a})
+		}
+	}
+	if params == nil {
+		params = map[string]any{}
+	}
+	params["count"] = len(changes)
+	return len(changes), writeJournal(ctx, tx, action, params, changes)
 }
 
 // restoreState writes a model state back (the model is found by its uid).
