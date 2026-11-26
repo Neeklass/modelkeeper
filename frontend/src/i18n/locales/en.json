@@ -208,21 +208,48 @@
     "eta": "about {{time}} left"
   },
   "stats": {
-    "files": "Files",
+    "files": "{{n}} files",
     "size": "Size",
-    "duplicates": "Duplicated contents",
+    "duplicates": "Stored more than once",
     "archives": "Archives",
     "archiveMembers": "Files in archives",
     "archivesBroken": "Damaged archives",
     "archivesEncrypted": "Password-protected",
     "missing": "Missing",
-    "pending": "Not yet processed"
+    "pending": "Not yet processed",
+    "loading": "Counting…",
+    "refresh": "Refresh",
+    "total": "Stored",
+    "dupFiles": "{{n}} files with copies",
+    "share": "Share of copies",
+    "shareHint": "of the stored size",
+    "unhashed": "{{n}} files have no fingerprint yet; their copies are not counted until a scan has read them.",
+    "byRoot": "By folder",
+    "byCreator": "By creator (largest 25)",
+    "byCategory": "By kind",
+    "byExt": "By file type (largest 15)",
+    "largest": "Largest models",
+    "dupTitle": "Largest copies",
+    "dupHint": "The same file content (fingerprint) in several places. modelkeeper only shows this; it never deletes anything.",
+    "noDuplicates": "No file is stored more than once.",
+    "file": "File (one of the places)",
+    "copies": "Copies",
+    "extra": "Extra space",
+    "showDuplicates": "Show models with copies",
+    "barTitle": "{{name}}: {{files}} files",
+    "category": {
+      "model": "3D models",
+      "slicer": "Slicer files",
+      "archive": "Archives",
+      "supplementary": "Images and other files"
+    }
   },
   "tabs": {
     "models": "Models",
     "folders": "Folders",
     "settings": "Settings",
-    "help": "Help"
+    "help": "Help",
+    "stats": "Statistics"
   },
   "models": {
     "searchPlaceholder": "Search name, creator, path…",
@@ -472,7 +499,8 @@
       "preRestore": "state before a restore",
       "preImport": "before an import",
       "preRelocate": "before changing a folder path",
-      "preForget": "before removing models"
+      "preForget": "before removing models",
+      "preSync": "before a sync"
     },
     "total_one": "{{n}} backup, {{size}} in total.",
     "total_other": "{{n}} backups, {{size}} in total.",
@@ -575,6 +603,18 @@
           "modelkeeper makes thumbnails itself: from an image in the model folder, the preview inside a 3MF file, or rendered from the STL. **Change thumbnail** lets you pick another image of the model, an image of your own (**Choose image…**), or go back with **Back to automatic**.",
           "**3D preview** shows the model in 3D: drag to rotate, right mouse button to pan, mouse wheel to zoom. **Use view as thumbnail** saves the current view as the thumbnail.",
           "**Open in slicer** opens the likely file (a slicer project first, otherwise the main file); ▾ lets you choose another one. The slicer always gets a read-only copy, never the original – it cannot overwrite anything in your collection. Which program is used is set under Settings → **Slicer**. Save slicer projects somewhere of your own; the copies are removed after 7 days."
+        ]
+      },
+      {
+        "id": "organize",
+        "title": "Collections, prints, statistics, sync",
+        "body": [
+          "**Collections**: own lists in the order you choose (\"D&D campaign\", \"To print next\"). Create one with + in the sidebar, add models with the selection (Ctrl/Shift+click) → **Add to**. In a collection, the selection can remove models or move one up and down.",
+          "**Saved searches**: a search with its filters is kept with **Save search** in the toolbar and shown in the sidebar.",
+          "**Edit fields** for several models at once (print status, supports, creator, origin, license) in the selection bar – undoable.",
+          "**Print log**: in the detail view, **Log a print** with date, result, printer, settings and notes. The newest print sets the print status.",
+          "**Statistics** (sidebar, bottom): size per folder, creator and file type, the largest models, and how much is stored more than once. modelkeeper never deletes copies itself.",
+          "**Sync with other PCs**: Settings → Export & configuration → choose the same shared folder (NAS or Dropbox) on each PC. Every 30 minutes, at the start and when closing, each PC writes its file and takes over the others' changes – also removed tags and changed fields. Folders are matched by path; a sync never adds folders."
         ]
       },
       {
@@ -732,7 +772,9 @@
     "showAll": "Show all {{n}}",
     "showLess": "Show less",
     "waiting": "Waiting for files",
-    "waitingHint": "Models from an import whose files were not found yet. A scan that finds them links them up."
+    "waitingHint": "Models from an import whose files were not found yet. A scan that finds them links them up.",
+    "collections": "Collections",
+    "savedSearches": "Saved searches"
   },
   "sort": {
     "label": "Sort",
@@ -844,7 +886,9 @@
       "merge_one": "{{count}} model merged into {{name}}",
       "merge_other": "{{count}} models merged into {{name}}",
       "reset": "corrections of {{name}} reset"
-    }
+    },
+    "modelsEdited_one": "{{count}} model edited",
+    "modelsEdited_other": "{{count}} models edited"
   },
   "tagManager": {
     "title": "Tags",
@@ -898,5 +942,86 @@
     "transfer": "Export & configuration",
     "tags": "Tags & history",
     "detection": "Detection"
+  },
+  "collections": {
+    "title": "Collections",
+    "new": "New collection",
+    "newPrompt": "Name of the collection",
+    "newOption": "New collection…",
+    "emptyHint": "Own lists like \"D&D campaign\" or \"To print next\" – add models with the selection.",
+    "addTo": "Add to",
+    "addButton": "Add",
+    "added_one": "{{count}} model added to {{name}}.",
+    "added_other": "{{count}} models added to {{name}}.",
+    "removeSelected": "Remove from this collection",
+    "removed_one": "{{count}} model removed from the collection.",
+    "removed_other": "{{count}} models removed from the collection.",
+    "removeFrom": "Remove from {{name}}",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "rename": "Rename collection",
+    "delete": "Delete",
+    "confirmDelete": "Delete the collection {{name}}?\n\nThe models stay in the catalog; only the list is removed.",
+    "invalidName": "Please enter a name (at most 100 characters).",
+    "exists": "A collection named {{name}} exists already.",
+    "notFound": "The collection no longer exists."
+  },
+  "savedSearch": {
+    "save": "Save search",
+    "saveHint": "Keep this search and its filters in the sidebar",
+    "namePlaceholder": "Name of the search",
+    "saved": "Saved",
+    "delete": "Delete saved search {{name}}"
+  },
+  "bulk": {
+    "button": "Edit fields",
+    "title_one": "Edit {{count}} model",
+    "title_other": "Edit {{count}} models",
+    "intro": "Only the fields you change are set; everything else stays as it is for each model. This can be undone.",
+    "keep": "leave unchanged",
+    "emptyClears": "empty = clear",
+    "apply": "Apply",
+    "done_one": "{{count}} model edited.",
+    "done_other": "{{count}} models edited."
+  },
+  "prints": {
+    "title_one": "Prints ({{count}})",
+    "title_other": "Prints ({{count}})",
+    "add": "Log a print",
+    "date": "Date",
+    "result": "Result",
+    "ok": "Successful",
+    "failed": "Failed",
+    "printer": "Printer",
+    "printerPlaceholder": "e.g. Saturn 4",
+    "settings": "Settings",
+    "settingsPlaceholder": "e.g. resin, layer height, exposure",
+    "notesPlaceholder": "How did it turn out?",
+    "save": "Save",
+    "delete": "Delete entry",
+    "confirmDelete": "Delete this entry of the print log?"
+  },
+  "sync": {
+    "title": "Sync with other PCs",
+    "intro": "Keep one cataloging work on several PCs, e.g. yours and your partner's. Each PC puts its work as a file into a shared folder (on the NAS or in Dropbox) and takes over what the others changed – also removed tags. The catalog itself stays on each PC.",
+    "choose": "Choose shared folder",
+    "change": "Other folder",
+    "off": "Turn off",
+    "now": "Sync now",
+    "folder": "Shared folder",
+    "running": "Syncing…",
+    "lastRun": "Last sync: {{when}}",
+    "never": "Not synced yet",
+    "waiting": "waits until the current scan is done",
+    "peers": "Other PCs",
+    "noPeers": "No other PC has written into this folder yet. Choose the same folder on the other PC.",
+    "peerFile": "file from {{when}}",
+    "peerApplied": "taken over {{when}}",
+    "peerNew": "not taken over yet",
+    "howItWorks": "Syncs every 30 minutes, at the start and when closing. Folders are not added by a sync: the other PC's folders are matched by path; models elsewhere are found by their files. A backup is made before the first sync of a day.",
+    "notAFolder": "{{path}} is not a folder.",
+    "unreachable": "The shared folder {{path}} cannot be reached (NAS off? Dropbox not running?).",
+    "writeFailed": "This PC's file could not be written into {{path}}.",
+    "failed": "Sync failed: {{error}}"
   }
 }

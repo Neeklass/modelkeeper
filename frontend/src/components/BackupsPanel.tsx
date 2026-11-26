@@ -18,6 +18,7 @@ export function backupReasonKey(reason: string): string {
         'pre-import': 'backup.reason.preImport',
         'pre-relocate': 'backup.reason.preRelocate',
         'pre-forget': 'backup.reason.preForget',
+        'pre-sync': 'backup.reason.preSync',
     }[reason] ?? 'backup.reason.other'
 }
 

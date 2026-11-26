@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
-import {GetScanProgress, PauseScan} from '../../wailsjs/go/main/App'
+import {CreateCollection, DeleteSavedSearch, GetScanProgress, PauseScan} from '../../wailsjs/go/main/App'
 import {main, scanner} from '../../wailsjs/go/models'
 import {EventsOn} from '../../wailsjs/runtime/runtime'
 import {formatDuration, formatNumber} from '../format'
@@ -8,7 +8,7 @@ import {Library} from '../library'
 import {emptyQuery, Query} from '../query'
 import {useEta} from './RootsPanel'
 
-export type View = 'library' | 'folders' | 'settings' | 'help'
+export type View = 'library' | 'folders' | 'stats' | 'settings' | 'help'
 
 export {libraryView, VIEW_QUERY} from '../query'
 export type {LibraryView} from '../query'
@@ -24,7 +24,23 @@ export function Sidebar({view, onView, query, onQuery, library, status}: {
     status: main.AppStatus
 }) {
     const {t} = useTranslation()
-    const current = view === 'library' ? libraryView(query) : null
+    const current = view === 'library' && !query.collectionId ? libraryView(query) : null
+    const [naming, setNaming] = useState(false)
+    const [newName, setNewName] = useState('')
+    const createCollection = async () => {
+        const name = newName.trim()
+        setNaming(false)
+        setNewName('')
+        if (!name) return
+        try {
+            const c = await CreateCollection(name)
+            library.reload()
+            onView('library')
+            onQuery({...emptyQuery, collectionId: c.id})
+        } catch {
+            // the name was invalid; nothing created
+        }
+    }
     const pick = (lv: LibraryView) => onQuery({...emptyQuery, ...VIEW_QUERY[lv]})
     const backupProblem = status.lastRestoreTest && !status.lastRestoreTest.ok
 
@@ -49,6 +65,57 @@ export function Sidebar({view, onView, query, onQuery, library, status}: {
                 )}
             </div>
 
+            <div className="side-section">
+                <div className="side-title row spread">
+                    <span>{t('nav.collections')}</span>
+                    <button className="link small" onClick={() => setNaming(true)} title={t('collections.new')}
+                            aria-label={t('collections.new')}>+</button>
+                </div>
+                {naming && (
+                    <input className="side-filter" autoFocus value={newName} placeholder={t('collections.newPrompt')}
+                           onChange={e => setNewName(e.target.value)} onBlur={createCollection}
+                           onKeyDown={e => {
+                               if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                               if (e.key === 'Escape') {
+                                   setNewName('')
+                                   setNaming(false)
+                               }
+                           }}/>
+                )}
+                {library.collections.map(c => (
+                    <button key={c.id} className={`side-item sub${view === 'library' && query.collectionId === c.id ? ' active' : ''}`}
+                            title={c.name} onClick={() => {
+                                onView('library')
+                                onQuery({...emptyQuery, collectionId: c.id})
+                            }}>
+                        <span className="ellipsis">{c.name}</span>
+                        <span className="side-count">{formatNumber(c.models)}</span>
+                    </button>
+                ))}
+                {library.collections.length === 0 && !naming && <p className="small muted side-hint">{t('collections.emptyHint')}</p>}
+            </div>
+
+            {library.savedSearches.length > 0 && (
+                <div className="side-section">
+                    <div className="side-title">{t('nav.savedSearches')}</div>
+                    {library.savedSearches.map(s => (
+                        <div key={s.id} className="side-item sub saved-search">
+                            <button className="link ellipsis" title={s.name} onClick={() => {
+                                onView('library')
+                                try {
+                                    onQuery({...emptyQuery, ...JSON.parse(s.query)})
+                                } catch {
+                                    onQuery(emptyQuery)
+                                }
+                            }}>{s.name}</button>
+                            <button className="chip-x" aria-label={t('savedSearch.delete', {name: s.name})}
+                                    title={t('savedSearch.delete', {name: s.name})}
+                                    onClick={() => DeleteSavedSearch(s.id).then(library.reload)}>✕</button>
+                        </div>
+                    ))}
+                </div>
+            )}
+
             <SideList title={t('nav.creators')} items={library.creators.map(c => ({id: c.id, name: c.name, count: c.models}))}
                       active={view === 'library' ? query.creatorId : 0} limit={8}
                       onPick={id => onQuery({...query, creatorId: query.creatorId === id ? 0 : id})}/>
@@ -72,6 +139,7 @@ export function Sidebar({view, onView, query, onQuery, library, status}: {
 
             <div className="side-footer">
                 <ScanMini/>
+                <SideItem icon="▤" label={t('tabs.stats')} active={view === 'stats'} onClick={() => onView('stats')}/>
                 <SideItem icon="🗀" label={t('tabs.folders')} active={view === 'folders'} onClick={() => onView('folders')}/>
                 <SideItem icon="⚙" label={t('tabs.settings')} active={view === 'settings'} onClick={() => onView('settings')}
                           warn={backupProblem} title={backupProblem ? t('backup.checkFailedShort') : undefined}/>

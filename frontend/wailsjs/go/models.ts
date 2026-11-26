@@ -31,6 +31,188 @@ export namespace backup {
 
 export namespace catalog {
 	
+	export class Print {
+	    id: number;
+	    modelId: number;
+	    printedAt: number;
+	    result: string;
+	    printer: string;
+	    settings: string;
+	    notes: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Print(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.modelId = source["modelId"];
+	        this.printedAt = source["printedAt"];
+	        this.result = source["result"];
+	        this.printer = source["printer"];
+	        this.settings = source["settings"];
+	        this.notes = source["notes"];
+	    }
+	}
+	
+	export class CollectionRef {
+	    id: number;
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CollectionRef(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	    }
+	}
+	
+	export class Collection {
+	    id: number;
+	    name: string;
+	    models: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Collection(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.models = source["models"];
+	    }
+	}
+	
+	export class SavedSearch {
+	    id: number;
+	    name: string;
+	    query: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SavedSearch(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.query = source["query"];
+	    }
+	}
+	
+	export class SizeCount {
+	    key: string;
+	    id?: number;
+	    files: number;
+	    bytes: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SizeCount(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.key = source["key"];
+	        this.id = source["id"];
+	        this.files = source["files"];
+	        this.bytes = source["bytes"];
+	    }
+	}
+	
+	export class DuplicateGroup {
+	    hash: string;
+	    path: string;
+	    copies: number;
+	    size: number;
+	    extra: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new DuplicateGroup(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.hash = source["hash"];
+	        this.path = source["path"];
+	        this.copies = source["copies"];
+	        this.size = source["size"];
+	        this.extra = source["extra"];
+	    }
+	}
+	
+	export class ModelSize {
+	    id: number;
+	    name: string;
+	    bytes: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelSize(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.bytes = source["bytes"];
+	    }
+	}
+	
+	export class Stats {
+	    files: number;
+	    bytes: number;
+	    unhashed: number;
+	    roots: SizeCount[];
+	    creators: SizeCount[];
+	    categories: SizeCount[];
+	    exts: SizeCount[];
+	    models: ModelSize[];
+	    dupFiles: number;
+	    dupExtra: number;
+	    duplicates: DuplicateGroup[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Stats(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.files = source["files"];
+	        this.bytes = source["bytes"];
+	        this.unhashed = source["unhashed"];
+	        this.roots = this.convertValues(source["roots"], SizeCount);
+	        this.creators = this.convertValues(source["creators"], SizeCount);
+	        this.categories = this.convertValues(source["categories"], SizeCount);
+	        this.exts = this.convertValues(source["exts"], SizeCount);
+	        this.models = this.convertValues(source["models"], ModelSize);
+	        this.dupFiles = source["dupFiles"];
+	        this.dupExtra = source["dupExtra"];
+	        this.duplicates = this.convertValues(source["duplicates"], DuplicateGroup);
+	    }
+
+	convertValues(a: any, classs: any, asMap: boolean = false): any {
+	    if (!a) {
+	        return a;
+	    }
+	    if (a.slice && a.map) {
+	        return (a as any[]).map(elem => this.convertValues(elem, classs));
+	    } else if ("object" === typeof a) {
+	        if (asMap) {
+	            for (const key of Object.keys(a)) {
+	                a[key] = new classs(a[key]);
+	            }
+	            return a;
+	        }
+	        return new classs(a);
+	    }
+	    return a;
+	}
+	}
+	
 	export class FileTypesChange {
 	    removed: number;
 	    recategorized: number;
@@ -240,6 +422,8 @@ export namespace catalog {
 	    hasCorrections: boolean;
 	    inactive: boolean;
 	    waiting: boolean;
+	    prints: Print[];
+	    collections: CollectionRef[];
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelDetail(source);
@@ -270,6 +454,8 @@ export namespace catalog {
 	        this.hasCorrections = source["hasCorrections"];
 	        this.inactive = source["inactive"];
 	        this.waiting = source["waiting"];
+	        this.prints = this.convertValues(source["prints"], Print);
+	        this.collections = this.convertValues(source["collections"], CollectionRef);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -379,6 +565,7 @@ export namespace catalog {
 	    missing: boolean;
 	    inactive: boolean;
 	    waiting: boolean;
+	    collectionId: number;
 	    orphanedBy: number;
 	    sort: string;
 	
@@ -405,6 +592,7 @@ export namespace catalog {
 	        this.missing = source["missing"];
 	        this.inactive = source["inactive"];
 	        this.waiting = source["waiting"];
+	        this.collectionId = source["collectionId"];
 	        this.orphanedBy = source["orphanedBy"];
 	        this.sort = source["sort"];
 	    }
@@ -1009,6 +1197,70 @@ export namespace main {
 	        this.from = source["from"];
 	        this.to = source["to"];
 	    }
+	}
+
+	export class SyncPeer {
+	    name: string;
+	    modified: number;
+	    appliedAt: number;
+	    error?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SyncPeer(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.modified = source["modified"];
+	        this.appliedAt = source["appliedAt"];
+	        this.error = source["error"];
+	    }
+	}
+	
+	export class SyncStatus {
+	    dir: string;
+	    own: string;
+	    lastRun: number;
+	    running: boolean;
+	    error?: msg.Msg;
+	    peers: SyncPeer[];
+	    waiting: boolean;
+	    exported: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SyncStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.dir = source["dir"];
+	        this.own = source["own"];
+	        this.lastRun = source["lastRun"];
+	        this.running = source["running"];
+	        this.error = this.convertValues(source["error"], msg.Msg);
+	        this.peers = this.convertValues(source["peers"], SyncPeer);
+	        this.waiting = source["waiting"];
+	        this.exported = source["exported"];
+	    }
+
+	convertValues(a: any, classs: any, asMap: boolean = false): any {
+	    if (!a) {
+	        return a;
+	    }
+	    if (a.slice && a.map) {
+	        return (a as any[]).map(elem => this.convertValues(elem, classs));
+	    } else if ("object" === typeof a) {
+	        if (asMap) {
+	            for (const key of Object.keys(a)) {
+	                a[key] = new classs(a[key]);
+	            }
+	            return a;
+	        }
+	        return new classs(a);
+	    }
+	    return a;
+	}
 	}
 
 }
