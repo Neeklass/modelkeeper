@@ -42,6 +42,10 @@ type Settings struct {
 	// DataDir is where the data folder was at the last start; a different
 	// place means the app folder was moved (M), see appdir.MovedRoot.
 	DataDir string `json:"dataDir,omitempty"`
+	// SyncDir is a folder shared with other PCs (NAS, Dropbox); "" = no sync
+	// (J9). SyncID names this installation's file in it.
+	SyncDir string `json:"syncDir,omitempty"`
+	SyncID  string `json:"syncId,omitempty"`
 }
 
 // Defaults returns the built-in settings.

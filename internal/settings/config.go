@@ -41,7 +41,7 @@ type ConfigRoot struct {
 // NewConfig builds the configuration of s and roots (the PC-specific
 // DataDir is left out).
 func NewConfig(s Settings, roots []ConfigRoot, appVersion string, now time.Time) Config {
-	s.DataDir = ""
+	s.DataDir, s.SyncID = "", "" // specific to this installation
 	if roots == nil {
 		roots = []ConfigRoot{}
 	}
@@ -118,7 +118,7 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 	if s.NASRescanHours < 0 || s.NASRescanHours > 24*365 {
 		s.NASRescanHours = Defaults().NASRescanHours
 	}
-	s.DataDir = ""
+	s.DataDir, s.SyncID = "", ""
 	var roots []ConfigRoot
 	for _, r := range c.Roots {
 		if r.Path != "" {

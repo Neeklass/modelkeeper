@@ -51,6 +51,7 @@ const (
 	ReasonImport       = "pre-import"
 	ReasonRelocate     = "pre-relocate"
 	ReasonForget       = "pre-forget"
+	ReasonSync         = "pre-sync"
 	reasonPreMigration = "pre-migration"
 )
 
