@@ -670,3 +670,4 @@ details.detail-section[open] summary h3::before { content: '▾ '; }
 .chip.alias { opacity: 0.8; font-style: italic; }
 .group-input { width: 8em; }
 .slicer-info { color: var(--fg-muted, inherit); margin-top: 2px; }
+.selectable { user-select: text; -webkit-user-select: text; }

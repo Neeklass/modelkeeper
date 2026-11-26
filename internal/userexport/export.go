@@ -206,6 +206,16 @@ func Build(ctx context.Context, db *sql.DB, o Options) (*Export, error) {
 			return nil, fmt.Errorf("read settings: %w", err)
 		}
 		if len(b) > 0 && json.Valid(b) {
+			// Secrets of this PC never leave it (the sync folder may be a cloud folder).
+			var m map[string]json.RawMessage
+			if json.Unmarshal(b, &m) == nil {
+				if _, ok := m["lanKey"]; ok {
+					delete(m, "lanKey")
+					if nb, err := json.Marshal(m); err == nil {
+						b = nb
+					}
+				}
+			}
 			var buf bytes.Buffer
 			if json.Compact(&buf, b) == nil {
 				e.Settings = json.RawMessage(buf.Bytes())

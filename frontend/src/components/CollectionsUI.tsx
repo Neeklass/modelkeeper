@@ -1,13 +1,55 @@
 import {useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
-    AddToCollection, CreateCollection, DeleteCollection, MoveInCollection, RemoveFromCollection, RenameCollection,
+    AddToCollection, CancelZipExport, CreateCollection, ExportCollectionZip, DeleteCollection, MoveInCollection, RemoveFromCollection, RenameCollection,
     SaveSearch, UpdateModels,
 } from '../../wailsjs/go/main/App'
 import {catalog} from '../../wailsjs/go/models'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
 import {emptyQuery, Query} from '../query'
 import {useConfirm} from './ConfirmDialog'
+import {EventsOn} from '../../wailsjs/runtime/runtime'
+import {formatBytes, formatNumber} from '../format'
+import {PathText} from './PathText'
+
+/** Writes a collection's files into a zip (read only), with progress. */
+export function ZipExportButton({collectionId}: { collectionId: number }) {
+    const {t} = useTranslation()
+    const [run, setRun] = useState<{path: string; bytes: number; done: number; skipped: number} | null>(null)
+    const [result, setResult] = useState<{path?: string; error?: Msg} | null>(null)
+    useEffect(() => {
+        const off1 = EventsOn('bundle:progress', (p: {bytesDone: number}) =>
+            setRun(r => r ? {...r, done: p.bytesDone} : r))
+        const off2 = EventsOn('bundle:done', (d: {path: string; error?: Msg}) => {
+            setRun(null)
+            setResult(d.error ? {error: d.error} : {path: d.path})
+        })
+        return () => {
+            off1()
+            off2()
+        }
+    }, [])
+    const start = async () => {
+        setResult(null)
+        try {
+            const s = await ExportCollectionZip(collectionId)
+            if (s.path) setRun({path: s.path, bytes: s.bytes, done: 0, skipped: s.skipped})
+        } catch (e) {
+            setResult({error: toMsg(e)})
+        }
+    }
+    return (
+        <span className="row small">
+            {run ? <>
+                <span>{t('bundle.running', {done: formatBytes(run.done), total: formatBytes(run.bytes)})}</span>
+                <button className="link small" onClick={() => CancelZipExport()}>{t('confirm.cancel')}</button>
+            </> : <button className="link small" onClick={start} title={t('bundle.hint')}>{t('bundle.export')}</button>}
+            {run && run.skipped > 0 && <span className="warn-text">{t('bundle.skipped', {n: formatNumber(run.skipped)})}</span>}
+            {result?.path && <span>{t('bundle.done')} <PathText path={result.path}/></span>}
+            {result?.error && <span className="error">{translateMsg(result.error)}</span>}
+        </span>
+    )
+}
 
 /** Name, rename and delete of the collection the library shows (G6). */
 export function CollectionHeader({collection, onChanged, onDeleted}: {
@@ -56,6 +98,7 @@ export function CollectionHeader({collection, onChanged, onDeleted}: {
                         setError(toMsg(e))
                     }
                 }}>{t('collections.delete')}</button>
+                <ZipExportButton collectionId={collection.id}/>
             </>}
             {error && <span className="error small">{translateMsg(error)}</span>}
         </span>

@@ -1270,6 +1270,69 @@ export namespace main {
 		}
 	}
 
+	export class BundleStart {
+	    path: string;
+	    files: number;
+	    bytes: number;
+	    skipped: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new BundleStart(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.files = source["files"];
+	        this.bytes = source["bytes"];
+	        this.skipped = source["skipped"];
+	    }
+	}
+
+	export class LANStatus {
+	    enabled: boolean;
+	    running: boolean;
+	    port: number;
+	    links: string[];
+	    error?: msg.Msg;
+	
+	    static createFrom(source: any = {}) {
+	        return new LANStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.enabled = source["enabled"];
+	        this.running = source["running"];
+	        this.port = source["port"];
+	        this.links = source["links"];
+	        this.error = source["error"];
+	    }
+	}
+
+	export class UpdateStatus {
+	    enabled: boolean;
+	    current: string;
+	    checkedAt: number;
+	    latest?: update.Release;
+	    newer: boolean;
+	    error?: msg.Msg;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.enabled = source["enabled"];
+	        this.current = source["current"];
+	        this.checkedAt = source["checkedAt"];
+	        this.latest = source["latest"];
+	        this.newer = source["newer"];
+	        this.error = source["error"];
+	    }
+	}
+
 }
 
 export namespace msg {
@@ -1697,6 +1760,29 @@ export namespace slicer {
 	        this.nozzle = source["nozzle"];
 	        this.resolutionX = source["resolutionX"];
 	        this.resolutionY = source["resolutionY"];
+	    }
+	}
+
+}
+
+export namespace update {
+	
+	export class Release {
+	    version: string;
+	    url: string;
+	    published: string;
+	    notes: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Release(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.version = source["version"];
+	        this.url = source["url"];
+	        this.published = source["published"];
+	        this.notes = source["notes"];
 	    }
 	}
 

@@ -243,6 +243,8 @@ func (a *App) startServices() error {
 	go a.runDailyTicker(a.stop)
 	go a.runPeerSync(a.stop)
 	go a.runHealthTicker(a.stop)
+	a.startLAN()
+	go a.runUpdateCheck(a.stop)
 
 	w, err := watch.New(conn, scans, watch.Options{
 		Exclude: layout.Root,

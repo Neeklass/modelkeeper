@@ -42,6 +42,7 @@ type ConfigRoot struct {
 // DataDir is left out).
 func NewConfig(s Settings, roots []ConfigRoot, appVersion string, now time.Time) Config {
 	s.DataDir, s.SyncID = "", "" // specific to this installation
+	s.LANKey = ""                // a key stays on its PC
 	if roots == nil {
 		roots = []ConfigRoot{}
 	}
@@ -119,6 +120,7 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 		s.NASRescanHours = Defaults().NASRescanHours
 	}
 	s.DataDir, s.SyncID = "", ""
+	s.LANKey = ""
 	var roots []ConfigRoot
 	for _, r := range c.Roots {
 		if r.Path != "" {

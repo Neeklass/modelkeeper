@@ -1110,5 +1110,45 @@
     "hint": "Eine Zip-Datei mit dem Protokoll, den Einstellungen und Systeminformationen, zum Mitschicken, wenn etwas schiefgeht. Sie enthält weder deinen Katalog noch Sicherungen oder Modelldateien.",
     "done": "Gespeichert:",
     "failed": "Die Diagnose konnte nicht geschrieben werden."
+  },
+  "bundle": {
+    "export": "Als Zip exportieren…",
+    "hint": "Alle Dateien der Modelle dieser Sammlung in einer Zip-Datei, z. B. für den Slicer-PC. Die Originale werden nur gelesen.",
+    "running": "Zip wird geschrieben: {{done}} von {{total}}",
+    "done": "Zip gespeichert:",
+    "skipped": "{{n}} Dateien übersprungen (Ordner offline oder Datei fehlt)",
+    "busy": "Es läuft schon ein Zip-Export.",
+    "empty": "Die Sammlung ist leer.",
+    "noFiles": "Keine der Dateien ist gerade erreichbar (Ordner offline?).",
+    "inLibrary": "Die Zip-Datei darf nicht in {{path}} gespeichert werden: modelkeeper schreibt nie in Modellordner oder seinen Datenordner.",
+    "failed": "Die Zip-Datei konnte nicht geschrieben werden: {{detail}}",
+    "cancelled": "Zip-Export abgebrochen; die unvollständige Datei wurde entfernt."
+  },
+  "lan": {
+    "title": "Handy und Tablet",
+    "intro": "Eine Nur-Lese-Ansicht des Katalogs für andere Geräte zu Hause, z. B. ein Tablet im Hobbyraum: Suche, Bilder, Tags, Notizen, Sammlungen und Drucke. Dort lässt sich nichts ändern und keine Modelldatei herunterladen.",
+    "enable": "Geräte im Heimnetz zulassen",
+    "port": "Port",
+    "links": "Öffne einen dieser Links auf dem Handy oder Tablet (gleiches WLAN):",
+    "noAddress": "Für diesen PC wurde keine Heimnetz-Adresse gefunden.",
+    "newKey": "Neuer Zugangsschlüssel",
+    "keyHint": "Der Schlüssel im Link schützt die Ansicht. Ein neuer Schlüssel macht vorher weitergegebene Links ungültig.",
+    "firewall": "Windows fragt eventuell einmal, ob modelkeeper Verbindungen annehmen darf – erlaube es nur für private Netzwerke. Nur Geräte im Heimnetz bekommen eine Antwort.",
+    "listenFailed": "Port {{port}} ist nicht frei ({{detail}}). Wähle einen anderen Port.",
+    "badPort": "Wähle einen Port zwischen 1024 und 65535."
+  },
+  "update": {
+    "title": "Updates",
+    "current": "Diese Version: {{version}}",
+    "newer": "Version {{version}} ist verfügbar.",
+    "upToDate": "Aktuell (neueste: {{version}}).",
+    "open": "Download-Seite öffnen",
+    "checkNow": "Jetzt prüfen",
+    "checking": "Wird geprüft…",
+    "atStart": "Bei jedem Start prüfen",
+    "hint": "Fragt nur bei GitHub nach der neuesten Version; Herunterladen und Installieren bleiben bei dir. Dein Katalog bleibt erhalten, wenn du die Programmdateien ersetzt.",
+    "unavailable": "Es konnten keine Versionsinformationen gelesen werden (offline oder noch keine Version veröffentlicht).",
+    "banner": "modelkeeper {{version}} ist verfügbar.",
+    "later": "Später"
   }
 }

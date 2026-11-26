@@ -437,3 +437,43 @@ export function FindSimilarTags() {
 export function GetSlicerInfo(arg1) {
   return window['go']['main']['App']['GetSlicerInfo'](arg1);
 }
+
+export function ExportCollectionZip(arg1) {
+  return window['go']['main']['App']['ExportCollectionZip'](arg1);
+}
+
+export function ExportModelsZip(arg1) {
+  return window['go']['main']['App']['ExportModelsZip'](arg1);
+}
+
+export function CancelZipExport() {
+  return window['go']['main']['App']['CancelZipExport']();
+}
+
+export function GetLANStatus() {
+  return window['go']['main']['App']['GetLANStatus']();
+}
+
+export function SetLANView(arg1,arg2) {
+  return window['go']['main']['App']['SetLANView'](arg1,arg2);
+}
+
+export function NewLANKey() {
+  return window['go']['main']['App']['NewLANKey']();
+}
+
+export function GetUpdateStatus() {
+  return window['go']['main']['App']['GetUpdateStatus']();
+}
+
+export function CheckForUpdateNow() {
+  return window['go']['main']['App']['CheckForUpdateNow']();
+}
+
+export function SetUpdateCheck(arg1) {
+  return window['go']['main']['App']['SetUpdateCheck'](arg1);
+}
+
+export function OpenReleasePage() {
+  return window['go']['main']['App']['OpenReleasePage']();
+}

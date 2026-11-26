@@ -1,7 +1,10 @@
 import {useCallback, useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
-import {CheckHealthNow, ExportDiagnostics, GetHealth} from '../../wailsjs/go/main/App'
-import {health} from '../../wailsjs/go/models'
+import {
+    CheckForUpdateNow, CheckHealthNow, ExportDiagnostics, GetHealth, GetLANStatus, GetUpdateStatus, NewLANKey, OpenReleasePage,
+    SetLANView, SetUpdateCheck,
+} from '../../wailsjs/go/main/App'
+import {health, main} from '../../wailsjs/go/models'
 import {EventsOn} from '../../wailsjs/runtime/runtime'
 import {formatBytes, formatDateTime, formatNumber} from '../format'
 import {Msg, toMsg, translateMsg} from '../i18n/msg'
@@ -105,6 +108,101 @@ export function DiagnosticsPanel() {
         <section className="card">
             <h2>{t('diag.title')}</h2>
             <DiagnosticsButton/>
+        </section>
+    )
+}
+
+/** Read-only view for a phone or tablet at home (TODO 6.3). */
+export function LANPanel() {
+    const {t} = useTranslation()
+    const [st, setSt] = useState<main.LANStatus | null>(null)
+    const [port, setPort] = useState('')
+    const [error, setError] = useState<Msg | null>(null)
+    useEffect(() => {
+        GetLANStatus().then(s => {
+            setSt(s)
+            setPort(String(s.port))
+        }).catch(e => setError(toMsg(e)))
+    }, [])
+    const run = async (fn: () => Promise<main.LANStatus>) => {
+        setError(null)
+        try {
+            setSt(await fn())
+        } catch (e) {
+            setError(toMsg(e))
+        }
+    }
+    const portNum = Number(port) || 0
+    return (
+        <section className="card">
+            <h2>{t('lan.title')}</h2>
+            <p className="small muted">{t('lan.intro')}</p>
+            <label className="row small">
+                <input type="checkbox" checked={!!st?.enabled}
+                       onChange={e => run(() => SetLANView(e.target.checked, portNum))}/>
+                {t('lan.enable')}
+            </label>
+            <label className="row small">
+                {t('lan.port')}
+                <input className="small" style={{width: '6em'}} value={port} inputMode="numeric"
+                       onChange={e => setPort(e.target.value.replace(/[^0-9]/g, ''))}
+                       onBlur={() => st?.enabled && portNum !== st.port && run(() => SetLANView(true, portNum))}/>
+            </label>
+            {st?.running && (
+                <div className="small">
+                    <p>{t('lan.links')}</p>
+                    <ul className="plain">
+                        {st.links.map(l => <li key={l}><code className="selectable">{l}</code></li>)}
+                    </ul>
+                    {st.links.length === 0 && <p className="muted">{t('lan.noAddress')}</p>}
+                    <button className="link small" onClick={() => run(() => NewLANKey())}>{t('lan.newKey')}</button>
+                    <p className="muted hint">{t('lan.keyHint')}</p>
+                </div>
+            )}
+            {st?.enabled && !st.running && st.error && <p className="error small">{translateMsg(st.error as Msg)}</p>}
+            <p className="small muted hint">{t('lan.firewall')}</p>
+            {error && <p className="error">{translateMsg(error)}</p>}
+        </section>
+    )
+}
+
+/** Looks for a new release (only reading GitHub; installing stays with the user). */
+export function UpdatePanel() {
+    const {t} = useTranslation()
+    const [st, setSt] = useState<main.UpdateStatus | null>(null)
+    const [busy, setBusy] = useState(false)
+    useEffect(() => {
+        GetUpdateStatus().then(setSt).catch(() => {})
+    }, [])
+    const check = async () => {
+        setBusy(true)
+        try {
+            setSt(await CheckForUpdateNow())
+        } finally {
+            setBusy(false)
+        }
+    }
+    return (
+        <section className="card">
+            <h2>{t('update.title')}</h2>
+            <p className="small">{t('update.current', {version: st?.current ?? '…'})}</p>
+            {st?.latest && (st.newer
+                ? <p className="small notice-inactive">{t('update.newer', {version: st.latest.version})}{' '}
+                    <button className="link small" onClick={() => OpenReleasePage()}>{t('update.open')}</button></p>
+                : <p className="small muted">{t('update.upToDate', {version: st.latest.version})}</p>)}
+            {st?.error && st.checkedAt > 0 && <p className="small muted">{translateMsg(st.error as Msg)}</p>}
+            <div className="row">
+                <button onClick={check} disabled={busy}>{busy ? t('update.checking') : t('update.checkNow')}</button>
+                <label className="row small">
+                    <input type="checkbox" checked={!!st?.enabled} onChange={async e => {
+                        const on = e.target.checked
+                        await SetUpdateCheck(on)
+                        setSt(s => s ? main.UpdateStatus.createFrom({...s, enabled: on}) : s)
+                    }}/>
+                    {t('update.atStart')}
+                </label>
+            </div>
+            <p className="small muted hint">{t('update.hint')}</p>
         </section>
     )
 }

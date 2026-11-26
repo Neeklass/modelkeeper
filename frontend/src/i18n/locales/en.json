@@ -1110,5 +1110,45 @@
     "hint": "A zip with the log, the settings and system information, to send along when something goes wrong. It does not contain your catalog, backups or any model file.",
     "done": "Saved:",
     "failed": "The diagnostics could not be written."
+  },
+  "bundle": {
+    "export": "Export as zip…",
+    "hint": "All files of the models in this collection in one zip file, e.g. for the slicer PC. The originals are only read.",
+    "running": "Writing zip: {{done}} of {{total}}",
+    "done": "Zip saved:",
+    "skipped": "{{n}} files skipped (folder offline or file missing)",
+    "busy": "A zip export is already running.",
+    "empty": "The collection is empty.",
+    "noFiles": "None of the files can be reached right now (folders offline?).",
+    "inLibrary": "The zip must not be saved inside {{path}}: modelkeeper never writes into model folders or its data folder.",
+    "failed": "The zip could not be written: {{detail}}",
+    "cancelled": "Zip export cancelled; the incomplete file was removed."
+  },
+  "lan": {
+    "title": "Phone and tablet",
+    "intro": "A read-only view of the catalog for other devices at home, e.g. a tablet in the hobby room: search, pictures, tags, notes, collections and prints. Nothing can be changed there, and no model file can be downloaded.",
+    "enable": "Allow devices in the home network",
+    "port": "Port",
+    "links": "Open one of these links on the phone or tablet (same Wi-Fi):",
+    "noAddress": "No home network address found for this PC.",
+    "newKey": "New access key",
+    "keyHint": "The key in the link protects the view. A new key makes links given out before stop working.",
+    "firewall": "Windows may ask once whether modelkeeper may accept connections – allow it for private networks only. Only devices in the home network get an answer.",
+    "listenFailed": "Port {{port}} is not free ({{detail}}). Choose another port.",
+    "badPort": "Choose a port between 1024 and 65535."
+  },
+  "update": {
+    "title": "Updates",
+    "current": "This version: {{version}}",
+    "newer": "Version {{version}} is available.",
+    "upToDate": "Up to date (newest: {{version}}).",
+    "open": "Open download page",
+    "checkNow": "Check now",
+    "checking": "Checking…",
+    "atStart": "Check at every start",
+    "hint": "Only asks GitHub for the newest version; downloading and installing stay with you. Your catalog is kept when you replace the program files.",
+    "unavailable": "No release information could be read (offline, or no release published yet).",
+    "banner": "modelkeeper {{version}} is available.",
+    "later": "Later"
   }
 }

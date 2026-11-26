@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react'
 import {useTranslation} from 'react-i18next'
 import {
     CheckRestoreNow, ChooseExternalBackupDir, ChooseSlicer, ClearExternalBackupDir, ClearSlicer, CreateBackup, DismissNotice,
-    GetStatus, OpenDataFolder, OpenExternalBackupDir, SetLanguage, SetNASRescanHours, StartWithEmptyCatalog,
+    GetStatus, OpenDataFolder, OpenReleasePage, OpenExternalBackupDir, SetLanguage, SetNASRescanHours, StartWithEmptyCatalog,
 } from '../wailsjs/go/main/App'
 import {main} from '../wailsjs/go/models'
 import {EventsOn} from '../wailsjs/runtime/runtime'
@@ -24,7 +24,7 @@ import {TagManagerPanel} from './components/TagManager'
 import {ConfigTransferPanel, MovedBanner} from './components/ConfigTransfer'
 import {StatsView} from './components/StatsView'
 import {SyncPanel} from './components/SyncPanel'
-import {DiagnosticsButton, DiagnosticsPanel, HealthPanel, useHealth} from './components/Maintenance'
+import {DiagnosticsButton, DiagnosticsPanel, HealthPanel, LANPanel, UpdatePanel, useHealth} from './components/Maintenance'
 
 /** Sections of the settings page. */
 const SETTINGS_SECTIONS = ['general', 'transfer', 'tags', 'detection', 'maintenance'] as const
@@ -48,6 +48,8 @@ function App() {
     const [scopeLabel, setScopeLabel] = useState<string | undefined>()
     const library = useLibrary()
     const healthReport = useHealth()
+    const [updateFound, setUpdateFound] = useState<string | null>(null)
+    useEffect(() => EventsOn('update:found', (s: main.UpdateStatus) => setUpdateFound(s.latest?.version ?? null)), [])
     const toast = useToast()
     const [settingsSection, setSettingsSection] = useState<SettingsSection>('general')
     // Opening the library from elsewhere with a query (e.g. the folders view).
@@ -125,6 +127,13 @@ function App() {
                     <MovedBanner from={status.movedFrom}
                                  onDone={() => setStatus(main.AppStatus.createFrom({...status, movedFrom: undefined}))}/>
                 )}
+                {updateFound && (
+                    <div className="row notice-inactive">
+                        <span className="small">{t('update.banner', {version: updateFound})}</span>
+                        <button className="link small" onClick={() => OpenReleasePage()}>{t('update.open')}</button>
+                        <button className="link small" onClick={() => setUpdateFound(null)}>{t('update.later')}</button>
+                    </div>
+                )}
                 {healthReport && (!healthReport.integrityOk || healthReport.lowSpace) && (
                     <div className="row notice-warn" role="alert">
                         <span className="small">{t(!healthReport.integrityOk ? 'health.bannerIntegrity' : 'health.bannerSpace')}</span>
@@ -178,6 +187,8 @@ function App() {
                     {settingsSection === 'detection' && <DetectionSettingsPanel/>}
                     {settingsSection === 'maintenance' && <>
                         <HealthPanel/>
+                        <UpdatePanel/>
+                        <LANPanel/>
                         <DiagnosticsPanel/>
                     </>}
                 </main>}
