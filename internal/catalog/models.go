@@ -28,8 +28,6 @@ type ModelRow struct {
 	// Waiting: the model has no files in the catalog (yet): imported, or its
 	// root folder was deleted. A scan that finds its files links it up (J7).
 	Waiting bool `json:"waiting"`
-	// CollectionID: only models of this collection, in its order (G6).
-	CollectionID int64 `json:"collectionId"`
 }
 
 // waitingCond is true for a model "m" without any location.
@@ -65,6 +63,8 @@ type ModelQuery struct {
 	Missing             bool `json:"missing"`             // files gone since the last scan
 	Inactive            bool `json:"inactive"`            // files only on deactivated roots (E9)
 	Waiting             bool `json:"waiting"`             // no files in the catalog yet (imported, J7)
+	// CollectionID: only models of this collection, in its order (G6).
+	CollectionID int64 `json:"collectionId"`
 	// OrphanedBy: models that deleting this (deactivated) root permanently
 	// would leave without a location (PurgeImpact).
 	OrphanedBy int64 `json:"orphanedBy"`

@@ -381,3 +381,97 @@ func TestRelocateRoot(t *testing.T) {
 	expect(t, "files present", e.int(`SELECT count(*) FROM location WHERE model_id = ? AND present = 0`, orc), 0)
 	expect(t, "bundle still one model", e.int(`SELECT count(DISTINCT model_id) FROM location WHERE path LIKE 'Atlas/Bundle/%'`), 1)
 }
+
+// Two PCs keep one cataloging work (J9): each applies the other's export
+// with the last applied one as base, so removals and changes go both ways
+// and work done on both sides in between is kept.
+func TestSyncBothWays(t *testing.T) {
+	ctx := context.Background()
+	a := newEnv(t)
+	userData(t, a, filepath.Join(t.TempDir(), "thumbnails"))
+	build := func(conn *sql.DB) *userexport.Export {
+		t.Helper()
+		x, err := userexport.Build(ctx, conn, userexport.Options{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return x
+	}
+	apply := func(conn *sql.DB, x, base *userexport.Export) {
+		t.Helper()
+		plan, err := userexport.Preview(ctx, conn, x, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var choices []userexport.RootChoice
+		for _, r := range plan.Roots {
+			c := r.Suggested
+			if c.Action == userexport.ActionAdd {
+				c.Action = userexport.ActionSkip // a sync never adds root folders
+			}
+			choices = append(choices, c)
+		}
+		if _, err := userexport.Apply(ctx, conn, x, choices, userexport.ApplyOptions{Base: base}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	model := func(conn *sql.DB, path string) catalog.ModelDetail {
+		t.Helper()
+		var id int64
+		if err := conn.QueryRow(`SELECT model_id FROM location WHERE path = ?`, path).Scan(&id); err != nil {
+			t.Fatalf("%s: %v", path, err)
+		}
+		d, err := catalog.GetModel(ctx, conn, id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return d
+	}
+
+	// PC B starts from A's export and scans the same folder.
+	a0 := build(a.db)
+	b, mgr := freshCatalog(t)
+	plan, _ := userexport.Preview(ctx, b, a0, nil)
+	res, err := userexport.Apply(ctx, b, a0, choicesOf(plan), userexport.ApplyOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scanRoot(t, mgr, res.RootsAdded[0])
+	b0 := build(b)
+	apply(a.db, b0, nil) // A's first sync with B: only adds (nothing new)
+
+	// Both work in between.
+	orcB, elfB := model(b, "Atlas/Orc/orc.stl"), model(b, "Atlas/Elf/elf.stl")
+	catalog.RemoveTag(ctx, b, []int64{orcB.ID}, "painted")
+	catalog.AddTags(ctx, b, []int64{orcB.ID}, []string{"from b"})
+	n := "written on B"
+	catalog.UpdateModel(ctx, b, elfB.ID, catalog.ModelUpdate{Notes: &n})
+	orcA, elfA := model(a.db, "Atlas/Orc/orc.stl"), model(a.db, "Atlas/Elf/elf.stl")
+	catalog.AddTags(ctx, a.db, []int64{orcA.ID}, []string{"from a"})
+	catalog.SetFavorite(ctx, a.db, []int64{elfA.ID}, false)
+
+	// Sync: A gets B's changes, then B gets A's.
+	b1 := build(b)
+	apply(a.db, b1, b0)
+	a1 := build(a.db)
+	apply(b, a1, a0)
+
+	for name, conn := range map[string]*sql.DB{"A": a.db, "B": b} {
+		orc, elf := model(conn, "Atlas/Orc/orc.stl"), model(conn, "Atlas/Elf/elf.stl")
+		expect(t, name+" orc tags", strings.Join(orc.Tags, ","), "from a,from b,green skin")
+		expect(t, name+" elf notes", elf.Notes, "written on B")
+		expect(t, name+" elf favorite", elf.Favorite, false)
+	}
+	// Nothing left to sync: applying again changes nothing.
+	apply(a.db, build(b), b1)
+	apply(b, build(a.db), a1)
+	noThumbs := func(x *userexport.Export) *userexport.Export {
+		for i := range x.Models {
+			x.Models[i].Thumbnail = nil // only B's copy lacks the image file in this test
+		}
+		return x
+	}
+	if x, y := canonical(t, noThumbs(build(a.db))), canonical(t, noThumbs(build(b))); x != y {
+		t.Errorf("the two catalogs differ after the sync\nA:\n%s\nB:\n%s", x, y)
+	}
+}

@@ -87,6 +87,7 @@ type Result struct {
 	Thumbnails       int    `json:"thumbnails"`
 	Prints           int    `json:"prints"`      // print log entries added
 	Collections      int    `json:"collections"` // collection memberships added
+	TagsRemoved      int    `json:"tagsRemoved"` // sync: tags the other PC removed
 	// RootsAdded are new root folders (to be scanned); RootsChanged existing
 	// ones with new corrections or places (to be detected again).
 	RootsAdded   []int64 `json:"rootsAdded"`
@@ -361,6 +362,12 @@ type ApplyOptions struct {
 	ThumbDir  string // data/thumbnails of this app
 	SourceDir string // folder of the export file (a "thumbnails" folder next to it is used)
 	DataDir   string // data folder (a new root folder must not overlap it)
+	// Base: for a sync (J9), the export of the same other PC that was applied
+	// last time. With it the import is a three-way merge: what that PC changed
+	// since (also removed tags, unset favorites, cleared fields, models taken
+	// out of a collection) is applied; what it did not change does not
+	// overwrite this catalog. Without it the import only adds.
+	Base *Export
 }
 
 // Apply imports the export into the catalog. Root folders to be added are
@@ -409,6 +416,12 @@ func Apply(ctx context.Context, db *sql.DB, e *Export, choices []RootChoice, o A
 	defer tx.Rollback()
 	now := time.Now().UnixMilli()
 	taken := map[int64]bool{}
+	base := map[string]*Model{}
+	if o.Base != nil {
+		for i := range o.Base.Models {
+			base[o.Base.Models[i].UID] = &o.Base.Models[i]
+		}
+	}
 
 	for i := range e.Models {
 		m := &e.Models[i]
@@ -449,7 +462,13 @@ func Apply(ctx context.Context, db *sql.DB, e *Export, choices []RootChoice, o A
 				}
 			}
 		} else {
-			kept, err := mergeModel(ctx, tx, id, m, now)
+			merge := mergeModel
+			if b := base[m.UID]; b != nil {
+				merge = func(ctx context.Context, tx *sql.Tx, id int64, m *Model, now int64) (bool, error) {
+					return syncModel(ctx, tx, id, m, b, now)
+				}
+			}
+			kept, err := merge(ctx, tx, id, m, now)
 			if err != nil {
 				return res, fmt.Errorf("model %s: %w", m.UID, err)
 			}
@@ -465,7 +484,19 @@ func Apply(ctx context.Context, db *sql.DB, e *Export, choices []RootChoice, o A
 		localOf[m.UID] = id
 		touched[id] = true
 
-		n, err := addTags(ctx, tx, id, m.Tags)
+		tags := m.Tags
+		if b := base[m.UID]; b != nil {
+			// Only tags the other PC added since; the ones it removed go here too.
+			tags = minus(m.Tags, b.Tags)
+			for _, t := range minus(b.Tags, m.Tags) {
+				if _, err := tx.ExecContext(ctx, `DELETE FROM model_tag WHERE model_id = ?
+					AND tag_id = (SELECT id FROM tag WHERE name = ?)`, id, t); err != nil {
+					return res, err
+				}
+				res.TagsRemoved++
+			}
+		}
+		n, err := addTags(ctx, tx, id, tags)
 		if err != nil {
 			return res, err
 		}
@@ -526,6 +557,15 @@ func Apply(ctx context.Context, db *sql.DB, e *Export, choices []RootChoice, o A
 
 	if err := importExtras(ctx, tx, e, localOf, now, &res); err != nil {
 		return res, err
+	}
+	if o.Base != nil {
+		if err := syncRemovals(ctx, tx, e, o.Base, localOf, &res); err != nil {
+			return res, err
+		}
+		if _, err := tx.ExecContext(ctx, `DELETE FROM tag WHERE NOT EXISTS
+			(SELECT 1 FROM model_tag mt WHERE mt.tag_id = tag.id)`); err != nil {
+			return res, err
+		}
 	}
 	if err := refreshSearch(ctx, tx, touched); err != nil {
 		return res, err
@@ -816,6 +856,132 @@ func importExtras(ctx context.Context, tx *sql.Tx, e *Export, localOf map[string
 		if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO saved_search (name, query, created_at) VALUES (?, ?, ?)`,
 			name, string(ss.Query), now); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+// minus returns the names in a that are not in b (case is ignored, as for tags).
+func minus(a, b []string) []string {
+	in := map[string]bool{}
+	for _, x := range b {
+		in[strings.ToLower(x)] = true
+	}
+	var out []string
+	for _, x := range a {
+		if !in[strings.ToLower(x)] {
+			out = append(out, x)
+		}
+	}
+	return out
+}
+
+// syncModel applies what the other PC changed since base (three-way merge):
+// a field it changed is taken over, one it did not change stays as it is
+// here. Notes changed on both sides keep both texts. Returns whether that
+// happened.
+func syncModel(ctx context.Context, tx *sql.Tx, id int64, m, b *Model, now int64) (bool, error) {
+	var notes string
+	if err := tx.QueryRowContext(ctx, `SELECT notes FROM model WHERE id = ?`, id).Scan(&notes); err != nil {
+		return false, err
+	}
+	exec := func(q string, args ...any) error {
+		_, err := tx.ExecContext(ctx, q, args...)
+		return err
+	}
+	changed := 0
+	if m.Name != b.Name || m.NameManual != b.NameManual {
+		if m.NameManual {
+			if err := exec(`UPDATE model SET name = ?, name_manual = 1 WHERE id = ?`, m.Name, id); err != nil {
+				return false, err
+			}
+			changed++
+		}
+	}
+	if m.CreatorManual && (m.Creator != b.Creator || !b.CreatorManual) {
+		cid, err := creatorID(ctx, tx, m.Creator)
+		if err != nil {
+			return false, err
+		}
+		if err := exec(`UPDATE model SET creator_id = ?, creator_manual = 1 WHERE id = ?`, cid, id); err != nil {
+			return false, err
+		}
+		changed++
+	}
+	if m.Favorite != b.Favorite {
+		if err := exec(`UPDATE model SET favorite = ? WHERE id = ?`, m.Favorite, id); err != nil {
+			return false, err
+		}
+		changed++
+	}
+	if m.PrintStatus != b.PrintStatus {
+		if err := exec(`UPDATE model SET print_status = ? WHERE id = ?`, m.PrintStatus, id); err != nil {
+			return false, err
+		}
+		changed++
+	}
+	if m.SupportsManual && (m.Supports != b.Supports || !b.SupportsManual) {
+		if err := exec(`UPDATE model SET supports = ?, supports_manual = 1 WHERE id = ?`, nullable(m.Supports), id); err != nil {
+			return false, err
+		}
+		changed++
+	}
+	for _, f := range []struct{ col, cur, old string }{
+		{"origin", m.Origin, b.Origin}, {"origin_url", m.OriginURL, b.OriginURL}, {"license", m.License, b.License},
+	} {
+		if f.cur != f.old {
+			if err := exec(`UPDATE model SET `+f.col+` = ? WHERE id = ?`, nullable(f.cur), id); err != nil {
+				return false, err
+			}
+			changed++
+		}
+	}
+	kept := false
+	if m.Notes != b.Notes {
+		next := m.Notes
+		if strings.TrimSpace(notes) != strings.TrimSpace(b.Notes) {
+			next, kept = mergeNotes(notes, m.Notes) // changed here too: keep both
+		}
+		if next != notes {
+			if err := exec(`UPDATE model SET notes = ? WHERE id = ?`, next, id); err != nil {
+				return false, err
+			}
+			changed++
+		}
+	}
+	if changed > 0 {
+		if err := exec(`UPDATE model SET updated_at = ? WHERE id = ?`, now, id); err != nil {
+			return false, err
+		}
+	}
+	return kept, nil
+}
+
+// syncRemovals takes models out of collections the other PC took them out
+// of since base.
+func syncRemovals(ctx context.Context, tx *sql.Tx, e, base *Export, localOf map[string]int64, res *Result) error {
+	cur := map[string]map[string]bool{}
+	for _, c := range e.Collections {
+		set := map[string]bool{}
+		for _, u := range c.Models {
+			set[u] = true
+		}
+		cur[strings.ToLower(c.Name)] = set
+	}
+	for _, c := range base.Collections {
+		now, still := cur[strings.ToLower(c.Name)]
+		for _, u := range c.Models {
+			if still && now[u] {
+				continue
+			}
+			id, ok := localOf[u]
+			if !ok {
+				continue
+			}
+			if _, err := tx.ExecContext(ctx, `DELETE FROM collection_model WHERE model_id = ?
+				AND collection_id = (SELECT id FROM collection WHERE name = ?)`, id, c.Name); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
