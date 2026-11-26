@@ -114,7 +114,13 @@ func (a *App) saveSyncState(st syncState) error {
 	return writeAtomic(filepath.Join(a.syncDir(), "state.json"), b)
 }
 
+// writeAtomic writes file via a temporary file in the same folder, creating
+// the folder if needed (found in the release test: the first sync with
+// another PC failed because data/sync did not exist yet).
 func writeAtomic(file string, b []byte) error {
+	if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
+		return err
+	}
 	tmp, err := os.CreateTemp(filepath.Dir(file), ".tmp-*")
 	if err != nil {
 		return err
